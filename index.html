@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ETF Edge</title>
+<style>
+  :root{
+    --ink:#10151c;
+    --ink-soft:#4b5563;
+    --paper:#f6f5f1;
+    --card:#ffffff;
+    --line:#e4e1d8;
+    --signal-buy:#1a7a4c;
+    --signal-buy-bg:#e7f5ed;
+    --signal-sell:#b3392f;
+    --signal-sell-bg:#fbeae7;
+    --signal-fair:#8a7f5c;
+    --signal-fair-bg:#f1efe6;
+    --accent:#c0501f;
+    --mono: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+    --sans: -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--sans);}
+  body{padding-bottom:40px; min-height:100vh;}
+  .hidden{display:none !important;}
+
+  /* ===== LOCK SCREEN ===== */
+  #lockScreen{
+    position:fixed; inset:0; background:var(--ink); color:#fff;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:999; padding:24px;
+  }
+  .lock-mark{
+    font-family:var(--mono); font-size:13px; letter-spacing:0.18em; text-transform:uppercase;
+    color:#9aa3ad; margin-bottom:6px;
+  }
+  .lock-title{font-size:28px; font-weight:700; margin-bottom:28px; letter-spacing:-0.01em;}
+  #pinDots{display:flex; gap:14px; margin-bottom:28px;}
+  .pin-dot{width:14px; height:14px; border-radius:50%; border:1.5px solid #5b6470; background:transparent; transition:all .15s;}
+  .pin-dot.filled{background:var(--accent); border-color:var(--accent);}
+  .pin-dot.error{border-color:var(--signal-sell); background:var(--signal-sell);}
+  #pinPad{display:grid; grid-template-columns:repeat(3,72px); gap:14px;}
+  .pin-key{
+    width:72px;height:72px;border-radius:50%;border:1px solid #2a323c;background:#1a212b;color:#fff;
+    font-size:24px;font-weight:500;display:flex;align-items:center;justify-content:center;
+  }
+  .pin-key:active{background:#262f3b;}
+  .pin-key.wide{font-size:14px; color:#9aa3ad;}
+  .lock-hint{margin-top:22px; font-size:12px; color:#6b7280; text-align:center; max-width:260px; line-height:1.5;}
+  #firstSetupNote{font-size:13px; color:#c9902c; margin-bottom:16px; text-align:center; max-width:260px;}
+
+  /* ===== HEADER ===== */
+  header{
+    padding:18px 18px 14px; background:var(--ink); color:#fff;
+    position:sticky; top:0; z-index:50;
+  }
+  .brand-row{display:flex; justify-content:space-between; align-items:baseline;}
+  .brand{font-size:20px; font-weight:700; letter-spacing:-0.01em;}
+  .brand span{color:var(--accent);}
+  .clock{font-family:var(--mono); font-size:12px; color:#9aa3ad;}
+  .summary-row{display:flex; gap:8px; margin-top:14px;}
+  .summary-pill{
+    flex:1; background:rgba(255,255,255,0.06); border-radius:10px; padding:9px 10px;
+    text-align:center;
+  }
+  .summary-pill .num{font-size:18px; font-weight:700; font-family:var(--mono);}
+  .summary-pill .lbl{font-size:9.5px; color:#9aa3ad; text-transform:uppercase; letter-spacing:0.06em; margin-top:1px;}
+  .summary-pill.buy .num{color:#5fd99a;}
+  .summary-pill.sell .num{color:#f08a7e;}
+
+  /* ===== MAIN ===== */
+  main{padding:14px 14px 0;}
+  .toolbar{display:flex; gap:8px; margin-bottom:12px;}
+  .btn{
+    flex:1; padding:12px; border-radius:11px; border:none; font-size:14.5px; font-weight:600;
+    font-family:var(--sans); display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn-primary{background:var(--ink); color:#fff;}
+  .btn-ghost{background:var(--card); color:var(--ink); border:1px solid var(--line);}
+  .btn:active{opacity:0.8;}
+
+  .empty-state{
+    text-align:center; padding:60px 20px; color:var(--ink-soft);
+  }
+  .empty-state .big{font-size:15px; font-weight:600; color:var(--ink); margin-bottom:6px;}
+  .empty-state .small{font-size:13px; line-height:1.5;}
+
+  /* ===== ETF CARD ===== */
+  #etfList{display:flex; flex-direction:column; gap:10px;}
+  .etf-card{
+    background:var(--card); border-radius:13px; padding:13px 14px; border:1px solid var(--line);
+    position:relative; overflow:hidden;
+  }
+  .etf-card::before{
+    content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+  }
+  .etf-card.buy::before{background:var(--signal-buy);}
+  .etf-card.sell::before{background:var(--signal-sell);}
+  .etf-card.fair::before{background:var(--signal-fair);}
+  .etf-card.pending::before{background:#c7c2b3;}
+
+  .etf-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:9px;}
+  .etf-name{font-size:14.5px; font-weight:700; color:var(--ink); line-height:1.25;}
+  .etf-ticker{font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:1px;}
+  .etf-signal{
+    font-size:11px; font-weight:700; padding:4px 9px; border-radius:7px; white-space:nowrap;
+    text-transform:uppercase; letter-spacing:0.02em;
+  }
+  .etf-signal.buy{background:var(--signal-buy-bg); color:var(--signal-buy);}
+  .etf-signal.sell{background:var(--signal-sell-bg); color:var(--signal-sell);}
+  .etf-signal.fair{background:var(--signal-fair-bg); color:var(--signal-fair);}
+  .etf-signal.pending{background:#f0eee6; color:#9b9580;}
+
+  .etf-inputs{display:flex; gap:8px; margin-bottom:8px;}
+  .input-group{flex:1;}
+  .input-group label{display:block; font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;}
+  .input-group .field-wrap{display:flex; align-items:center; background:var(--paper); border-radius:8px; border:1px solid var(--line); padding:0 8px;}
+  .input-group .rupee{font-size:13px; color:var(--ink-soft); margin-right:2px;}
+  .input-group input{
+    width:100%; border:none; background:transparent; padding:9px 0; font-size:15px; font-family:var(--mono);
+    color:var(--ink); font-weight:600;
+  }
+  .input-group input:focus{outline:none;}
+  .input-group input::placeholder{color:#b8b3a3; font-weight:400;}
+
+  .etf-bottom{display:flex; justify-content:space-between; align-items:center;}
+  .delta-display{font-family:var(--mono); font-size:13px; font-weight:700;}
+  .delta-display.buy{color:var(--signal-buy);}
+  .delta-display.sell{color:var(--signal-sell);}
+  .delta-display.fair{color:var(--signal-fair);}
+  .delta-display.pending{color:#b8b3a3; font-weight:400; font-size:12px;}
+  .delete-btn{
+    background:none; border:none; color:#c7c2b3; font-size:12px; font-weight:600; padding:4px 6px;
+  }
+  .delete-btn:active{color:var(--signal-sell);}
+
+  /* ===== ADD MODAL ===== */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(16,21,28,0.55); z-index:200;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .modal-sheet{
+    background:var(--card); width:100%; max-width:480px; border-radius:18px 18px 0 0;
+    padding:20px 18px 28px; max-height:85vh; overflow-y:auto;
+  }
+  .modal-handle{width:36px; height:4px; background:var(--line); border-radius:99px; margin:0 auto 16px;}
+  .modal-title{font-size:17px; font-weight:700; margin-bottom:16px;}
+  .form-field{margin-bottom:14px;}
+  .form-field label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
+  .form-field input{
+    width:100%; padding:12px 13px; border-radius:10px; border:1px solid var(--line); background:var(--paper);
+    font-size:15px; font-family:var(--sans); color:var(--ink);
+  }
+  .form-field input:focus{outline:none; border-color:var(--accent);}
+  .modal-actions{display:flex; gap:10px; margin-top:6px;}
+  .err-text{color:var(--signal-sell); font-size:12px; margin-top:6px; display:none;}
+
+  /* ===== SETTINGS / SECURITY NOTE ===== */
+  .footer-note{
+    text-align:center; padding:24px 30px 10px; font-size:11px; color:#a39e8c; line-height:1.6;
+  }
+  .footer-note button{
+    background:none; border:none; color:var(--accent); font-size:11px; font-weight:600; text-decoration:underline;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOCK SCREEN ============ -->
+<div id="lockScreen">
+  <div class="lock-mark">ETF EDGE</div>
+  <div class="lock-title" id="lockTitle">Enter PIN</div>
+  <div id="firstSetupNote" class="hidden">Set a 4-digit PIN to lock this tracker. This is a privacy screen, not real security — anyone with this file could view its source.</div>
+  <div id="pinDots"></div>
+  <div id="pinPad"></div>
+  <div class="lock-hint" id="lockHint"></div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="app" class="hidden">
+  <header>
+    <div class="brand-row">
+      <div class="brand">ETF <span>Edge</span></div>
+      <div class="clock" id="clockDisplay">--:--:--</div>
+    </div>
+    <div class="summary-row">
+      <div class="summary-pill buy">
+        <div class="num" id="buyCount">0</div>
+        <div class="lbl">Discount</div>
+      </div>
+      <div class="summary-pill">
+        <div class="num" id="fairCount" style="color:#cbb892;">0</div>
+        <div class="lbl">Fair</div>
+      </div>
+      <div class="summary-pill sell">
+        <div class="num" id="sellCount">0</div>
+        <div class="lbl">Premium</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="openAddModal()">+ Add ETF</button>
+      <button class="btn btn-ghost" onclick="resetAllPrices()">Clear prices</button>
+    </div>
+
+    <div id="etfList"></div>
+
+    <div id="emptyState" class="empty-state hidden">
+      <div class="big">No ETFs yet</div>
+      <div class="small">Tap "+ Add ETF" to start building<br>your watchlist.</div>
+    </div>
+  </main>
+
+  <div class="footer-note">
+    Manual entry tool · iNAV from NSE/BSE, price from your broker app.<br>
+    Threshold for signal: ±0.5% (<button onclick="changeThreshold()">change</button>) · 
+    <button onclick="lockNow()">Lock screen</button> · <button onclick="changePin()">Change PIN</button>
+  </div>
+</div>
+
+<!-- ============ ADD ETF MODAL ============ -->
+<div id="addModal" class="modal-overlay hidden">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Add ETF / Stock</div>
+    <div class="form-field">
+      <label>Name</label>
+      <input type="text" id="newEtfName" placeholder="e.g. Nippon Nifty 50 ETF" autocomplete="off">
+    </div>
+    <div class="form-field">
+      <label>Ticker (optional)</label>
+      <input type="text" id="newEtfTicker" placeholder="e.g. NIFTYBEES" autocomplete="off" style="text-transform:uppercase;">
+    </div>
+    <div class="err-text" id="addErr">Please enter a name.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewEtf()">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ETF EDGE — Manual iNAV vs Market Price Tracker
+   All data stored locally on this device via localStorage.
+   ============================================================ */
+
+const STORAGE_KEY = 'etfEdge_v1';
+const PIN_KEY = 'etfEdge_pin';
+const THRESHOLD_KEY = 'etfEdge_threshold';
+
+let state = {
+  etfs: [],       // {id, name, ticker, inav, price}
+  threshold: 0.5
+};
+
+let enteredPin = '';
+let pinMode = 'check'; // 'check' | 'setup' | 'confirm' | 'change-old' | 'change-new' | 'change-confirm'
+let tempNewPin = '';
+
+const DEFAULT_ETFS = [
+  {name:"CPSE ETF", ticker:"CPSEETF"},
+  {name:"HDFC Nifty 200 Momentum 30 ETF", ticker:"HDFCMOMENT"},
+  {name:"HDFC Nifty Bank ETF", ticker:"HDFCNIFBAN"},
+  {name:"ICICI Pru Nifty 100 Low Vol 30 ETF", ticker:"ICICILV30"},
+  {name:"ICICI Pru Nifty 200 Value 30 ETF", ticker:"ICICIV30"},
+  {name:"ICICI Pru Nifty 50 Value 20 ETF", ticker:"ICICIV20"},
+  {name:"ICICI Pru Nifty Alpha Low Vol 30", ticker:"ICICIALPV"},
+  {name:"ICICI Pru Nifty Auto ETF", ticker:"ICICIAUTO"},
+  {name:"ICICI Pru Nifty FMCG ETF", ticker:"ICICIFMCG"},
+  {name:"ICICI Pru Nifty Metal ETF", ticker:"ICICIMETAL"},
+  {name:"ICICI Pru Nifty Midcap 150 ETF", ticker:"ICICIMC150"},
+  {name:"ICICI Pru Nifty Next 50 ETF", ticker:"ICICINXT50"},
+  {name:"ICICI Pru Nifty Oil & Gas ETF", ticker:"ICICIOILGS"},
+  {name:"ICICI Pru Nifty Private Bank ETF", ticker:"ICICIPRBN"},
+  {name:"Mirae Asset Gold ETF", ticker:"MIRAEGOLD"},
+  {name:"Mirae Asset Hang Seng Tech ETF", ticker:"MIRAEHANG"},
+  {name:"Mirae Asset Nifty Midcap 150 ETF", ticker:"MIRAEMC150"},
+  {name:"Motilal Oswal Nasdaq 100 ETF", ticker:"MON100"},
+  {name:"Motilal Oswal Nifty 500 ETF", ticker:"MONIFTY500"},
+  {name:"Motilal Oswal Nifty India Defence ETF", ticker:"MODEFENCE"},
+  {name:"Motilal Oswal Nifty Smallcap 250 ETF", ticker:"MOSC250"},
+  {name:"Nippon Nifty 50 ETF", ticker:"NIFTYBEES"},
+  {name:"Nippon Nifty IT ETF", ticker:"ITBEES"},
+  {name:"Nippon Pharma ETF", ticker:"PHARMABEES"},
+  {name:"Nippon Silver ETF", ticker:"SILVERBEES"},
+  {name:"TATA Silver ETF", ticker:"TATASILVER"},
+  {name:"Tata Gold ETF", ticker:"TATAGOLD"},
+  {name:"Zerodha Nifty 50 ETF", ticker:"ZERODHANIF"}
+];
+
+/* ---------- PERSISTENCE ---------- */
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      state = JSON.parse(raw);
+    } else {
+      state.etfs = DEFAULT_ETFS.map((e,i)=>({
+        id: 'etf_'+i+'_'+Date.now(),
+        name: e.name, ticker: e.ticker, inav:null, price:null
+      }));
+      saveState();
+    }
+  }catch(e){
+    console.error('Load failed', e);
+  }
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error('Save failed', e); }
+}
+
+/* ---------- PIN / LOCK ---------- */
+function getSavedPin(){ return localStorage.getItem(PIN_KEY); }
+function setSavedPin(pin){ localStorage.setItem(PIN_KEY, pin); }
+
+function initLock(){
+  renderPinPad();
+  const saved = getSavedPin();
+  if(!saved){
+    pinMode = 'setup';
+    document.getElementById('lockTitle').textContent = 'Create a PIN';
+    document.getElementById('firstSetupNote').classList.remove('hidden');
+    document.getElementById('lockHint').textContent = 'Enter 4 digits';
+  } else {
+    pinMode = 'check';
+    document.getElementById('lockTitle').textContent = 'Enter PIN';
+    document.getElementById('lockHint').textContent = '';
+  }
+  renderPinDots();
+}
+
+function renderPinPad(){
+  const pad = document.getElementById('pinPad');
+  pad.innerHTML = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','del'];
+  keys.forEach(k=>{
+    const btn = document.createElement('button');
+    if(k===''){
+      btn.style.visibility='hidden';
+      btn.className='pin-key';
+    } else if(k==='del'){
+      btn.className='pin-key wide';
+      btn.textContent='⌫';
+      btn.onclick=()=>pinBackspace();
+    } else {
+      btn.className='pin-key';
+      btn.textContent=k;
+      btn.onclick=()=>pinPress(k);
+    }
+    pad.appendChild(btn);
+  });
+}
+
+function renderPinDots(){
+  const dotsEl = document.getElementById('pinDots');
+  dotsEl.innerHTML='';
+  for(let i=0;i<4;i++){
+    const d = document.createElement('div');
+    d.className = 'pin-dot' + (i < enteredPin.length ? ' filled' : '');
+    dotsEl.appendChild(d);
+  }
+}
+
+function pinPress(digit){
+  if(enteredPin.length >= 4) return;
+  enteredPin += digit;
+  renderPinDots();
+  if(enteredPin.length === 4){
+    setTimeout(()=>processPinEntry(), 150);
+  }
+}
+function pinBackspace(){
+  enteredPin = enteredPin.slice(0,-1);
+  renderPinDots();
+}
+
+function shakeError(msg){
+  const dotsEl = document.getElementById('pinDots');
+  dotsEl.querySelectorAll('.pin-dot').forEach(d=>d.classList.add('error'));
+  document.getElementById('lockHint').textContent = msg;
+  document.getElementById('lockHint').style.color = '#f08a7e';
+  setTimeout(()=>{
+    enteredPin='';
+    renderPinDots();
+  }, 400);
+}
+
+function processPinEntry(){
+  if(pinMode === 'setup'){
+    tempNewPin = enteredPin;
+    enteredPin = '';
+    pinMode = 'confirm';
+    document.getElementById('lockTitle').textContent = 'Confirm PIN';
+    document.getElementById('firstSetupNote').classList.add('hidden');
+    renderPinDots();
+  } else if(pinMode === 'confirm'){
+    if(enteredPin === tempNewPin){
+      setSavedPin(enteredPin);
+      unlockApp();
+    } else {
+      shakeError("PIN didn't match — try again");
+      pinMode = 'setup';
+      tempNewPin='';
+      setTimeout(()=>{
+        document.getElementById('lockTitle').textContent = 'Create a PIN';
+        document.getElementById('firstSetupNote').classList.remove('hidden');
+        document.getElementById('lockHint').textContent = '';
+        document.getElementById('lockHint').style.color = '#6b7280';
+      }, 450);
+    }
+  } else if(pinMode === 'check'){
+    if(enteredPin === getSavedPin()){
+      unlockApp();
+    } else {
+      shakeError('Incorrect PIN');
+    }
+  } else if(pinMode === 'change-old'){
+    if(enteredPin === getSavedPin()){
+      enteredPin='';
+      pinMode='change-new';
+      document.getElementById('lockTitle').textContent = 'New PIN';
+      document.getElementById('lockHint').textContent = '';
+      renderPinDots();
+    } else {
+      shakeError('Incorrect current PIN');
+    }
+  } else if(pinMode === 'change-new'){
+    tempNewPin = enteredPin;
+    enteredPin='';
+    pinMode='change-confirm';
+    document.getElementById('lockTitle').textContent = 'Confirm new PIN';
+    renderPinDots();
+  } else if(pinMode === 'change-confirm'){
+    if(enteredPin === tempNewPin){
+      setSavedPin(enteredPin);
+      unlockApp();
+    } else {
+      shakeError("Didn't match — try again");
+      pinMode = 'change-new';
+      setTimeout(()=>{
+        document.getElementById('lockTitle').textContent = 'New PIN';
+        document.getElementById('lockHint').textContent = '';
+        document.getElementById('lockHint').style.color = '#6b7280';
+      }, 450);
+    }
+  }
+}
+
+function unlockApp(){
+  document.getElementById('lockScreen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  enteredPin=''; tempNewPin='';
+  renderApp();
+}
+
+function lockNow(){
+  enteredPin='';
+  pinMode='check';
+  document.getElementById('lockTitle').textContent = 'Enter PIN';
+  document.getElementById('lockHint').textContent = '';
+  document.getElementById('lockHint').style.color = '#6b7280';
+  renderPinDots();
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('lockScreen').classList.remove('hidden');
+}
+
+function changePin(){
+  enteredPin='';
+  pinMode='change-old';
+  document.getElementById('lockTitle').textContent = 'Current PIN';
+  document.getElementById('lockHint').textContent = '';
+  renderPinDots();
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('lockScreen').classList.remove('hidden');
+}
+
+/* ---------- CLOCK ---------- */
+function tickClock(){
+  const now = new Date();
+  const opts = {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false};
+  document.getElementById('clockDisplay').textContent =
+    now.toLocaleTimeString('en-IN', opts) + ' IST';
+}
+
+/* ---------- SIGNAL CALC ---------- */
+function calcSignal(inav, price){
+  if(inav==null || price==null || inav==='' || price==='' || isNaN(inav) || isNaN(price) || Number(inav)===0){
+    return {status:'pending', pct:null};
+  }
+  inav = Number(inav); price = Number(price);
+  const pct = ((price - inav) / inav) * 100;
+  let status;
+  if(pct > state.threshold) status = 'sell';       // premium
+  else if(pct < -state.threshold) status = 'buy';  // discount
+  else status = 'fair';
+  return {status, pct};
+}
+
+/* ---------- RENDER ---------- */
+function renderApp(){
+  const list = document.getElementById('etfList');
+  const empty = document.getElementById('emptyState');
+
+  if(state.etfs.length === 0){
+    list.innerHTML = '';
+    empty.classList.remove('hidden');
+    updateSummary([]);
+    return;
+  }
+  empty.classList.add('hidden');
+
+  // compute signals, then sort by pct ascending (biggest discount first),
+  // pending items go to the bottom
+  const withSignal = state.etfs.map(e=>{
+    const sig = calcSignal(e.inav, e.price);
+    return {...e, _status: sig.status, _pct: sig.pct};
+  });
+
+  withSignal.sort((a,b)=>{
+    if(a._status==='pending' && b._status==='pending') return 0;
+    if(a._status==='pending') return 1;
+    if(b._status==='pending') return -1;
+    return a._pct - b._pct; // most negative (deepest discount) first
+  });
+
+  list.innerHTML = withSignal.map(e=>renderCard(e)).join('');
+  updateSummary(withSignal);
+}
+
+function renderCard(e){
+  const statusLabel = {
+    buy:'Discount', sell:'Premium', fair:'Fair value', pending:'Pending'
+  }[e._status];
+
+  const deltaHtml = e._status === 'pending'
+    ? `<span class="delta-display pending">Enter both values</span>`
+    : `<span class="delta-display ${e._status}">${e._pct > 0 ? '+' : ''}${e._pct.toFixed(2)}%</span>`;
+
+  return `
+    <div class="etf-card ${e._status}">
+      <div class="etf-top">
+        <div>
+          <div class="etf-name">${escapeHtml(e.name)}</div>
+          ${e.ticker ? `<div class="etf-ticker">${escapeHtml(e.ticker)}</div>` : ''}
+        </div>
+        <div class="etf-signal ${e._status}">${statusLabel}</div>
+      </div>
+      <div class="etf-inputs">
+        <div class="input-group">
+          <label>iNAV</label>
+          <div class="field-wrap">
+            <span class="rupee">₹</span>
+            <input type="number" inputmode="decimal" step="0.01" placeholder="0.00"
+              value="${e.inav ?? ''}"
+              onchange="updateField('${e.id}','inav',this.value)">
+          </div>
+        </div>
+        <div class="input-group">
+          <label>Market price</label>
+          <div class="field-wrap">
+            <span class="rupee">₹</span>
+            <input type="number" inputmode="decimal" step="0.01" placeholder="0.00"
+              value="${e.price ?? ''}"
+              onchange="updateField('${e.id}','price',this.value)">
+          </div>
+        </div>
+      </div>
+      <div class="etf-bottom">
+        ${deltaHtml}
+        <button class="delete-btn" onclick="deleteEtf('${e.id}')">Remove</button>
+      </div>
+    </div>
+  `;
+}
+
+function updateSummary(list){
+  const buy = list.filter(e=>e._status==='buy').length;
+  const sell = list.filter(e=>e._status==='sell').length;
+  const fair = list.filter(e=>e._status==='fair').length;
+  document.getElementById('buyCount').textContent = buy;
+  document.getElementById('sellCount').textContent = sell;
+  document.getElementById('fairCount').textContent = fair;
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ---------- ACTIONS ---------- */
+function updateField(id, field, value){
+  const etf = state.etfs.find(e=>e.id===id);
+  if(!etf) return;
+  etf[field] = value === '' ? null : Number(value);
+  saveState();
+  renderApp();
+}
+
+function deleteEtf(id){
+  state.etfs = state.etfs.filter(e=>e.id!==id);
+  saveState();
+  renderApp();
+}
+
+function resetAllPrices(){
+  if(!confirm('Clear all entered iNAV and price values? ETF list stays.')) return;
+  state.etfs.forEach(e=>{ e.inav=null; e.price=null; });
+  saveState();
+  renderApp();
+}
+
+function openAddModal(){
+  document.getElementById('newEtfName').value='';
+  document.getElementById('newEtfTicker').value='';
+  document.getElementById('addErr').style.display='none';
+  document.getElementById('addModal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('newEtfName').focus(), 100);
+}
+function closeAddModal(){
+  document.getElementById('addModal').classList.add('hidden');
+}
+function saveNewEtf(){
+  const name = document.getElementById('newEtfName').value.trim();
+  const ticker = document.getElementById('newEtfTicker').value.trim().toUpperCase();
+  if(!name){
+    document.getElementById('addErr').style.display='block';
+    return;
+  }
+  state.etfs.push({
+    id: 'etf_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+    name, ticker, inav:null, price:null
+  });
+  saveState();
+  closeAddModal();
+  renderApp();
+}
+
+function changeThreshold(){
+  const val = prompt('Set premium/discount alert threshold (%)', state.threshold);
+  if(val === null) return;
+  const num = parseFloat(val);
+  if(!isNaN(num) && num > 0){
+    state.threshold = num;
+    saveState();
+    renderApp();
+  }
+}
+
+/* ---------- INIT ---------- */
+loadState();
+initLock();
+tickClock();
+setInterval(tickClock, 1000);
+</script>
+</body>
+</html>
