@@ -6,660 +6,609 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>ETF Edge</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root{
-    --ink:#10151c;
-    --ink-soft:#4b5563;
-    --paper:#f6f5f1;
-    --card:#ffffff;
-    --line:#e4e1d8;
-    --signal-buy:#1a7a4c;
-    --signal-buy-bg:#e7f5ed;
-    --signal-sell:#b3392f;
-    --signal-sell-bg:#fbeae7;
-    --signal-fair:#8a7f5c;
-    --signal-fair-bg:#f1efe6;
-    --accent:#c0501f;
-    --mono: 'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
-    --sans: -apple-system, 'Inter', 'Segoe UI', Roboto, sans-serif;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--sans);}
-  body{padding-bottom:40px; min-height:100vh;}
-  .hidden{display:none !important;}
+:root{
+  --ink:#0f172a; --ink2:#475569; --paper:#f1f5f9; --card:#fff; --line:#e2e8f0;
+  --buy:#16a34a; --buy-bg:#dcfce7;
+  --sell:#dc2626; --sell-bg:#fee2e2;
+  --fair:#b45309; --fair-bg:#fef3c7;
+  --accent:#1d4ed8; --accent2:#1e3a5f;
+  --tab-h:58px; --header-h:110px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+html,body{height:100%;background:var(--paper);font-family:-apple-system,'Segoe UI',sans-serif;color:var(--ink);}
+input,button{font-family:inherit;}
+.hidden{display:none!important;}
 
-  /* ===== LOCK SCREEN ===== */
-  #lockScreen{
-    position:fixed; inset:0; background:var(--ink); color:#fff;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    z-index:999; padding:24px;
-  }
-  .lock-mark{
-    font-family:var(--mono); font-size:13px; letter-spacing:0.18em; text-transform:uppercase;
-    color:#9aa3ad; margin-bottom:6px;
-  }
-  .lock-title{font-size:28px; font-weight:700; margin-bottom:28px; letter-spacing:-0.01em;}
-  #pinDots{display:flex; gap:14px; margin-bottom:28px;}
-  .pin-dot{width:14px; height:14px; border-radius:50%; border:1.5px solid #5b6470; background:transparent; transition:all .15s;}
-  .pin-dot.filled{background:var(--accent); border-color:var(--accent);}
-  .pin-dot.error{border-color:var(--signal-sell); background:var(--signal-sell);}
-  #pinPad{display:grid; grid-template-columns:repeat(3,72px); gap:14px;}
-  .pin-key{
-    width:72px;height:72px;border-radius:50%;border:1px solid #2a323c;background:#1a212b;color:#fff;
-    font-size:24px;font-weight:500;display:flex;align-items:center;justify-content:center;
-  }
-  .pin-key:active{background:#262f3b;}
-  .pin-key.wide{font-size:14px; color:#9aa3ad;}
-  .lock-hint{margin-top:22px; font-size:12px; color:#6b7280; text-align:center; max-width:260px; line-height:1.5;}
-  #firstSetupNote{font-size:13px; color:#c9902c; margin-bottom:16px; text-align:center; max-width:260px;}
+/* ── PIN LOCK ── */
+#lock{position:fixed;inset:0;background:#0f172a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;padding:24px;}
+.lk-mark{font-size:12px;letter-spacing:.2em;color:#64748b;text-transform:uppercase;margin-bottom:6px;}
+.lk-title{font-size:26px;font-weight:800;margin-bottom:6px;letter-spacing:-.5px;}
+.lk-sub{font-size:12px;color:#64748b;margin-bottom:24px;text-align:center;max-width:260px;line-height:1.5;}
+#pinDots{display:flex;gap:14px;margin-bottom:28px;}
+.dot{width:14px;height:14px;border-radius:50%;border:1.5px solid #334155;transition:all .15s;}
+.dot.on{background:var(--accent);border-color:var(--accent);}
+.dot.err{background:var(--sell);border-color:var(--sell);}
+#pinPad{display:grid;grid-template-columns:repeat(3,72px);gap:14px;}
+.pk{width:72px;height:72px;border-radius:50%;border:1px solid #1e293b;background:#162032;color:#fff;font-size:22px;font-weight:500;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.pk:active{background:#1e2d42;}
+.pk.sm{font-size:14px;color:#64748b;}
 
-  /* ===== HEADER ===== */
-  header{
-    padding:18px 18px 14px; background:var(--ink); color:#fff;
-    position:sticky; top:0; z-index:50;
-  }
-  .brand-row{display:flex; justify-content:space-between; align-items:baseline;}
-  .brand{font-size:20px; font-weight:700; letter-spacing:-0.01em;}
-  .brand span{color:var(--accent);}
-  .clock{font-family:var(--mono); font-size:12px; color:#9aa3ad;}
-  .summary-row{display:flex; gap:8px; margin-top:14px;}
-  .summary-pill{
-    flex:1; background:rgba(255,255,255,0.06); border-radius:10px; padding:9px 10px;
-    text-align:center;
-  }
-  .summary-pill .num{font-size:18px; font-weight:700; font-family:var(--mono);}
-  .summary-pill .lbl{font-size:9.5px; color:#9aa3ad; text-transform:uppercase; letter-spacing:0.06em; margin-top:1px;}
-  .summary-pill.buy .num{color:#5fd99a;}
-  .summary-pill.sell .num{color:#f08a7e;}
+/* ── APP SHELL ── */
+#app{height:100%;display:flex;flex-direction:column;}
+header{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;padding:14px 16px 12px;flex-shrink:0;}
+.h-row1{display:flex;justify-content:space-between;align-items:baseline;}
+.brand{font-size:20px;font-weight:800;letter-spacing:-.5px;}
+.brand span{color:#93c5fd;}
+.clock{font-size:11px;opacity:.75;font-variant-numeric:tabular-nums;}
+.pills{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;}
+.pill{background:rgba(255,255,255,.1);border-radius:10px;padding:8px;text-align:center;}
+.pill .pv{font-size:17px;font-weight:800;}
+.pill .pl{font-size:9px;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-top:1px;}
 
-  /* ===== MAIN ===== */
-  main{padding:14px 14px 0;}
-  .toolbar{display:flex; gap:8px; margin-bottom:12px;}
-  .btn{
-    flex:1; padding:12px; border-radius:11px; border:none; font-size:14.5px; font-weight:600;
-    font-family:var(--sans); display:flex; align-items:center; justify-content:center; gap:6px;
-  }
-  .btn-primary{background:var(--ink); color:#fff;}
-  .btn-ghost{background:var(--card); color:var(--ink); border:1px solid var(--line);}
-  .btn:active{opacity:0.8;}
+/* ── TABS ── */
+nav{display:flex;background:var(--card);border-top:1px solid var(--line);flex-shrink:0;position:sticky;bottom:0;z-index:40;}
+.tab{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:none;color:var(--ink2);font-size:10px;font-weight:600;cursor:pointer;}
+.tab .ico{font-size:20px;}
+.tab.active{color:var(--accent);}
+.tab.active .ico{filter:none;}
 
-  .empty-state{
-    text-align:center; padding:60px 20px; color:var(--ink-soft);
-  }
-  .empty-state .big{font-size:15px; font-weight:600; color:var(--ink); margin-bottom:6px;}
-  .empty-state .small{font-size:13px; line-height:1.5;}
+/* ── SCROLL AREA ── */
+.page{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 10px;}
 
-  /* ===== ETF CARD ===== */
-  #etfList{display:flex; flex-direction:column; gap:10px;}
-  .etf-card{
-    background:var(--card); border-radius:13px; padding:13px 14px; border:1px solid var(--line);
-    position:relative; overflow:hidden;
-  }
-  .etf-card::before{
-    content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
-  }
-  .etf-card.buy::before{background:var(--signal-buy);}
-  .etf-card.sell::before{background:var(--signal-sell);}
-  .etf-card.fair::before{background:var(--signal-fair);}
-  .etf-card.pending::before{background:#c7c2b3;}
+/* ── UPLOAD ZONE ── */
+.upload-zone{border:2px dashed #93c5fd;border-radius:12px;padding:16px;text-align:center;cursor:pointer;background:#fff;margin-bottom:14px;}
+.upload-zone .uz-ico{font-size:28px;}
+.upload-zone .uz-title{font-size:14px;color:var(--accent);font-weight:700;margin-top:4px;}
+.upload-zone .uz-hint{font-size:11px;color:var(--ink2);margin-top:3px;line-height:1.5;}
+.upload-zone .uz-status{font-size:11px;margin-top:6px;font-weight:600;}
+.uz-ok{color:var(--buy);}
+.uz-err{color:var(--sell);}
 
-  .etf-top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:9px;}
-  .etf-name{font-size:14.5px; font-weight:700; color:var(--ink); line-height:1.25;}
-  .etf-ticker{font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:1px;}
-  .etf-signal{
-    font-size:11px; font-weight:700; padding:4px 9px; border-radius:7px; white-space:nowrap;
-    text-transform:uppercase; letter-spacing:0.02em;
-  }
-  .etf-signal.buy{background:var(--signal-buy-bg); color:var(--signal-buy);}
-  .etf-signal.sell{background:var(--signal-sell-bg); color:var(--signal-sell);}
-  .etf-signal.fair{background:var(--signal-fair-bg); color:var(--signal-fair);}
-  .etf-signal.pending{background:#f0eee6; color:#9b9580;}
+/* ── SUMMARY CARDS ── */
+.cards3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px;}
+.kcard{border-radius:10px;padding:10px 8px;text-align:center;}
+.kcard .kv{font-size:13px;font-weight:800;}
+.kcard .kl{font-size:9px;color:var(--ink2);margin-bottom:3px;}
+.kcard .ks{font-size:9px;margin-top:2px;}
 
-  .etf-inputs{display:flex; gap:8px; margin-bottom:8px;}
-  .input-group{flex:1;}
-  .input-group label{display:block; font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;}
-  .input-group .field-wrap{display:flex; align-items:center; background:var(--paper); border-radius:8px; border:1px solid var(--line); padding:0 8px;}
-  .input-group .rupee{font-size:13px; color:var(--ink-soft); margin-right:2px;}
-  .input-group input{
-    width:100%; border:none; background:transparent; padding:9px 0; font-size:15px; font-family:var(--mono);
-    color:var(--ink); font-weight:600;
-  }
-  .input-group input:focus{outline:none;}
-  .input-group input::placeholder{color:#b8b3a3; font-weight:400;}
+/* ── TABLE ── */
+.tbl-wrap{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+.tbl-head{display:grid;background:var(--accent2);color:#fff;font-size:9.5px;font-weight:700;padding:8px 10px;gap:4px;letter-spacing:.3px;}
+.tbl-row{display:grid;padding:9px 10px;gap:4px;border-bottom:1px solid var(--line);align-items:center;}
+.tbl-row:last-child{border-bottom:none;}
+.tbl-row:nth-child(even){background:#f8fafc;}
+.pnl-chip{border-radius:7px;padding:4px 5px;text-align:center;}
+.pnl-chip .pv{font-size:11px;font-weight:800;}
+.pnl-chip .pp{font-size:9px;font-weight:600;}
+.ic-btn{border:none;border-radius:6px;padding:5px 7px;font-size:13px;cursor:pointer;}
 
-  .etf-bottom{display:flex; justify-content:space-between; align-items:center;}
-  .delta-display{font-family:var(--mono); font-size:13px; font-weight:700;}
-  .delta-display.buy{color:var(--signal-buy);}
-  .delta-display.sell{color:var(--signal-sell);}
-  .delta-display.fair{color:var(--signal-fair);}
-  .delta-display.pending{color:#b8b3a3; font-weight:400; font-size:12px;}
-  .delete-btn{
-    background:none; border:none; color:#c7c2b3; font-size:12px; font-weight:600; padding:4px 6px;
-  }
-  .delete-btn:active{color:var(--signal-sell);}
+/* ── EDIT PANEL ── */
+.edit-panel{background:#fefce8;border-bottom:1px solid #fde68a;padding:10px;}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.ef label{font-size:10px;color:var(--ink2);display:block;margin-bottom:3px;}
+.ef input{width:100%;font-size:16px;padding:8px 10px;border:1px solid #93c5fd;border-radius:8px;background:#fff;}
+.edit-acts{display:flex;gap:8px;}
+.btn-save{flex:1;background:var(--buy);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;}
+.btn-cancel{flex:1;background:#f1f5f9;border:none;border-radius:8px;padding:10px;font-size:13px;cursor:pointer;}
 
-  /* ===== ADD MODAL ===== */
-  .modal-overlay{
-    position:fixed; inset:0; background:rgba(16,21,28,0.55); z-index:200;
-    display:flex; align-items:flex-end; justify-content:center;
-  }
-  .modal-sheet{
-    background:var(--card); width:100%; max-width:480px; border-radius:18px 18px 0 0;
-    padding:20px 18px 28px; max-height:85vh; overflow-y:auto;
-  }
-  .modal-handle{width:36px; height:4px; background:var(--line); border-radius:99px; margin:0 auto 16px;}
-  .modal-title{font-size:17px; font-weight:700; margin-bottom:16px;}
-  .form-field{margin-bottom:14px;}
-  .form-field label{display:block; font-size:12px; font-weight:600; color:var(--ink-soft); margin-bottom:6px;}
-  .form-field input{
-    width:100%; padding:12px 13px; border-radius:10px; border:1px solid var(--line); background:var(--paper);
-    font-size:15px; font-family:var(--sans); color:var(--ink);
-  }
-  .form-field input:focus{outline:none; border-color:var(--accent);}
-  .modal-actions{display:flex; gap:10px; margin-top:6px;}
-  .err-text{color:var(--signal-sell); font-size:12px; margin-top:6px; display:none;}
+/* ── INAV CARDS ── */
+.inav-card{background:var(--card);border-radius:12px;padding:12px 13px;border:1px solid var(--line);margin-bottom:9px;position:relative;overflow:hidden;}
+.inav-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;}
+.inav-card.buy::before{background:var(--buy);}
+.inav-card.sell::before{background:var(--sell);}
+.inav-card.fair::before{background:var(--fair);}
+.inav-card.pending::before{background:#cbd5e1;}
+.ic-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.ic-name{font-size:13.5px;font-weight:700;}
+.ic-ticker{font-size:10px;color:var(--ink2);margin-top:1px;}
+.ic-sig{font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;text-transform:uppercase;letter-spacing:.02em;}
+.ic-sig.buy{background:var(--buy-bg);color:var(--buy);}
+.ic-sig.sell{background:var(--sell-bg);color:var(--sell);}
+.ic-sig.fair{background:var(--fair-bg);color:var(--fair);}
+.ic-sig.pending{background:#f1f5f9;color:#94a3b8;}
+.ic-inputs{display:flex;gap:8px;margin-bottom:8px;}
+.ig{flex:1;}
+.ig label{display:block;font-size:9px;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
+.ig .fw{display:flex;align-items:center;background:var(--paper);border-radius:8px;border:1px solid var(--line);padding:0 8px;}
+.ig .rs{font-size:12px;color:var(--ink2);}
+.ig input{width:100%;border:none;background:transparent;padding:9px 0;font-size:16px;font-weight:600;color:var(--ink);}
+.ig input:focus{outline:none;}
+.ig input::placeholder{color:#cbd5e1;font-weight:400;}
+.ic-foot{display:flex;justify-content:space-between;align-items:center;}
+.delta{font-size:13px;font-weight:700;}
+.delta.buy{color:var(--buy);}
+.delta.sell{color:var(--sell);}
+.delta.fair{color:var(--fair);}
+.delta.pending{color:#94a3b8;font-size:11px;font-weight:400;}
+.del-btn{background:none;border:none;color:#cbd5e1;font-size:11px;padding:4px 6px;cursor:pointer;}
 
-  /* ===== SETTINGS / SECURITY NOTE ===== */
-  .footer-note{
-    text-align:center; padding:24px 30px 10px; font-size:11px; color:#a39e8c; line-height:1.6;
-  }
-  .footer-note button{
-    background:none; border:none; color:var(--accent); font-size:11px; font-weight:600; text-decoration:underline;
-  }
+/* ── TOOLBAR ── */
+.toolbar{display:flex;gap:8px;margin-bottom:12px;}
+.tbtn{flex:1;padding:11px;border-radius:10px;border:none;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;}
+.tbtn-p{background:var(--ink);color:#fff;}
+.tbtn-g{background:var(--card);color:var(--ink);border:1px solid var(--line);}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;}
+.sheet{background:var(--card);width:100%;max-width:480px;border-radius:18px 18px 0 0;padding:20px 16px 34px;}
+.sh-handle{width:36px;height:4px;background:var(--line);border-radius:99px;margin:0 auto 14px;}
+.sh-title{font-size:16px;font-weight:800;margin-bottom:14px;}
+.ff{margin-bottom:12px;}
+.ff label{display:block;font-size:11px;font-weight:600;color:var(--ink2);margin-bottom:5px;}
+.ff input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font-size:16px;}
+.ff input:focus{outline:none;border-color:var(--accent);}
+.sh-acts{display:flex;gap:9px;margin-top:4px;}
+.sh-ok{flex:1;background:var(--ink);color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;}
+.sh-no{flex:1;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:13px;font-size:14px;cursor:pointer;}
+
+.empty{text-align:center;padding:50px 20px;color:#94a3b8;}
+.empty .eb{font-size:14px;font-weight:700;color:var(--ink2);margin-top:8px;}
+.foot-note{text-align:center;font-size:11px;color:#94a3b8;padding:14px 16px 4px;line-height:1.7;}
+.foot-note button{background:none;border:none;color:var(--accent);font-size:11px;font-weight:600;text-decoration:underline;cursor:pointer;}
 </style>
 </head>
 <body>
 
-<!-- ============ LOCK SCREEN ============ -->
-<div id="lockScreen">
-  <div class="lock-mark">ETF EDGE</div>
-  <div class="lock-title" id="lockTitle">Enter PIN</div>
-  <div id="firstSetupNote" class="hidden">Set a 4-digit PIN to lock this tracker. This is a privacy screen, not real security — anyone with this file could view its source.</div>
+<!-- PIN LOCK -->
+<div id="lock">
+  <div class="lk-mark">ETF EDGE</div>
+  <div class="lk-title" id="lkTitle">Enter PIN</div>
+  <div class="lk-sub" id="lkSub"></div>
   <div id="pinDots"></div>
   <div id="pinPad"></div>
-  <div class="lock-hint" id="lockHint"></div>
 </div>
 
-<!-- ============ MAIN APP ============ -->
+<!-- APP -->
 <div id="app" class="hidden">
   <header>
-    <div class="brand-row">
+    <div class="h-row1">
       <div class="brand">ETF <span>Edge</span></div>
-      <div class="clock" id="clockDisplay">--:--:--</div>
+      <div class="clock" id="clk">--:--:--</div>
     </div>
-    <div class="summary-row">
-      <div class="summary-pill buy">
-        <div class="num" id="buyCount">0</div>
-        <div class="lbl">Discount</div>
-      </div>
-      <div class="summary-pill">
-        <div class="num" id="fairCount" style="color:#cbb892;">0</div>
-        <div class="lbl">Fair</div>
-      </div>
-      <div class="summary-pill sell">
-        <div class="num" id="sellCount">0</div>
-        <div class="lbl">Premium</div>
-      </div>
+    <div class="pills" id="pills">
+      <div class="pill"><div class="pv" id="p1">—</div><div class="pl" id="p1l">—</div></div>
+      <div class="pill"><div class="pv" id="p2">—</div><div class="pl" id="p2l">—</div></div>
+      <div class="pill"><div class="pv" id="p3">—</div><div class="pl" id="p3l">—</div></div>
     </div>
   </header>
 
-  <main>
-    <div class="toolbar">
-      <button class="btn btn-primary" onclick="openAddModal()">+ Add ETF</button>
-      <button class="btn btn-ghost" onclick="resetAllPrices()">Clear prices</button>
+  <!-- PORTFOLIO PAGE -->
+  <div class="page" id="pgPortfolio">
+    <div class="upload-zone" id="uploadZone">
+      <div class="uz-ico">📂</div>
+      <div class="uz-title">Upload today's CSV / Excel</div>
+      <div class="uz-hint">Columns: <b>Name · Quantity · Avg Price · Last Traded</b><br>+ Investment · Current Value · P&L · P&L %</div>
+      <div class="uz-status" id="uzStatus"></div>
     </div>
+    <input type="file" id="fileIn" accept=".csv,.xlsx,.xls" style="display:none">
 
-    <div id="etfList"></div>
+    <div class="cards3" id="portCards" style="display:none"></div>
+    <div class="tbl-wrap" id="portTbl"></div>
 
-    <div id="emptyState" class="empty-state hidden">
-      <div class="big">No ETFs yet</div>
-      <div class="small">Tap "+ Add ETF" to start building<br>your watchlist.</div>
+    <div class="empty hidden" id="portEmpty">
+      <div style="font-size:36px">📋</div>
+      <div class="eb">No holdings yet</div>
+      <div style="font-size:12px;margin-top:4px">Upload your daily portfolio CSV to begin.</div>
     </div>
-  </main>
-
-  <div class="footer-note">
-    Manual entry tool · iNAV from NSE/BSE, price from your broker app.<br>
-    Threshold for signal: ±0.5% (<button onclick="changeThreshold()">change</button>) · 
-    <button onclick="lockNow()">Lock screen</button> · <button onclick="changePin()">Change PIN</button>
+    <div class="foot-note">
+      🟢 Profit &nbsp;|&nbsp; 🔴 Loss &nbsp;|&nbsp; 🟡 Breakeven (±0.25%)<br>
+      <button onclick="lockNow()">Lock screen</button> &nbsp;·&nbsp; <button onclick="changePin()">Change PIN</button>
+    </div>
   </div>
+
+  <!-- INAV PAGE -->
+  <div class="page hidden" id="pgInav">
+    <div class="toolbar">
+      <button class="tbtn tbtn-p" onclick="openAddModal()">+ Add ETF</button>
+      <button class="tbtn tbtn-g" onclick="clearInavPrices()">Clear prices</button>
+    </div>
+    <div id="inavList"></div>
+    <div class="empty hidden" id="inavEmpty">
+      <div style="font-size:36px">📡</div>
+      <div class="eb">No ETFs</div>
+      <div style="font-size:12px;margin-top:4px">Tap "+ Add ETF" to build your watchlist.</div>
+    </div>
+    <div class="foot-note">
+      Signal threshold: ±<span id="thr">0.5</span>% (<button onclick="changeThr()">change</button>)
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <nav>
+    <button class="tab active" id="tabPort" onclick="switchTab('portfolio')">
+      <span class="ico">💼</span>Portfolio
+    </button>
+    <button class="tab" id="tabInav" onclick="switchTab('inav')">
+      <span class="ico">📡</span>iNAV Edge
+    </button>
+  </nav>
 </div>
 
-<!-- ============ ADD ETF MODAL ============ -->
-<div id="addModal" class="modal-overlay hidden">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">Add ETF / Stock</div>
-    <div class="form-field">
-      <label>Name</label>
-      <input type="text" id="newEtfName" placeholder="e.g. Nippon Nifty 50 ETF" autocomplete="off">
-    </div>
-    <div class="form-field">
-      <label>Ticker (optional)</label>
-      <input type="text" id="newEtfTicker" placeholder="e.g. NIFTYBEES" autocomplete="off" style="text-transform:uppercase;">
-    </div>
-    <div class="err-text" id="addErr">Please enter a name.</div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeAddModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveNewEtf()">Add</button>
+<!-- ADD ETF MODAL -->
+<div class="overlay hidden" id="addModal">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-title">Add ETF to iNAV Tracker</div>
+    <div class="ff"><label>Name</label><input type="text" id="mName" placeholder="e.g. Nippon Nifty 50 ETF" autocomplete="off"></div>
+    <div class="ff"><label>Ticker (optional)</label><input type="text" id="mTicker" placeholder="e.g. NIFTYBEES" autocomplete="off" style="text-transform:uppercase"></div>
+    <div class="sh-acts">
+      <button class="sh-no" onclick="closeModal()">Cancel</button>
+      <button class="sh-ok" onclick="addInavEtf()">Add</button>
     </div>
   </div>
 </div>
 
 <script>
 /* ============================================================
-   ETF EDGE — Manual iNAV vs Market Price Tracker
-   All data stored locally on this device via localStorage.
+   ETF EDGE — Combined Portfolio + iNAV Tracker
+   Umesh Chavan · iOS/Desktop · localStorage persistence
    ============================================================ */
 
-const STORAGE_KEY = 'etfEdge_v1';
-const PIN_KEY = 'etfEdge_pin';
-const THRESHOLD_KEY = 'etfEdge_threshold';
+const SK = { pin:'etfe_pin', port:'etfe_port_v1', inav:'etfe_inav_v1', thr:'etfe_thr' };
+let portRows = [];
+let inavEtfs = [];
+let threshold = 0.5;
+let activeTab = 'portfolio';
 
-let state = {
-  etfs: [],       // {id, name, ticker, inav, price}
-  threshold: 0.5
-};
+/* ─── PIN ─── */
+let pin='', pinMode='check', tmpPin='';
 
-let enteredPin = '';
-let pinMode = 'check'; // 'check' | 'setup' | 'confirm' | 'change-old' | 'change-new' | 'change-confirm'
-let tempNewPin = '';
-
-const DEFAULT_ETFS = [
-  {name:"CPSE ETF", ticker:"CPSEETF"},
-  {name:"HDFC Nifty 200 Momentum 30 ETF", ticker:"HDFCMOMENT"},
-  {name:"HDFC Nifty Bank ETF", ticker:"HDFCNIFBAN"},
-  {name:"ICICI Pru Nifty 100 Low Vol 30 ETF", ticker:"ICICILV30"},
-  {name:"ICICI Pru Nifty 200 Value 30 ETF", ticker:"ICICIV30"},
-  {name:"ICICI Pru Nifty 50 Value 20 ETF", ticker:"ICICIV20"},
-  {name:"ICICI Pru Nifty Alpha Low Vol 30", ticker:"ICICIALPV"},
-  {name:"ICICI Pru Nifty Auto ETF", ticker:"ICICIAUTO"},
-  {name:"ICICI Pru Nifty FMCG ETF", ticker:"ICICIFMCG"},
-  {name:"ICICI Pru Nifty Metal ETF", ticker:"ICICIMETAL"},
-  {name:"ICICI Pru Nifty Midcap 150 ETF", ticker:"ICICIMC150"},
-  {name:"ICICI Pru Nifty Next 50 ETF", ticker:"ICICINXT50"},
-  {name:"ICICI Pru Nifty Oil & Gas ETF", ticker:"ICICIOILGS"},
-  {name:"ICICI Pru Nifty Private Bank ETF", ticker:"ICICIPRBN"},
-  {name:"Mirae Asset Gold ETF", ticker:"MIRAEGOLD"},
-  {name:"Mirae Asset Hang Seng Tech ETF", ticker:"MIRAEHANG"},
-  {name:"Mirae Asset Nifty Midcap 150 ETF", ticker:"MIRAEMC150"},
-  {name:"Motilal Oswal Nasdaq 100 ETF", ticker:"MON100"},
-  {name:"Motilal Oswal Nifty 500 ETF", ticker:"MONIFTY500"},
-  {name:"Motilal Oswal Nifty India Defence ETF", ticker:"MODEFENCE"},
-  {name:"Motilal Oswal Nifty Smallcap 250 ETF", ticker:"MOSC250"},
-  {name:"Nippon Nifty 50 ETF", ticker:"NIFTYBEES"},
-  {name:"Nippon Nifty IT ETF", ticker:"ITBEES"},
-  {name:"Nippon Pharma ETF", ticker:"PHARMABEES"},
-  {name:"Nippon Silver ETF", ticker:"SILVERBEES"},
-  {name:"TATA Silver ETF", ticker:"TATASILVER"},
-  {name:"Tata Gold ETF", ticker:"TATAGOLD"},
-  {name:"Zerodha Nifty 50 ETF", ticker:"ZERODHANIF"}
-];
-
-/* ---------- PERSISTENCE ---------- */
-function loadState(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      state = JSON.parse(raw);
-    } else {
-      state.etfs = DEFAULT_ETFS.map((e,i)=>({
-        id: 'etf_'+i+'_'+Date.now(),
-        name: e.name, ticker: e.ticker, inav:null, price:null
-      }));
-      saveState();
-    }
-  }catch(e){
-    console.error('Load failed', e);
-  }
-}
-function saveState(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-  catch(e){ console.error('Save failed', e); }
-}
-
-/* ---------- PIN / LOCK ---------- */
-function getSavedPin(){ return localStorage.getItem(PIN_KEY); }
-function setSavedPin(pin){ localStorage.setItem(PIN_KEY, pin); }
+function getSavedPin(){ return localStorage.getItem(SK.pin); }
+function setSavedPin(p){ localStorage.setItem(SK.pin, p); }
 
 function initLock(){
-  renderPinPad();
+  buildPad();
   const saved = getSavedPin();
-  if(!saved){
-    pinMode = 'setup';
-    document.getElementById('lockTitle').textContent = 'Create a PIN';
-    document.getElementById('firstSetupNote').classList.remove('hidden');
-    document.getElementById('lockHint').textContent = 'Enter 4 digits';
-  } else {
-    pinMode = 'check';
-    document.getElementById('lockTitle').textContent = 'Enter PIN';
-    document.getElementById('lockHint').textContent = '';
-  }
-  renderPinDots();
+  pinMode = saved ? 'check' : 'setup';
+  document.getElementById('lkTitle').textContent = saved ? 'Enter PIN' : 'Create a PIN';
+  document.getElementById('lkSub').textContent = saved ? '' : 'Set a 4-digit PIN to protect this tracker.';
+  renderDots();
 }
 
-function renderPinPad(){
-  const pad = document.getElementById('pinPad');
-  pad.innerHTML = '';
-  const keys = ['1','2','3','4','5','6','7','8','9','','0','del'];
-  keys.forEach(k=>{
-    const btn = document.createElement('button');
-    if(k===''){
-      btn.style.visibility='hidden';
-      btn.className='pin-key';
-    } else if(k==='del'){
-      btn.className='pin-key wide';
-      btn.textContent='⌫';
-      btn.onclick=()=>pinBackspace();
-    } else {
-      btn.className='pin-key';
-      btn.textContent=k;
-      btn.onclick=()=>pinPress(k);
-    }
-    pad.appendChild(btn);
+function buildPad(){
+  const pad = document.getElementById('pinPad'); pad.innerHTML='';
+  ['1','2','3','4','5','6','7','8','9','','0','del'].forEach(k=>{
+    const b=document.createElement('button'); b.className='pk';
+    if(!k){ b.style.visibility='hidden'; }
+    else if(k==='del'){ b.className='pk sm'; b.textContent='⌫'; b.onclick=()=>{pin=pin.slice(0,-1);renderDots();}; }
+    else { b.textContent=k; b.onclick=()=>pressPin(k); }
+    pad.appendChild(b);
   });
 }
 
-function renderPinDots(){
-  const dotsEl = document.getElementById('pinDots');
-  dotsEl.innerHTML='';
+function renderDots(err=false){
+  const el=document.getElementById('pinDots'); el.innerHTML='';
   for(let i=0;i<4;i++){
-    const d = document.createElement('div');
-    d.className = 'pin-dot' + (i < enteredPin.length ? ' filled' : '');
-    dotsEl.appendChild(d);
+    const d=document.createElement('div');
+    d.className='dot'+(i<pin.length?' on':'')+(err?' err':'');
+    el.appendChild(d);
   }
 }
 
-function pinPress(digit){
-  if(enteredPin.length >= 4) return;
-  enteredPin += digit;
-  renderPinDots();
-  if(enteredPin.length === 4){
-    setTimeout(()=>processPinEntry(), 150);
+function pressPin(d){
+  if(pin.length>=4)return;
+  pin+=d; renderDots();
+  if(pin.length===4) setTimeout(processPin,150);
+}
+
+function shakeErr(msg){
+  renderDots(true);
+  document.getElementById('lkSub').textContent=msg;
+  document.getElementById('lkSub').style.color='#f87171';
+  setTimeout(()=>{ pin=''; renderDots(); document.getElementById('lkSub').style.color='#64748b'; },500);
+}
+
+function processPin(){
+  if(pinMode==='setup'){ tmpPin=pin; pin=''; pinMode='confirm'; document.getElementById('lkTitle').textContent='Confirm PIN'; renderDots(); }
+  else if(pinMode==='confirm'){
+    if(pin===tmpPin){ setSavedPin(pin); unlockApp(); }
+    else { shakeErr("PINs didn't match — try again"); pinMode='setup'; tmpPin=''; setTimeout(()=>document.getElementById('lkTitle').textContent='Create a PIN',500); }
   }
-}
-function pinBackspace(){
-  enteredPin = enteredPin.slice(0,-1);
-  renderPinDots();
-}
-
-function shakeError(msg){
-  const dotsEl = document.getElementById('pinDots');
-  dotsEl.querySelectorAll('.pin-dot').forEach(d=>d.classList.add('error'));
-  document.getElementById('lockHint').textContent = msg;
-  document.getElementById('lockHint').style.color = '#f08a7e';
-  setTimeout(()=>{
-    enteredPin='';
-    renderPinDots();
-  }, 400);
-}
-
-function processPinEntry(){
-  if(pinMode === 'setup'){
-    tempNewPin = enteredPin;
-    enteredPin = '';
-    pinMode = 'confirm';
-    document.getElementById('lockTitle').textContent = 'Confirm PIN';
-    document.getElementById('firstSetupNote').classList.add('hidden');
-    renderPinDots();
-  } else if(pinMode === 'confirm'){
-    if(enteredPin === tempNewPin){
-      setSavedPin(enteredPin);
-      unlockApp();
-    } else {
-      shakeError("PIN didn't match — try again");
-      pinMode = 'setup';
-      tempNewPin='';
-      setTimeout(()=>{
-        document.getElementById('lockTitle').textContent = 'Create a PIN';
-        document.getElementById('firstSetupNote').classList.remove('hidden');
-        document.getElementById('lockHint').textContent = '';
-        document.getElementById('lockHint').style.color = '#6b7280';
-      }, 450);
-    }
-  } else if(pinMode === 'check'){
-    if(enteredPin === getSavedPin()){
-      unlockApp();
-    } else {
-      shakeError('Incorrect PIN');
-    }
-  } else if(pinMode === 'change-old'){
-    if(enteredPin === getSavedPin()){
-      enteredPin='';
-      pinMode='change-new';
-      document.getElementById('lockTitle').textContent = 'New PIN';
-      document.getElementById('lockHint').textContent = '';
-      renderPinDots();
-    } else {
-      shakeError('Incorrect current PIN');
-    }
-  } else if(pinMode === 'change-new'){
-    tempNewPin = enteredPin;
-    enteredPin='';
-    pinMode='change-confirm';
-    document.getElementById('lockTitle').textContent = 'Confirm new PIN';
-    renderPinDots();
-  } else if(pinMode === 'change-confirm'){
-    if(enteredPin === tempNewPin){
-      setSavedPin(enteredPin);
-      unlockApp();
-    } else {
-      shakeError("Didn't match — try again");
-      pinMode = 'change-new';
-      setTimeout(()=>{
-        document.getElementById('lockTitle').textContent = 'New PIN';
-        document.getElementById('lockHint').textContent = '';
-        document.getElementById('lockHint').style.color = '#6b7280';
-      }, 450);
-    }
+  else if(pinMode==='check'){
+    if(pin===getSavedPin()) unlockApp();
+    else shakeErr('Incorrect PIN');
+  }
+  else if(pinMode==='change-old'){
+    if(pin===getSavedPin()){ pin=''; pinMode='change-new'; document.getElementById('lkTitle').textContent='New PIN'; renderDots(); }
+    else shakeErr('Incorrect current PIN');
+  }
+  else if(pinMode==='change-new'){ tmpPin=pin; pin=''; pinMode='change-confirm'; document.getElementById('lkTitle').textContent='Confirm new PIN'; renderDots(); }
+  else if(pinMode==='change-confirm'){
+    if(pin===tmpPin){ setSavedPin(pin); unlockApp(); }
+    else { shakeErr("Didn't match — retry"); pinMode='change-new'; setTimeout(()=>document.getElementById('lkTitle').textContent='New PIN',500); }
   }
 }
 
 function unlockApp(){
-  document.getElementById('lockScreen').classList.add('hidden');
+  pin=''; tmpPin='';
+  document.getElementById('lock').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  enteredPin=''; tempNewPin='';
-  renderApp();
+  renderAll();
+}
+function lockNow(){ pin=''; pinMode='check'; document.getElementById('lkTitle').textContent='Enter PIN'; document.getElementById('lkSub').textContent=''; document.getElementById('lkSub').style.color='#64748b'; renderDots(); document.getElementById('app').classList.add('hidden'); document.getElementById('lock').classList.remove('hidden'); }
+function changePin(){ pin=''; pinMode='change-old'; document.getElementById('lkTitle').textContent='Current PIN'; document.getElementById('lkSub').textContent=''; renderDots(); document.getElementById('app').classList.add('hidden'); document.getElementById('lock').classList.remove('hidden'); }
+
+/* ─── TABS ─── */
+function switchTab(t){
+  activeTab=t;
+  document.getElementById('pgPortfolio').classList.toggle('hidden', t!=='portfolio');
+  document.getElementById('pgInav').classList.toggle('hidden', t!=='inav');
+  document.getElementById('tabPort').classList.toggle('active', t==='portfolio');
+  document.getElementById('tabInav').classList.toggle('active', t==='inav');
+  updateHeader();
 }
 
-function lockNow(){
-  enteredPin='';
-  pinMode='check';
-  document.getElementById('lockTitle').textContent = 'Enter PIN';
-  document.getElementById('lockHint').textContent = '';
-  document.getElementById('lockHint').style.color = '#6b7280';
-  renderPinDots();
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('lockScreen').classList.remove('hidden');
-}
-
-function changePin(){
-  enteredPin='';
-  pinMode='change-old';
-  document.getElementById('lockTitle').textContent = 'Current PIN';
-  document.getElementById('lockHint').textContent = '';
-  renderPinDots();
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('lockScreen').classList.remove('hidden');
-}
-
-/* ---------- CLOCK ---------- */
+/* ─── CLOCK ─── */
 function tickClock(){
-  const now = new Date();
-  const opts = {hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false};
-  document.getElementById('clockDisplay').textContent =
-    now.toLocaleTimeString('en-IN', opts) + ' IST';
+  document.getElementById('clk').textContent = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})+' IST';
 }
 
-/* ---------- SIGNAL CALC ---------- */
-function calcSignal(inav, price){
-  if(inav==null || price==null || inav==='' || price==='' || isNaN(inav) || isNaN(price) || Number(inav)===0){
-    return {status:'pending', pct:null};
-  }
-  inav = Number(inav); price = Number(price);
-  const pct = ((price - inav) / inav) * 100;
-  let status;
-  if(pct > state.threshold) status = 'sell';       // premium
-  else if(pct < -state.threshold) status = 'buy';  // discount
-  else status = 'fair';
-  return {status, pct};
+/* ─── HELPERS ─── */
+const clean = v => parseFloat(String(v??'').replace(/[₹,%\s]/g,'').replace(/,/g,''))||0;
+const fmt = (n,d=2) => isNaN(n)?'—':Number(n).toLocaleString('en-IN',{minimumFractionDigits:d,maximumFractionDigits:d});
+const BE = 0.25;
+const classify = p => p>BE?'PROFIT':p<-BE?'LOSS':'BREAKEVEN';
+const posC  = {PROFIT:'#16a34a',LOSS:'#dc2626',BREAKEVEN:'#b45309'};
+const posBg = {PROFIT:'#dcfce7',LOSS:'#fee2e2',BREAKEVEN:'#fef3c7'};
+
+/* ─── PERSIST ─── */
+function savePort(){ try{ localStorage.setItem(SK.port,JSON.stringify(portRows)); }catch(e){} }
+function loadPort(){ try{ const r=localStorage.getItem(SK.port); if(r) portRows=JSON.parse(r); }catch(e){} }
+function saveInav(){ try{ localStorage.setItem(SK.inav,JSON.stringify(inavEtfs)); }catch(e){} }
+function loadInav(){
+  try{
+    const r=localStorage.getItem(SK.inav);
+    if(r){ inavEtfs=JSON.parse(r); return; }
+  }catch(e){}
+  inavEtfs = [
+    {n:"CPSE ETF",t:"CPSEETF"},{n:"HDFC Nifty 200 Momentum 30 ETF",t:"HDFCMOMENT"},
+    {n:"HDFC Nifty Bank ETF",t:"HDFCNIFBAN"},{n:"ICICI Pru Nifty 100 Low Vol 30 ETF",t:"ICICILV30"},
+    {n:"ICICI Pru Nifty 200 Value 30 ETF",t:"ICICIV30"},{n:"ICICI Pru Nifty 50 Value 20 ETF",t:"ICICIV20"},
+    {n:"ICICI Pru Nifty Alpha Low Vol 30",t:"ICICIALPV"},{n:"ICICI Pru Nifty Auto ETF",t:"ICICIAUTO"},
+    {n:"ICICI Pru Nifty FMCG ETF",t:"ICICIFMCG"},{n:"ICICI Pru Nifty Metal ETF",t:"ICICIMETAL"},
+    {n:"ICICI Pru Nifty Midcap 150 ETF",t:"ICICIMC150"},{n:"ICICI Pru Nifty Next 50 ETF",t:"ICICINXT50"},
+    {n:"ICICI Pru Nifty Oil & Gas ETF",t:"ICICIOILGS"},{n:"ICICI Pru Nifty Private Bank ETF",t:"ICICIPRBN"},
+    {n:"Mirae Asset Gold ETF",t:"MIRAEGOLD"},{n:"Mirae Asset Hang Seng Tech ETF",t:"MIRAEHANG"},
+    {n:"Mirae Asset Nifty Midcap 150 ETF",t:"MIRAEMC150"},{n:"Motilal Oswal Nasdaq 100 ETF",t:"MON100"},
+    {n:"Motilal Oswal Nifty 500 ETF",t:"MONIFTY500"},{n:"MO Nifty India Defence ETF",t:"MODEFENCE"},
+    {n:"Motilal Oswal Nifty Smallcap 250 ETF",t:"MOSC250"},{n:"Nippon Nifty 50 ETF",t:"NIFTYBEES"},
+    {n:"Nippon Nifty IT ETF",t:"ITBEES"},{n:"Nippon Pharma ETF",t:"PHARMABEES"},
+    {n:"Nippon Silver ETF",t:"SILVERBEES"},{n:"TATA Silver ETF",t:"TATASILVER"},
+    {n:"Tata Gold ETF",t:"TATAGOLD"},{n:"Zerodha Nifty 50 ETF",t:"ZERODHANIF"}
+  ].map((e,i)=>({id:'i'+i,name:e.n,ticker:e.t,inav:null,price:null}));
+  saveInav();
+}
+function loadThr(){ threshold=parseFloat(localStorage.getItem(SK.thr))||0.5; document.getElementById('thr').textContent=threshold; }
+
+/* ─── PORTFOLIO PARSE ─── */
+function parseCSV(text){
+  const lines = text.split(/\r?\n/).filter(l=>l.trim());
+  const rawH = lines[0].split(',').map(h=>h.replace(/"/g,'').trim());
+  const h = rawH.map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,''));
+  const ci = keys => keys.map(k=>h.findIndex(x=>x.includes(k))).find(i=>i>=0)??-1;
+  const iN=ci(['name','etf','scrip','stock']);
+  const iQ=ci(['quantity','qty','units']);
+  const iA=ci(['avgprice','avgcost','averageprice','averagecost','average']);
+  const iL=ci(['lasttraded','lasttrade','ltp','last','market']);
+  const iI=ci(['investment','invested','costvalue']);
+  const iC=ci(['currentvalue','curvalue','marketvalue','current']);
+  const iP=ci(['pandl','pnl','profitloss','profit']);
+  const iPC=ci(['pandlpct','pnlpct','profitlosspct','pct','percent']);
+  if(iN<0) throw new Error("Cannot find a 'Name' column.");
+
+  const split = line => {
+    const r=[]; let c='',q=false;
+    for(const ch of line){ if(ch==='"'){q=!q;}else if(ch===','&&!q){r.push(c);c='';}else c+=ch; }
+    r.push(c); return r;
+  };
+
+  return lines.slice(1).map(line=>{
+    const c=split(line).map(x=>x.replace(/"/g,'').trim());
+    if(!c[iN]) return null;
+    const qty=clean(c[iQ]), avgPrice=clean(c[iA]), ltp=iL>=0?clean(c[iL]):0;
+    const invested=iI>=0?clean(c[iI]):qty*avgPrice;
+    const current=iC>=0?clean(c[iC]):qty*ltp;
+    const pnl=iP>=0?clean(c[iP]):current-invested;
+    const pnlPct=iPC>=0?clean(c[iPC]):(invested>0?(pnl/invested)*100:0);
+    return {id:'p'+Math.random().toString(36).slice(2),name:c[iN],qty,avgPrice,ltp,invested,current,pnl,pnlPct,pos:classify(pnlPct)};
+  }).filter(Boolean).filter(r=>r.name);
 }
 
-/* ---------- RENDER ---------- */
-function renderApp(){
-  const list = document.getElementById('etfList');
-  const empty = document.getElementById('emptyState');
+/* ─── FILE UPLOAD ─── */
+document.addEventListener('DOMContentLoaded',()=>{
+  const zone=document.getElementById('uploadZone');
+  const fi=document.getElementById('fileIn');
+  zone.onclick=()=>fi.click();
+  zone.addEventListener('dragover',e=>e.preventDefault());
+  zone.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);});
+  fi.onchange=e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); e.target.value=''; };
+});
 
-  if(state.etfs.length === 0){
-    list.innerHTML = '';
-    empty.classList.remove('hidden');
-    updateSummary([]);
-    return;
-  }
+function handleFile(file){
+  const st=document.getElementById('uzStatus');
+  const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      let rows;
+      if(ext==='csv') rows=parseCSV(e.target.result);
+      else{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        rows=parseCSV(XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]]));
+      }
+      if(!rows.length) throw new Error("No valid rows found.");
+      portRows=rows; savePort();
+      st.className='uz-status uz-ok';
+      st.textContent=`✓ ${file.name} — ${rows.length} holdings loaded`;
+      renderPortfolio(); updateHeader();
+    }catch(err){ st.className='uz-status uz-err'; st.textContent='⚠ '+err.message; }
+  };
+  ext==='csv'?reader.readAsText(file):reader.readAsArrayBuffer(file);
+}
+
+/* ─── PORTFOLIO RENDER ─── */
+let editPIdx=null, editPRow=null;
+
+function renderPortfolio(){
+  const empty=document.getElementById('portEmpty');
+  const cards=document.getElementById('portCards');
+  const tbl=document.getElementById('portTbl');
+  if(!portRows.length){ empty.classList.remove('hidden'); cards.style.display='none'; tbl.innerHTML=''; return; }
+  empty.classList.add('hidden');
+  const tot=portRows.reduce((a,r)=>({inv:a.inv+r.invested,cur:a.cur+r.current,pnl:a.pnl+r.pnl}),{inv:0,cur:0,pnl:0});
+  const tPct=tot.inv>0?(tot.pnl/tot.inv)*100:0;
+  const tPos=classify(tPct);
+  cards.style.display='grid';
+  cards.innerHTML=`
+    <div class="kcard" style="background:#eff6ff"><div class="kl">Invested</div><div class="kv" style="color:#1e40af">₹${fmt(tot.inv,0)}</div><div class="ks" style="color:#64748b">${portRows.length} ETFs</div></div>
+    <div class="kcard" style="background:#ecfdf5"><div class="kl">Current</div><div class="kv" style="color:#065f46">₹${fmt(tot.cur,0)}</div><div class="ks" style="color:#64748b">${tot.cur>=tot.inv?'▲':'▼'} vs cost</div></div>
+    <div class="kcard" style="background:${posBg[tPos]}"><div class="kl">P&L</div><div class="kv" style="color:${posC[tPos]}">${tot.pnl>=0?'+':''}₹${fmt(Math.abs(tot.pnl),0)}</div><div class="ks" style="color:${posC[tPos]};font-weight:700">${tPct>=0?'+':''}${fmt(tPct)}%</div></div>
+  `;
+
+  const sorted=[...portRows].sort((a,b)=>a.pnlPct-b.pnlPct);
+  const cols='2fr 0.6fr 0.85fr 0.85fr 1fr 1fr 1.1fr 52px';
+  const head=`<div class="tbl-head" style="grid-template-columns:${cols}"><div>Name</div><div>Qty</div><div>Avg ₹</div><div>LTP ₹</div><div>Invested</div><div>Cur.Val</div><div>P&L</div><div></div></div>`;
+  const rowsHtml=sorted.map((r,i)=>{
+    const ri=portRows.findIndex(x=>x.id===r.id);
+    if(editPIdx===ri) return `
+      <div class="edit-panel" id="ep_${ri}">
+        <div class="edit-grid">
+          <div class="ef" style="grid-column:span 2"><label>Name</label><input id="ef_name_${ri}" value="${r.name}" type="text"></div>
+          <div class="ef"><label>Qty</label><input id="ef_qty_${ri}" value="${r.qty}" type="number" inputmode="decimal"></div>
+          <div class="ef"><label>Avg Price ₹</label><input id="ef_avg_${ri}" value="${r.avgPrice}" type="number" inputmode="decimal"></div>
+          <div class="ef"><label>LTP ₹</label><input id="ef_ltp_${ri}" value="${r.ltp}" type="number" inputmode="decimal"></div>
+        </div>
+        <div class="edit-acts">
+          <button class="btn-cancel" onclick="cancelPEdit()">Cancel</button>
+          <button class="btn-save" onclick="savePEdit(${ri})">Save</button>
+        </div>
+      </div>`;
+    return `
+      <div class="tbl-row" style="grid-template-columns:${cols}">
+        <div style="font-size:11px;font-weight:700;color:var(--ink);line-height:1.25">${r.name}</div>
+        <div style="font-size:11px;color:var(--ink2)">${r.qty}</div>
+        <div style="font-size:11px;color:var(--ink2)">${fmt(r.avgPrice)}</div>
+        <div style="font-size:11px;color:var(--ink2)">${fmt(r.ltp)}</div>
+        <div style="font-size:11px;color:#1e40af;font-weight:600">₹${fmt(r.invested,0)}</div>
+        <div style="font-size:11px;color:#065f46;font-weight:600">₹${fmt(r.current,0)}</div>
+        <div class="pnl-chip" style="background:${posBg[r.pos]};color:${posC[r.pos]}">
+          <div class="pv">${r.pnl>=0?'+':'−'}₹${fmt(Math.abs(r.pnl),0)}</div>
+          <div class="pp">${r.pnlPct>=0?'+':''}${fmt(r.pnlPct)}%</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <button class="ic-btn" style="background:#eff6ff" onclick="startPEdit(${ri})">✏</button>
+          <button class="ic-btn" style="background:#fee2e2" onclick="delPRow(${ri})">🗑</button>
+        </div>
+      </div>`;
+  }).join('');
+  tbl.innerHTML=head+rowsHtml;
+}
+
+function startPEdit(i){ editPIdx=i; editPRow={...portRows[i]}; renderPortfolio(); }
+function cancelPEdit(){ editPIdx=null; editPRow=null; renderPortfolio(); }
+function savePEdit(i){
+  const qty=parseFloat(document.getElementById('ef_qty_'+i).value)||0;
+  const avg=parseFloat(document.getElementById('ef_avg_'+i).value)||0;
+  const ltp=parseFloat(document.getElementById('ef_ltp_'+i).value)||0;
+  const name=document.getElementById('ef_name_'+i).value||portRows[i].name;
+  const inv=qty*avg, cur=qty*ltp, pnl=cur-inv, pct=inv>0?(pnl/inv)*100:0;
+  portRows[i]={...portRows[i],name,qty,avgPrice:avg,ltp,invested:inv,current:cur,pnl,pnlPct:pct,pos:classify(pct)};
+  editPIdx=null; editPRow=null; savePort(); renderPortfolio(); updateHeader();
+}
+function delPRow(i){ portRows.splice(i,1); savePort(); renderPortfolio(); updateHeader(); }
+
+/* ─── INAV RENDER ─── */
+function renderInav(){
+  const list=document.getElementById('inavList');
+  const empty=document.getElementById('inavEmpty');
+  if(!inavEtfs.length){ list.innerHTML=''; empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
 
-  // compute signals, then sort by pct ascending (biggest discount first),
-  // pending items go to the bottom
-  const withSignal = state.etfs.map(e=>{
-    const sig = calcSignal(e.inav, e.price);
-    return {...e, _status: sig.status, _pct: sig.pct};
+  const withSig=inavEtfs.map(e=>{
+    const {status,pct}=calcSig(e.inav,e.price);
+    return {...e,status,pct};
+  }).sort((a,b)=>{
+    if(a.status==='pending'&&b.status==='pending')return 0;
+    if(a.status==='pending')return 1; if(b.status==='pending')return -1;
+    return a.pct-b.pct;
   });
 
-  withSignal.sort((a,b)=>{
-    if(a._status==='pending' && b._status==='pending') return 0;
-    if(a._status==='pending') return 1;
-    if(b._status==='pending') return -1;
-    return a._pct - b._pct; // most negative (deepest discount) first
-  });
-
-  list.innerHTML = withSignal.map(e=>renderCard(e)).join('');
-  updateSummary(withSignal);
-}
-
-function renderCard(e){
-  const statusLabel = {
-    buy:'Discount', sell:'Premium', fair:'Fair value', pending:'Pending'
-  }[e._status];
-
-  const deltaHtml = e._status === 'pending'
-    ? `<span class="delta-display pending">Enter both values</span>`
-    : `<span class="delta-display ${e._status}">${e._pct > 0 ? '+' : ''}${e._pct.toFixed(2)}%</span>`;
-
-  return `
-    <div class="etf-card ${e._status}">
-      <div class="etf-top">
+  const lbl={buy:'Discount',sell:'Premium',fair:'Fair value',pending:'—'};
+  list.innerHTML=withSig.map(e=>`
+    <div class="inav-card ${e.status}">
+      <div class="ic-top">
         <div>
-          <div class="etf-name">${escapeHtml(e.name)}</div>
-          ${e.ticker ? `<div class="etf-ticker">${escapeHtml(e.ticker)}</div>` : ''}
+          <div class="ic-name">${e.name}</div>
+          ${e.ticker?`<div class="ic-ticker">${e.ticker}</div>`:''}
         </div>
-        <div class="etf-signal ${e._status}">${statusLabel}</div>
+        <div class="ic-sig ${e.status}">${lbl[e.status]}</div>
       </div>
-      <div class="etf-inputs">
-        <div class="input-group">
-          <label>iNAV</label>
-          <div class="field-wrap">
-            <span class="rupee">₹</span>
-            <input type="number" inputmode="decimal" step="0.01" placeholder="0.00"
-              value="${e.inav ?? ''}"
-              onchange="updateField('${e.id}','inav',this.value)">
-          </div>
-        </div>
-        <div class="input-group">
-          <label>Market price</label>
-          <div class="field-wrap">
-            <span class="rupee">₹</span>
-            <input type="number" inputmode="decimal" step="0.01" placeholder="0.00"
-              value="${e.price ?? ''}"
-              onchange="updateField('${e.id}','price',this.value)">
-          </div>
-        </div>
+      <div class="ic-inputs">
+        <div class="ig"><label>iNAV</label><div class="fw"><span class="rs">₹</span><input type="number" inputmode="decimal" step="0.01" placeholder="0.00" value="${e.inav??''}" onchange="updateInav('${e.id}','inav',this.value)"></div></div>
+        <div class="ig"><label>Market price</label><div class="fw"><span class="rs">₹</span><input type="number" inputmode="decimal" step="0.01" placeholder="0.00" value="${e.price??''}" onchange="updateInav('${e.id}','price',this.value)"></div></div>
       </div>
-      <div class="etf-bottom">
-        ${deltaHtml}
-        <button class="delete-btn" onclick="deleteEtf('${e.id}')">Remove</button>
+      <div class="ic-foot">
+        ${e.status==='pending'?'<span class="delta pending">Enter both values</span>':`<span class="delta ${e.status}">${e.pct>0?'+':''}${e.pct.toFixed(2)}%</span>`}
+        <button class="del-btn" onclick="delInav('${e.id}')">Remove</button>
       </div>
     </div>
-  `;
+  `).join('');
 }
 
-function updateSummary(list){
-  const buy = list.filter(e=>e._status==='buy').length;
-  const sell = list.filter(e=>e._status==='sell').length;
-  const fair = list.filter(e=>e._status==='fair').length;
-  document.getElementById('buyCount').textContent = buy;
-  document.getElementById('sellCount').textContent = sell;
-  document.getElementById('fairCount').textContent = fair;
+function calcSig(inav,price){
+  if(inav==null||price==null||isNaN(+inav)||isNaN(+price)||+inav===0) return {status:'pending',pct:null};
+  const pct=((+price- +inav)/+inav)*100;
+  const status=pct>threshold?'sell':pct<-threshold?'buy':'fair';
+  return {status,pct};
 }
 
-function escapeHtml(str){
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+function updateInav(id,field,val){
+  const e=inavEtfs.find(x=>x.id===id); if(!e)return;
+  e[field]=val===''?null:Number(val); saveInav(); renderInav(); updateHeader();
+}
+function delInav(id){ inavEtfs=inavEtfs.filter(e=>e.id!==id); saveInav(); renderInav(); updateHeader(); }
+function clearInavPrices(){ if(!confirm('Clear all iNAV and market prices?'))return; inavEtfs.forEach(e=>{e.inav=null;e.price=null;}); saveInav(); renderInav(); updateHeader(); }
+function openAddModal(){ document.getElementById('mName').value=''; document.getElementById('mTicker').value=''; document.getElementById('addModal').classList.remove('hidden'); setTimeout(()=>document.getElementById('mName').focus(),100); }
+function closeModal(){ document.getElementById('addModal').classList.add('hidden'); }
+function addInavEtf(){
+  const name=document.getElementById('mName').value.trim();
+  if(!name)return;
+  const ticker=document.getElementById('mTicker').value.trim().toUpperCase();
+  inavEtfs.push({id:'i'+Date.now(),name,ticker,inav:null,price:null});
+  saveInav(); closeModal(); renderInav(); updateHeader();
+}
+function changeThr(){
+  const v=prompt('Signal threshold (%)',threshold); if(!v)return;
+  const n=parseFloat(v); if(!isNaN(n)&&n>0){ threshold=n; localStorage.setItem(SK.thr,n); document.getElementById('thr').textContent=n; renderInav(); updateHeader(); }
 }
 
-/* ---------- ACTIONS ---------- */
-function updateField(id, field, value){
-  const etf = state.etfs.find(e=>e.id===id);
-  if(!etf) return;
-  etf[field] = value === '' ? null : Number(value);
-  saveState();
-  renderApp();
-}
-
-function deleteEtf(id){
-  state.etfs = state.etfs.filter(e=>e.id!==id);
-  saveState();
-  renderApp();
-}
-
-function resetAllPrices(){
-  if(!confirm('Clear all entered iNAV and price values? ETF list stays.')) return;
-  state.etfs.forEach(e=>{ e.inav=null; e.price=null; });
-  saveState();
-  renderApp();
-}
-
-function openAddModal(){
-  document.getElementById('newEtfName').value='';
-  document.getElementById('newEtfTicker').value='';
-  document.getElementById('addErr').style.display='none';
-  document.getElementById('addModal').classList.remove('hidden');
-  setTimeout(()=>document.getElementById('newEtfName').focus(), 100);
-}
-function closeAddModal(){
-  document.getElementById('addModal').classList.add('hidden');
-}
-function saveNewEtf(){
-  const name = document.getElementById('newEtfName').value.trim();
-  const ticker = document.getElementById('newEtfTicker').value.trim().toUpperCase();
-  if(!name){
-    document.getElementById('addErr').style.display='block';
-    return;
-  }
-  state.etfs.push({
-    id: 'etf_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
-    name, ticker, inav:null, price:null
-  });
-  saveState();
-  closeAddModal();
-  renderApp();
-}
-
-function changeThreshold(){
-  const val = prompt('Set premium/discount alert threshold (%)', state.threshold);
-  if(val === null) return;
-  const num = parseFloat(val);
-  if(!isNaN(num) && num > 0){
-    state.threshold = num;
-    saveState();
-    renderApp();
+/* ─── HEADER ─── */
+function updateHeader(){
+  if(activeTab==='portfolio'){
+    if(!portRows.length){ document.getElementById('p1').textContent='—'; document.getElementById('p1l').textContent='Invested'; document.getElementById('p2').textContent='—'; document.getElementById('p2l').textContent='Current'; document.getElementById('p3').textContent='—'; document.getElementById('p3l').textContent='P&L'; return; }
+    const tot=portRows.reduce((a,r)=>({inv:a.inv+r.invested,cur:a.cur+r.current,pnl:a.pnl+r.pnl}),{inv:0,cur:0,pnl:0});
+    const pct=tot.inv>0?(tot.pnl/tot.inv)*100:0;
+    document.getElementById('p1').textContent='₹'+fmt(tot.inv/1000,1)+'K'; document.getElementById('p1l').textContent='Invested';
+    document.getElementById('p2').textContent='₹'+fmt(tot.cur/1000,1)+'K'; document.getElementById('p2l').textContent='Current';
+    document.getElementById('p3').textContent=(pct>=0?'+':'')+fmt(pct)+'%'; document.getElementById('p3l').textContent='P&L';
+    document.getElementById('p3').style.color=tot.pnl>=0?'#86efac':'#fca5a5';
+  } else {
+    const buy=inavEtfs.filter(e=>calcSig(e.inav,e.price).status==='buy').length;
+    const sell=inavEtfs.filter(e=>calcSig(e.inav,e.price).status==='sell').length;
+    const fair=inavEtfs.filter(e=>calcSig(e.inav,e.price).status==='fair').length;
+    document.getElementById('p1').textContent=buy; document.getElementById('p1l').textContent='Discount';
+    document.getElementById('p2').textContent=fair; document.getElementById('p2l').textContent='Fair';
+    document.getElementById('p3').textContent=sell; document.getElementById('p3l').textContent='Premium';
+    document.getElementById('p1').style.color='#86efac'; document.getElementById('p2').style.color='#fcd34d'; document.getElementById('p3').style.color='#fca5a5';
   }
 }
 
-/* ---------- INIT ---------- */
-loadState();
+/* ─── INIT ─── */
+function renderAll(){ loadThr(); loadPort(); loadInav(); renderPortfolio(); renderInav(); updateHeader(); }
 initLock();
-tickClock();
-setInterval(tickClock, 1000);
+setInterval(tickClock,1000); tickClock();
 </script>
 </body>
 </html>
