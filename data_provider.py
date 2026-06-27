@@ -298,7 +298,7 @@ else:
     st.dataframe(display_df, use_container_width=True, hide_index=True, height=460)
 
     # ── Footer ────────────────────────────────────────────────────────────────
-    st.markdown("""
+    st.markdown(f"""
     <div style="margin-top:20px; padding:14px 18px; background:#1e293b; border-radius:10px;
                 font-size:11px; color:#64748b; display:flex; gap:24px; flex-wrap:wrap;">
       <span>🟢 <b style="color:#94a3b8">BUY</b> — trading at discount to iNAV (&lt;−0.5%)</span>
