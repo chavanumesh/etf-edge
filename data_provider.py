@@ -1,312 +1,207 @@
-import streamlit as st
 import pandas as pd
+import yfinance as yf
+import requests
+import threading
 import time
-from data_provider import init_portfolio_pipeline, update_uploaded_portfolio, get_portfolio_metrics
+import datetime
 
-st.set_page_config(
-    page_title="ETF Edge Tracker",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+# ── Cache ─────────────────────────────────────────────────────────────────────
+_PORTFOLIO_CACHE = {
+    "raw_df":       pd.DataFrame(),
+    "enriched_df":  pd.DataFrame(),
+    "last_updated": None,
+    "inav_source":  "—"
+}
+_CACHE_LOCK = threading.Lock()
 
-# ── Custom CSS ────────────────────────────────────────────────────────────────
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-
-/* Page background */
-.stApp { background: #0f172a; }
-
-/* Hide default Streamlit chrome */
-#MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 1.5rem 2rem 2rem; max-width: 1400px; }
-
-/* ── Hero header ── */
-.hero {
-    background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 60%, #7c3aed 100%);
-    border-radius: 16px;
-    padding: 24px 28px 20px;
-    margin-bottom: 24px;
-    position: relative;
-    overflow: hidden;
-}
-.hero::before {
-    content: '';
-    position: absolute;
-    top: -40px; right: -40px;
-    width: 200px; height: 200px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 50%;
-}
-.hero-title {
-    font-size: 24px; font-weight: 800;
-    color: #ffffff; letter-spacing: -0.5px; margin: 0;
-}
-.hero-sub {
-    font-size: 13px; color: #93c5fd;
-    margin-top: 4px;
-}
-.hero-sync {
-    font-size: 11px; color: #94a3b8;
-    margin-top: 10px; display: flex; align-items: center; gap: 6px;
-}
-.pulse {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #22c55e;
-    animation: pulse 1.5s infinite;
-    display: inline-block;
-}
-@keyframes pulse {
-    0%,100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: 0.4; transform: scale(0.8); }
+# ── ETF Name → yfinance ticker ────────────────────────────────────────────────
+TICKER_MAP = {
+    "CPSE ETF":                                "CPSEETF.NS",
+    "Groww BSE Power ETF":                     "POWERETF.NS",
+    "HDFC Nifty 200 Momentum 30 ETF":          "HDFCMOM30.NS",
+    "HDFC Nifty Bank ETF":                     "HDFCBANKETF.NS",
+    "ICICI Pru Nifty 100 Low Vol 30 ETF":      "ICICILOVOL.NS",
+    "ICICI Pru Nifty 200 Value 30 ETF":        "ICICIVALUE.NS",
+    "ICICI Pru Nifty 50 Value 20 ETF":         "ICICINV20.NS",
+    "ICICI Pru Nifty Alpha Low Volatility 30": "ICICIALV30.NS",
+    "ICICI Pru Nifty Auto ETF":                "ICICIAUTO.NS",
+    "ICICI Pru Nifty FMCG ETF":               "ICICIFMCG.NS",
+    "ICICI Pru Nifty Metal ETF":              "ICICIMETAL.NS",
+    "ICICI Pru Nifty Midcap 150 ETF":         "ICICIMID150.NS",
+    "ICICI Pru Nifty Next 50 ETF":            "ICICINXT50.NS",
+    "ICICI Pru Nifty Oil & Gas ETF":          "ICICIOIL.NS",
+    "ICICI Pru Nifty Private Bank ETF":       "ICICIPRIVAT.NS",
+    "Mirae Asset Gold ETF":                   "MAFITGOLDA.NS",
+    "Mirae Asset Hang Seng Tech ETF":         "MAHKTECH.NS",
+    "Mirae Asset Nifty Midcap 150 ETF":       "MANF150ETF.NS",
+    "Motilal Oswal Nasdaq 100 ETF":           "MON100.NS",
+    "Motilal Oswal Nifty 500 ETF":            "MONIFTY500.NS",
+    "Motilal Oswal Nifty India Defence ETF":  "MODEFENCE.NS",
+    "Motilal Oswal Nifty Smallcap 250 ETF":   "MASPTOP50.NS",
+    "Nippon Nifty 50 ETF (NIFTYBEES)":        "NIFTYBEES.NS",
+    "Nippon Nifty IT ETF (ITBEES)":           "ITBEES.NS",
+    "Nippon Pharma ETF (PHARMABEES)":         "PHARMABEES.NS",
+    "Nippon Silver ETF (SILVERBEES)":         "SILVERBEES.NS",
+    "TATA Silver ETF":                        "TATASILVER.NS",
+    "Tata Gold ETF":                          "TATAGOLD.NS",
+    "Zerodha Nifty 50 ETF":                   "ZETFNIF50.NS",
+    "Embassy Office Parks REIT":              "EMBASSY.NS",
+    "IRB InvIT Fund":                         "IRBINVIT.NS",
+    "Powergrid Infrastructure":               "PGINVIT.NS",
 }
 
-/* ── Metric cards ── */
-.cards-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    margin-bottom: 24px;
-}
-.mcard {
-    border-radius: 14px;
-    padding: 18px 20px;
-    position: relative; overflow: hidden;
-}
-.mcard-invested { background: linear-gradient(135deg, #1e3a5f, #1d4ed8); }
-.mcard-value    { background: linear-gradient(135deg, #064e3b, #059669); }
-.mcard-pnl-pos  { background: linear-gradient(135deg, #052e16, #16a34a); }
-.mcard-pnl-neg  { background: linear-gradient(135deg, #450a0a, #dc2626); }
-.mcard-holdings { background: linear-gradient(135deg, #1e1b4b, #7c3aed); }
+# NSE symbol → ETF display name (for iNAV matching)
+_NSE_SYMBOL_TO_NAME = {v.replace(".NS", ""): k for k, v in TICKER_MAP.items()}
 
-.mcard-label {
-    font-size: 11px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.08em; color: rgba(255,255,255,0.65); margin-bottom: 8px;
-}
-.mcard-value-text {
-    font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;
-}
-.mcard-delta {
-    font-size: 12px; font-weight: 600; margin-top: 5px;
-    display: inline-flex; align-items: center; gap: 4px;
-    background: rgba(255,255,255,0.12);
-    padding: 2px 8px; border-radius: 99px; color: #fff;
-}
+# ── NSE iNAV session ──────────────────────────────────────────────────────────
+_NSE_SESSION = requests.Session()
+_NSE_SESSION.headers.update({
+    "User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36",
+    "Accept":          "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer":         "https://www.nseindia.com/",
+    "X-Requested-With": "XMLHttpRequest",
+})
+_NSE_COOKIE_INITIALIZED = False
 
-/* ── Section header ── */
-.section-header {
-    font-size: 16px; font-weight: 700; color: #f1f5f9;
-    margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
-}
-.section-badge {
-    font-size: 11px; background: #1d4ed8; color: #fff;
-    padding: 2px 8px; border-radius: 99px; font-weight: 600;
-}
 
-/* ── Upload zone ── */
-.uploadzone {
-    background: #1e293b;
-    border: 2px dashed #334155;
-    border-radius: 12px;
-    padding: 14px 18px;
-    margin-bottom: 20px;
-    transition: border-color .2s;
-}
+def _init_nse_session():
+    global _NSE_COOKIE_INITIALIZED
+    if not _NSE_COOKIE_INITIALIZED:
+        try:
+            _NSE_SESSION.get("https://www.nseindia.com", timeout=12)
+            _NSE_COOKIE_INITIALIZED = True
+        except Exception as e:
+            print(f"NSE session init failed: {e}")
 
-/* ── Table styling ── */
-.stDataFrame {
-    border-radius: 12px !important;
-    overflow: hidden !important;
-    border: 1px solid #1e293b !important;
-}
-.stDataFrame thead tr th {
-    background: #1e293b !important;
-    color: #94a3b8 !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.06em !important;
-    padding: 10px 14px !important;
-    border-bottom: 1px solid #334155 !important;
-}
-.stDataFrame tbody tr { background: #0f172a !important; }
-.stDataFrame tbody tr:nth-child(even) { background: #111827 !important; }
-.stDataFrame tbody tr:hover { background: #1e293b !important; }
-.stDataFrame tbody tr td {
-    color: #e2e8f0 !important;
-    font-size: 13px !important;
-    padding: 9px 14px !important;
-    border-bottom: 1px solid #1e293b !important;
-}
 
-/* File uploader */
-[data-testid="stFileUploader"] {
-    background: #1e293b !important;
-    border-radius: 12px !important;
-    padding: 6px !important;
-}
-[data-testid="stFileUploader"] label { color: #94a3b8 !important; font-size: 13px !important; }
+def fetch_inav_from_nse() -> dict:
+    """Fetch real iNAV values from NSE. Returns {ETF name: iNAV float}."""
+    global _NSE_COOKIE_INITIALIZED
+    _init_nse_session()
+    inav_map = {}
+    try:
+        resp = _NSE_SESSION.get("https://www.nseindia.com/api/etf", timeout=12)
+        resp.raise_for_status()
+        records = resp.json().get("data", [])
+        for item in records:
+            symbol    = str(item.get("symbol", "")).strip()
+            raw_inav  = item.get("iNavValue", None)
+            if raw_inav and str(raw_inav).strip() not in ("", "-", "N/A"):
+                try:
+                    inav_val     = float(str(raw_inav).replace(",", ""))
+                    display_name = _NSE_SYMBOL_TO_NAME.get(symbol)
+                    if display_name:
+                        inav_map[display_name] = inav_val
+                except ValueError:
+                    pass
+        print(f"NSE iNAV: fetched {len(inav_map)} values.")
+    except Exception as e:
+        print(f"NSE iNAV fetch failed — using LTP proxy: {e}")
+        _NSE_COOKIE_INITIALIZED = False
+    return inav_map
 
-/* Spinner */
-.stSpinner > div { border-top-color: #1d4ed8 !important; }
 
-/* Info box */
-.stAlert { background: #1e293b !important; border: 1px solid #334155 !important; border-radius: 10px !important; color: #94a3b8 !important; }
-</style>
-""", unsafe_allow_html=True)
+# ── Core pipeline ─────────────────────────────────────────────────────────────
+def process_data_snapshot():
+    global _PORTFOLIO_CACHE
 
-# ── Init ──────────────────────────────────────────────────────────────────────
-init_portfolio_pipeline()
+    with _CACHE_LOCK:
+        working_df = _PORTFOLIO_CACHE["raw_df"].copy()
 
-# ── Upload ────────────────────────────────────────────────────────────────────
-uploaded_file = st.file_uploader(
-    "📂  Upload today's Portfolio CSV or Excel",
-    type=["csv", "xlsx"],
-    label_visibility="visible"
-)
+    if working_df.empty or "Name" not in working_df.columns:
+        return
 
-if uploaded_file is not None:
-    if "last_uploaded_name" not in st.session_state or st.session_state.last_uploaded_name != uploaded_file.name:
-        with st.spinner("Fetching live prices & computing P&L…"):
-            try:
-                user_df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
-                update_uploaded_portfolio(user_df)
-                st.session_state.last_uploaded_name = uploaded_file.name
-                st.rerun()
-            except Exception as e:
-                st.error(f"Upload error: {e}")
+    # 1. Fetch LTP via yfinance
+    tickers       = [TICKER_MAP.get(str(n).strip()) for n in working_df["Name"]]
+    valid_tickers = [t for t in tickers if t]
+    ltp_dict      = {}
 
-# ── Data ──────────────────────────────────────────────────────────────────────
-df, last_sync, inav_source = get_portfolio_metrics()
+    if valid_tickers:
+        try:
+            data = yf.download(valid_tickers, period="1d", group_by="ticker",
+                               progress=False, threads=True)
+            for t in valid_tickers:
+                try:
+                    ltp_dict[t] = float(
+                        data["Close"].iloc[-1] if len(valid_tickers) == 1
+                        else data[t]["Close"].iloc[-1]
+                    )
+                except Exception:
+                    ltp_dict[t] = None
+        except Exception as e:
+            print(f"yfinance error: {e}")
 
-# ── Hero header ───────────────────────────────────────────────────────────────
-sync_str = last_sync.strftime('%d %b %Y · %H:%M:%S IST') if last_sync else "Awaiting data…"
-st.markdown(f"""
-<div class="hero">
-  <div class="hero-title">📊 ETF Edge Portfolio Tracker</div>
-  <div class="hero-sub">Indian ETF · Real-time iNAV · P&amp;L Intelligence</div>
-  <div class="hero-sync">
-    <span class="pulse"></span>
-    Live Sync &nbsp;·&nbsp; {sync_str} &nbsp;·&nbsp; 5-min auto-refresh
-  </div>
-</div>
-""", unsafe_allow_html=True)
+    working_df["Last Traded"] = [
+        ltp_dict.get(TICKER_MAP.get(str(n).strip())) for n in working_df["Name"]
+    ]
 
-# ── Empty state ───────────────────────────────────────────────────────────────
-if df.empty:
-    st.markdown("""
-    <div style="text-align:center; padding:60px 20px; color:#475569;">
-      <div style="font-size:48px">📋</div>
-      <div style="font-size:16px; font-weight:700; color:#94a3b8; margin-top:12px;">No portfolio loaded</div>
-      <div style="font-size:13px; margin-top:6px;">Upload your daily CSV / Excel above to get started.</div>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    # ── Compute totals ────────────────────────────────────────────────────────
-    total_inv  = df["Investment"].sum()    if "Investment"    in df.columns else 0
-    total_cur  = df["Current Value"].sum() if "Current Value" in df.columns else 0
-    total_pnl  = total_cur - total_inv
-    pnl_pct    = (total_pnl / total_inv * 100) if total_inv > 0 else 0
-    n_holdings = len(df)
-    pnl_card   = "mcard-pnl-pos" if total_pnl >= 0 else "mcard-pnl-neg"
-    pnl_arrow  = "▲" if total_pnl >= 0 else "▼"
+    # 2. Fetch real iNAV from NSE (falls back to LTP proxy if NSE is unavailable)
+    inav_from_nse = fetch_inav_from_nse()
+    inav_source   = "NSE (real)" if inav_from_nse else "LTP proxy (−0.12%)"
 
-    # Count signals
-    if "iNAV" in df.columns and "Last Traded" in df.columns:
-        df["_sig_pct"] = ((df["Last Traded"] - df["iNAV"]) / df["iNAV"] * 100).round(2)
-        n_discount = (df["_sig_pct"] < -0.5).sum()
-        n_premium  = (df["_sig_pct"] >  0.5).sum()
-    else:
-        n_discount = n_premium = 0
+    inav_list = []
+    for name in working_df["Name"]:
+        name_str = str(name).strip()
+        if name_str in inav_from_nse:
+            inav_list.append(round(inav_from_nse[name_str], 2))
+        else:
+            sym = TICKER_MAP.get(name_str)
+            ltp = ltp_dict.get(sym) if sym else None
+            inav_list.append(round(ltp * 0.9988, 2) if ltp else None)
 
-    # ── Metric cards ──────────────────────────────────────────────────────────
-    st.markdown(f"""
-    <div class="cards-row">
-      <div class="mcard mcard-invested">
-        <div class="mcard-label">Total Invested</div>
-        <div class="mcard-value-text">₹{total_inv:,.0f}</div>
-        <div class="mcard-delta">📂 {n_holdings} holdings</div>
-      </div>
-      <div class="mcard mcard-value">
-        <div class="mcard-label">Portfolio Value</div>
-        <div class="mcard-value-text">₹{total_cur:,.0f}</div>
-        <div class="mcard-delta">📡 iNAV live</div>
-      </div>
-      <div class="mcard {pnl_card}">
-        <div class="mcard-label">Net P&amp;L</div>
-        <div class="mcard-value-text">₹{abs(total_pnl):,.0f}</div>
-        <div class="mcard-delta">{pnl_arrow} {abs(pnl_pct):.2f}%</div>
-      </div>
-      <div class="mcard mcard-holdings">
-        <div class="mcard-label">iNAV Signals</div>
-        <div class="mcard-value-text" style="font-size:18px">
-          🟢 {n_discount} &nbsp; 🔴 {n_premium}
-        </div>
-        <div class="mcard-delta">Discount · Premium</div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    working_df["iNAV"] = inav_list
 
-    # ── Asset matrix ──────────────────────────────────────────────────────────
-    st.markdown(f"""
-    <div class="section-header">
-      📋 Asset Matrix
-      <span class="section-badge">{n_holdings} ETFs</span>
-    </div>
-    """, unsafe_allow_html=True)
+    # 3. P&L calculations
+    if "Quantity" in working_df.columns and "Avg Price" in working_df.columns:
+        working_df["Quantity"]      = pd.to_numeric(working_df["Quantity"],  errors="coerce")
+        working_df["Avg Price"]     = pd.to_numeric(working_df["Avg Price"], errors="coerce")
+        working_df["Investment"]    = working_df["Quantity"] * working_df["Avg Price"]
+        working_df["Current Value"] = working_df["Quantity"] * working_df["Last Traded"]
+        working_df["P&L"]           = working_df["Current Value"] - working_df["Investment"]
+        working_df["P&L %"]         = (working_df["P&L"] / working_df["Investment"]) * 100
 
-    ordered_cols = ["Name", "Quantity", "Avg Price", "Investment",
-                    "Last Traded", "iNAV", "P&L", "P&L %"]
-    existing_cols = [c for c in ordered_cols if c in df.columns]
-    display_df = df[existing_cols].copy()
-    display_df.rename(columns={"Investment": "Total Invested"}, inplace=True)
+    # 4. Save to cache
+    with _CACHE_LOCK:
+        _PORTFOLIO_CACHE["enriched_df"]  = working_df
+        _PORTFOLIO_CACHE["last_updated"] = datetime.datetime.now()
+        _PORTFOLIO_CACHE["inav_source"]  = inav_source
 
-    # Add Buy/Sell/Hold signal column
-    if "iNAV" in display_df.columns and "Last Traded" in display_df.columns:
-        def signal(row):
-            try:
-                pct = (float(str(row["Last Traded"]).replace("₹","").replace(",",""))
-                       - float(str(row["iNAV"]).replace("₹","").replace(",",""))) \
-                      / float(str(row["iNAV"]).replace("₹","").replace(",","")) * 100
-                if pct < -0.5:  return "🟢 BUY"
-                if pct >  0.5:  return "🔴 SELL"
-                return "🟡 HOLD"
-            except Exception:
-                return "-"
 
-    # Format columns
-    for col in ["Avg Price", "Total Invested", "Last Traded", "iNAV"]:
-        if col in display_df.columns:
-            display_df[col] = display_df[col].map(lambda x: f"₹{x:,.2f}" if pd.notnull(x) and x != "-" else "-")
+# ── Public functions (called by app.py) ───────────────────────────────────────
+def update_uploaded_portfolio(df: pd.DataFrame):
+    global _PORTFOLIO_CACHE
+    with _CACHE_LOCK:
+        _PORTFOLIO_CACHE["raw_df"] = df
+    try:
+        process_data_snapshot()
+    except Exception as e:
+        print(f"Snapshot error on upload: {e}")
 
-    if "P&L" in display_df.columns:
-        display_df["P&L"] = display_df["P&L"].map(
-            lambda x: f"+₹{x:,.2f}" if pd.notnull(x) and x >= 0 else (f"-₹{abs(x):,.2f}" if pd.notnull(x) else "-")
+
+def _background_ticker_worker():
+    while True:
+        try:
+            process_data_snapshot()
+        except Exception as e:
+            print(f"Background worker error: {e}")
+        time.sleep(300)
+
+
+def init_portfolio_pipeline():
+    if not any(t.name == "PortfolioFetcher" for t in threading.enumerate()):
+        t = threading.Thread(
+            target=_background_ticker_worker,
+            name="PortfolioFetcher",
+            daemon=True
         )
-    if "P&L %" in display_df.columns:
-        display_df["P&L %"] = display_df["P&L %"].map(
-            lambda x: f"+{x:.2f}%" if pd.notnull(x) and x >= 0 else (f"{x:.2f}%" if pd.notnull(x) else "-")
+        t.start()
+
+
+def get_portfolio_metrics():
+    with _CACHE_LOCK:
+        return (
+            _PORTFOLIO_CACHE["enriched_df"].copy(),
+            _PORTFOLIO_CACHE["last_updated"],
+            _PORTFOLIO_CACHE["inav_source"],
         )
-
-    # Signal column (compute on raw df before formatting)
-    if "iNAV" in df.columns and "Last Traded" in df.columns:
-        display_df["Signal"] = df.apply(signal, axis=1)
-
-    st.dataframe(display_df, use_container_width=True, hide_index=True, height=460)
-
-    # ── Footer ────────────────────────────────────────────────────────────────
-    st.markdown(f"""
-    <div style="margin-top:20px; padding:14px 18px; background:#1e293b; border-radius:10px;
-                font-size:11px; color:#64748b; display:flex; gap:24px; flex-wrap:wrap;">
-      <span>🟢 <b style="color:#94a3b8">BUY</b> — trading at discount to iNAV (&lt;−0.5%)</span>
-      <span>🔴 <b style="color:#94a3b8">SELL</b> — trading at premium to iNAV (&gt;+0.5%)</span>
-      <span>🟡 <b style="color:#94a3b8">HOLD</b> — within fair value band (±0.5%)</span>
-      <span style="margin-left:auto">iNAV source: <b style="color:#93c5fd">{inav_source}</b></span>
-    </div>
-    """, unsafe_allow_html=True)
-
-time.sleep(300)
-st.rerun()
