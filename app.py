@@ -11,23 +11,26 @@ st.markdown("### 📱 My ETF Edge Portfolio Tracker")
 uploaded_file = st.file_uploader("Upload Portfolio Layout (CSV or Excel)", type=["csv", "xlsx"])
 
 if uploaded_file is not None:
-    try:
-        if uploaded_file.name.endswith(".csv"):
-            user_df = pd.read_csv(uploaded_file)
-        else:
-            user_df = pd.read_excel(uploaded_file)
-        
-        update_uploaded_portfolio(user_df)
-        st.success("Structure Synchronized! Parsing ticker arrays...")
-    except Exception as e:
-        st.error(f"Error handling document: {e}")
+    # Use a session state variable to ensure we process the uploaded file exactly once per upload
+    if "last_uploaded_name" not in st.session_state or st.session_state.last_uploaded_name != uploaded_file.name:
+        with st.spinner("Processing template structures & fetching live price quotes..."):
+            try:
+                if uploaded_file.name.endswith(".csv"):
+                    user_df = pd.read_csv(uploaded_file)
+                else:
+                    user_df = pd.read_excel(uploaded_file)
+                
+                update_uploaded_portfolio(user_df)
+                st.session_state.last_uploaded_name = uploaded_file.name
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error handling document: {e}")
 
 df, last_sync = get_portfolio_metrics()
 
 if df.empty:
-    st.info("💡 Drop your Excel tracker sheet template above to visualize current values & iNAV.")
+    st.info("💡 Drop your 3-column Excel tracker sheet template above to visualize current values & iNAV.")
 else:
-    # Portfolio Aggregate Metrics Summaries
     total_inv = df["Investment"].sum()
     total_cur = df["Current Value"].sum()
     total_pnl = total_cur - total_inv
@@ -48,11 +51,9 @@ else:
     
     st.write("#### 📊 Asset Matrix Details")
     
-    # Clean display configuration ensuring requested target tracking columns are stacked first
     ordered_cols = ["Name", "Quantity", "Last Traded", "iNAV", "P&L", "P&L %"]
     existing_cols = [c for c in ordered_cols if c in df.columns]
     
-    # Custom Number formatting adjustments for easy phone scanning
     formatted_df = df[existing_cols].copy()
     if "Last Traded" in formatted_df.columns:
         formatted_df["Last Traded"] = formatted_df["Last Traded"].map(lambda x: f"₹{x:,.2f}" if pd.notnull(x) else "-")
@@ -65,6 +66,5 @@ else:
 
     st.dataframe(formatted_df, use_container_width=True, hide_index=True)
 
-# UI auto-update redraw tick loop
 time.sleep(5)
 st.rerun()
