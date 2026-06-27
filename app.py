@@ -1,31 +1,53 @@
 import streamlit as st
+import pandas as pd
 import time
-from data_provider import initialize_data_pipeline, get_latest_metrics
-from metrics import calculate_proxy_inav
+from data_provider import init_portfolio_pipeline, update_uploaded_portfolio, get_portfolio_metrics
 
-st.set_page_config(
-    page_title="Mobile iNAV", 
-    layout="centered", 
-    initial_sidebar_state="collapsed"
+st.set_page_config(page_title="ETF Tracker", layout="centered")
+init_portfolio_pipeline()
+
+st.markdown("### 📊 Personal Portfolio Engine")
+
+# 1. Automatic Frontend File Uploader Dropzone
+uploaded_file = st.file_uploader(
+    "Upload your Portfolio File (CSV or Excel)", 
+    type=["csv", "xlsx", "xls"]
 )
 
-initialize_data_pipeline()
-df, last_update = get_latest_metrics()
+if uploaded_file is not None:
+    try:
+        # Load file dynamically based on file type extensions
+        if uploaded_file.name.endswith(".csv"):
+            user_df = pd.read_csv(uploaded_file)
+        else:
+            user_df = pd.read_excel(uploaded_file)
+            
+        # Push file to our streaming background layer
+        update_uploaded_portfolio(user_df)
+        st.success("Portfolio template parsed! Syncing live market tickers...")
+    except Exception as e:
+        st.error(f"Error loading your document format: {e}")
 
-st.markdown("### 📱 Personal Proxy iNAV")
+# 2. Grab current live tracking information
+tracked_df, last_sync = get_portfolio_metrics()
 
-if df.empty:
-    st.info("Syncing background data layer...")
-    time.sleep(2)
-    st.rerun()
+if tracked_df.empty:
+    st.info("💡 Please upload an Excel or CSV file matching your asset columns above to begin generating metrics.")
+else:
+    # 3. Structural metrics summaries for mobile display
+    total_inv = tracked_df["Investment"].dropna().sum() if "Investment" in tracked_df.columns else 0
+    
+    st.metric(label="Total Tracked Core Base Value", value=f"₹ {round(total_inv, 2):,}")
+    if last_sync:
+        st.caption(f"🔄 Market Tickers Last Synced At: {last_sync.strftime('%H:%M:%S')} (10m delay interval)")
+        
+    # Rearranging layout to emphasize the requested iNAV and LTP columns
+    display_cols = ["Name", "Quantity", "Avg Price", "LTP", "iNAV"]
+    existing_cols = [c for c in display_cols if c in tracked_df.columns]
+    
+    st.write("#### 📈 Live Real-time Tracked Matrix")
+    st.dataframe(tracked_df[existing_cols], use_container_width=True)
 
-current_inav = calculate_proxy_inav(df)
-
-st.metric(label="Calculated Proxy iNAV", value=f"₹ {current_inav}")
-st.caption(f"⏱️ Delay: ~10m | Last Sync: {last_update.strftime('%H:%M:%S') if last_update else 'N/A'}")
-
-with st.expander("🔍 View Component Allocations", expanded=False):
-    st.dataframe(df[["ticker", "underlying_price"]], use_container_width=True)
-
+# 4. Mobile screen frame loop re-render ticks
 time.sleep(5)
 st.rerun()
