@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+  README (read before using)
+  ---------------------------------
+  What this is: a single-file daily expense tracker for INR, built for iPhone Safari.
+  Storage: localStorage only (no server). Data survives closing Safari and device sleep.
+  For best persistence: Share button -> Add to Home Screen. This makes it behave like an app icon.
+
+  iOS limitations (by design of iOS Safari, not this app):
+  - No background exports or push notifications. Reminders only show while the app is open.
+  - No native background upload. Export = download the .xlsx file to your device, then
+    you move it wherever you like (Files app, email, AirDrop, etc.)
+
+  PIN lock: set once on first use, stored (hashed, not plain text) in localStorage on this device only.
+  If you clear Safari website data, the PIN and all expense data are erased.
+
+  Retention: entries kept 30 days. After a month closes, its entries move to an "Archive"
+  (kept in the app, not deleted) and a reminder banner offers to export that month as .xlsx.
+
+  To change settings later: tap the gear icon in the app footer.
+-->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Expense Tracker</title>
+<style>
+  :root{
+    --bg:#0f1210;
+    --card:#171b18;
+    --card-2:#1e2320;
+    --text:#f2f0e8;
+    --muted:#8f978f;
+    --accent:#d9a441;
+    --accent-2:#5c8a6b;
+    --danger:#c0564a;
+    --border:#2a302b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding-bottom:env(safe-area-inset-bottom);
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  input, textarea{ -webkit-user-select:text; user-select:text; }
+  .app{ max-width:480px; margin:0 auto; padding:16px; padding-top:calc(16px + env(safe-area-inset-top)); }
+
+  .banner{
+    background:var(--accent);
+    color:#20180a;
+    padding:10px 14px;
+    border-radius:10px;
+    font-size:13px;
+    font-weight:600;
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .banner.show{ display:flex; }
+  .banner button{
+    background:#20180a;
+    color:var(--accent);
+    border:none;
+    border-radius:8px;
+    padding:6px 10px;
+    font-size:12px;
+    font-weight:700;
+  }
+
+  header.today{
+    text-align:center;
+    padding:22px 10px 18px;
+  }
+  header.today .label{
+    color:var(--muted);
+    font-size:13px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+  }
+  header.today .total{
+    font-size:44px;
+    font-weight:800;
+    margin-top:4px;
+    letter-spacing:-0.02em;
+  }
+  header.today .date{
+    color:var(--muted);
+    font-size:13px;
+    margin-top:2px;
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .card h2{
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--muted);
+    margin:0 0 12px 0;
+  }
+
+  .form-row{ margin-bottom:10px; }
+  .form-row label{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .amount-input{
+    display:flex;
+    align-items:center;
+    background:var(--card-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:0 12px;
+  }
+  .amount-input span{ color:var(--accent); font-weight:700; font-size:18px; margin-right:4px; }
+  .amount-input input{
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-size:18px;
+    padding:12px 0;
+    width:100%;
+  }
+  select, input[type=text], input[type=number], input[type=password]{
+    width:100%;
+    background:var(--card-2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    color:var(--text);
+    font-size:15px;
+    padding:12px;
+    outline:none;
+  }
+  .btn{
+    width:100%;
+    padding:14px;
+    border-radius:10px;
+    border:none;
+    font-size:15px;
+    font-weight:700;
+    background:var(--accent);
+    color:#20180a;
+    margin-top:4px;
+  }
+  .btn:active{ opacity:0.85; }
+  .btn.secondary{
+    background:var(--card-2);
+    color:var(--text);
+    border:1px solid var(--border);
+  }
+  .btn.danger{ background:var(--danger); color:#fff; }
+  .btn.small{ padding:9px; font-size:13px; margin-top:0; width:auto; }
+
+  .cat-row{ margin-bottom:10px; }
+  .cat-row-top{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; }
+  .cat-row-top .name{ color:var(--text); font-weight:600; }
+  .cat-row-top .val{ color:var(--muted); }
+  .bar-track{ background:var(--card-2); border-radius:8px; height:8px; overflow:hidden; }
+  .bar-fill{ height:100%; background:var(--accent-2); border-radius:8px; }
+
+  .entry{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .entry:last-child{ border-bottom:none; }
+  .entry .time{ color:var(--muted); font-size:12px; width:44px; flex-shrink:0; }
+  .entry .mid{ flex:1; min-width:0; }
+  .entry .amt{ font-weight:700; font-size:15px; }
+  .entry .badge{
+    display:inline-block;
+    font-size:11px;
+    color:var(--muted);
+    background:var(--card-2);
+    padding:2px 7px;
+    border-radius:20px;
+    margin-left:6px;
+  }
+  .entry .note{ font-size:12px; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .entry .del{
+    background:none;
+    border:none;
+    color:var(--danger);
+    font-size:18px;
+    padding:6px;
+  }
+  .empty{ color:var(--muted); font-size:13px; text-align:center; padding:16px 0; }
+
+  .snackbar{
+    position:fixed;
+    left:16px; right:16px; bottom:calc(16px + env(safe-area-inset-bottom));
+    max-width:448px; margin:0 auto;
+    background:#25291f;
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:12px 14px;
+    border-radius:10px;
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    font-size:13px;
+    z-index:50;
+  }
+  .snackbar.show{ display:flex; }
+  .snackbar button{
+    background:none; border:none; color:var(--accent); font-weight:700; font-size:13px;
+  }
+
+  footer{
+    text-align:center;
+    padding:10px 0 20px;
+  }
+  footer .gear{
+    background:var(--card);
+    border:1px solid var(--border);
+    color:var(--muted);
+    font-size:13px;
+    padding:10px 16px;
+    border-radius:10px;
+  }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    display:none; align-items:flex-end; justify-content:center;
+    z-index:100;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:18px 18px 0 0;
+    width:100%; max-width:480px;
+    padding:20px;
+    padding-bottom:calc(20px + env(safe-area-inset-bottom));
+    max-height:85vh;
+    overflow-y:auto;
+  }
+  .modal h3{ margin:0 0 14px 0; font-size:16px; }
+  .modal .close-x{
+    float:right;
+    background:none; border:none; color:var(--muted); font-size:20px;
+  }
+  .pin-dots{ display:flex; justify-content:center; gap:14px; margin:26px 0; }
+  .pin-dots .dot{
+    width:14px; height:14px; border-radius:50%;
+    border:2px solid var(--muted);
+  }
+  .pin-dots .dot.filled{ background:var(--accent); border-color:var(--accent); }
+  .pin-pad{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:280px; margin:0 auto;
+  }
+  .pin-pad button{
+    padding:18px 0; font-size:20px; font-weight:600;
+    background:var(--card-2); border:1px solid var(--border); border-radius:12px; color:var(--text);
+  }
+  .pin-lock-screen{
+    position:fixed; inset:0; background:var(--bg); z-index:200;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .pin-lock-screen h2{ font-size:18px; margin-bottom:6px; }
+  .pin-lock-screen p{ color:var(--muted); font-size:13px; margin-top:0; }
+  .pin-error{ color:var(--danger); font-size:12px; height:16px; }
+</style>
+</head>
+<body>
+
+<div id="pinLockScreen" class="pin-lock-screen" style="display:none;">
+  <h2 id="pinScreenTitle">Enter PIN</h2>
+  <p id="pinScreenSub">Unlock your expense tracker</p>
+  <div class="pin-dots" id="pinDots">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+  <div class="pin-pad" id="pinPad">
+    <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+    <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+    <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+    <button data-k="clear">Clear</button><button data-k="0">0</button><button data-k="back">Back</button>
+  </div>
+</div>
+
+<div class="app" id="mainApp" style="display:none;">
+
+  <div class="banner" id="reminderBanner">
+    <span id="bannerText">Reminder</span>
+    <button id="bannerAction">Export</button>
+  </div>
+
+  <header class="today">
+    <div class="label">Today's Total</div>
+    <div class="total" id="todayTotal">Rs 0.00</div>
+    <div class="date" id="todayDate"></div>
+  </header>
+
+  <div class="card">
+    <h2>Add Expense</h2>
+    <div class="form-row">
+      <label for="amountInput">Amount</label>
+      <div class="amount-input">
+        <span>Rs</span>
+        <input type="number" id="amountInput" inputmode="decimal" placeholder="0.00" step="0.01" min="0.01" aria-label="Amount in rupees">
+      </div>
+    </div>
+    <div class="form-row">
+      <label for="categorySelect">Category</label>
+      <select id="categorySelect" aria-label="Category"></select>
+    </div>
+    <div class="form-row" id="otherCategoryRow" style="display:none;">
+      <label for="otherCategoryInput">New category name</label>
+      <input type="text" id="otherCategoryInput" placeholder="e.g. Health" maxlength="20">
+    </div>
+    <div class="form-row">
+      <label for="noteInput">Note (optional)</label>
+      <input type="text" id="noteInput" placeholder="e.g. Auto rickshaw" maxlength="60">
+    </div>
+    <button class="btn" id="addBtn">Add Expense</button>
+  </div>
+
+  <div class="card" id="breakdownCard">
+    <h2>Today by Category</h2>
+    <div id="breakdownList"></div>
+  </div>
+
+  <div class="card">
+    <h2>Today's Entries</h2>
+    <div id="entriesList"></div>
+  </div>
+
+  <footer>
+    <button class="gear" id="settingsBtn">Settings</button>
+    <div style="color:var(--muted); font-size:11px; margin-top:8px;">Last export: <span id="lastExportLabel">never</span></div>
+  </footer>
+</div>
+
+<div class="snackbar" id="snackbar">
+  <span id="snackbarText">Deleted</span>
+  <button id="snackbarUndo">UNDO</button>
+</div>
+
+<div class="modal-overlay" id="settingsOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeSettings">&times;</button>
+    <h3>Settings</h3>
+    <div class="form-row">
+      <label>Archived months</label>
+      <div id="archiveList" style="font-size:13px; color:var(--muted);"></div>
+    </div>
+    <button class="btn secondary" id="manualExportBtn">Export current data now (.xlsx)</button>
+    <button class="btn secondary" id="changePinBtn" style="margin-top:10px;">Change PIN</button>
+    <button class="btn danger" id="wipeBtn" style="margin-top:10px;">Erase all data</button>
+    <p style="font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5;">
+      Data is stored only on this device (localStorage). No server, no upload. Add this page to your Home Screen for the most reliable experience on iPhone.
+    </p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="setPinOverlay">
+  <div class="modal">
+    <h3 id="setPinTitle">Set a 4-digit PIN</h3>
+    <div class="pin-dots" id="setPinDots">
+      <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <div class="pin-error" id="setPinError"></div>
+    <div class="pin-pad" id="setPinPad">
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+      <button data-k="clear">Clear</button><button data-k="0">0</button><button data-k="back">Back</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// All JS below uses plain ASCII only (iOS Safari can silently fail to parse
+// non-ASCII characters like smart quotes or en-dashes in script blocks).
+
+(function(){
+
+  var STORAGE_KEY = 'expenseTracker.entries';
+  var CATS_KEY = 'expenseTracker.categories';
+  var PIN_KEY = 'expenseTracker.pinHash';
+  var ARCHIVE_KEY = 'expenseTracker.archive';
+  var LASTEXPORT_KEY = 'expenseTracker.lastExport';
+  var RETENTION_DAYS = 30;
+
+  var defaultCategories = ['Food', 'Transport', 'Bills', 'Entertainment', 'Other'];
+
+  function loadJSON(key, fallback){
+    try{
+      var raw = localStorage.getItem(key);
+      if(!raw) return fallback;
+      return JSON.parse(raw);
+    }catch(e){ return fallback; }
+  }
+  function saveJSON(key, val){
+    try{
+      localStorage.setItem(key, JSON.stringify(val));
+      return true;
+    }catch(e){
+      alert('Storage is full or unavailable. Please export and clear old data.');
+      return false;
+    }
+  }
+
+  function todayISO(){
+    var d = new Date();
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var day = String(d.getDate()).padStart(2,'0');
+    return y + '-' + m + '-' + day;
+  }
+  function uuid(){
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c){
+      var r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8);
+      return v.toString(16);
+    });
+  }
+
+  // Simple hash so raw PIN is not stored in plain text (not cryptographic-grade,
+  // just avoids storing the literal digits).
+  function simpleHash(str){
+    var hash = 0;
+    for(var i=0;i<str.length;i++){
+      hash = ((hash<<5)-hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return String(hash);
+  }
+
+  // ---------- App state ----------
+  var entries = loadJSON(STORAGE_KEY, []);
+  var categories = loadJSON(CATS_KEY, defaultCategories.slice());
+  var archive = loadJSON(ARCHIVE_KEY, {}); // { "2026-06": [entries] }
+  var lastExport = loadJSON(LASTEXPORT_KEY, null);
+  var pendingDelete = null;
+  var snackbarTimer = null;
+
+  function init(){
+    try{
+      initPinLock();
+      populateCategorySelect();
+      renderDate();
+      render();
+      checkRetentionAndBanner();
+      bindEvents();
+    }catch(err){
+      showFatalError(err);
+    }
+  }
+
+  function showFatalError(err){
+    document.getElementById('pinLockScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'none';
+    var box = document.createElement('div');
+    box.style.padding = '24px';
+    box.style.color = '#f2f0e8';
+    box.style.fontFamily = 'sans-serif';
+    box.style.fontSize = '14px';
+    box.innerHTML = '<h3>Something went wrong loading the tracker</h3>' +
+      '<p>Please try opening this file in Safari directly (not an in-app preview), ' +
+      'or tap Share then "Open in Safari" if you are viewing this inside another app.</p>' +
+      '<p style="color:#8f978f; font-size:12px;">Details: ' + escapeHtml(String(err && err.message ? err.message : err)) + '</p>';
+    document.body.appendChild(box);
+  }
+
+  // Lazily load the Excel export library only when actually needed,
+  // so a blocked/failed external script cannot prevent the app itself from loading.
+  var xlsxLoadPromise = null;
+  function ensureXlsxLoaded(){
+    if(typeof XLSX !== 'undefined') return Promise.resolve();
+    if(xlsxLoadPromise) return xlsxLoadPromise;
+    xlsxLoadPromise = new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = function(){ resolve(); };
+      s.onerror = function(){ reject(new Error('Could not load the Excel export library. Check your internet connection and try again.')); };
+      document.head.appendChild(s);
+    });
+    return xlsxLoadPromise;
+  }
+
+  // ---------- PIN lock ----------
+  var pinEntryBuffer = '';
+  var pinMode = 'unlock'; // 'unlock' or 'confirm-new'
+  var newPinFirstEntry = null;
+
+  function initPinLock(){
+    var storedHash = null;
+    try{
+      storedHash = localStorage.getItem(PIN_KEY);
+    }catch(e){
+      throw new Error('This browser is blocking local storage. Please open the file in Safari directly.');
+    }
+    if(!storedHash){
+      showSetPinModal(true);
+    }else{
+      showLockScreen();
+    }
+  }
+  function showLockScreen(){
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('pinLockScreen').style.display = 'flex';
+    pinEntryBuffer = '';
+    updatePinDots('pinDots', pinEntryBuffer);
+    document.getElementById('pinError').textContent = '';
+  }
+  function unlockApp(){
+    document.getElementById('pinLockScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+  }
+  function updatePinDots(containerId, buffer){
+    var dots = document.getElementById(containerId).querySelectorAll('.dot');
+    for(var i=0;i<dots.length;i++){
+      if(i < buffer.length) dots[i].classList.add('filled');
+      else dots[i].classList.remove('filled');
+    }
+  }
+  function handlePinKey(k, padContext){
+    if(padContext === 'unlock'){
+      if(k === 'clear'){ pinEntryBuffer = ''; }
+      else if(k === 'back'){ pinEntryBuffer = pinEntryBuffer.slice(0,-1); }
+      else if(pinEntryBuffer.length < 4){ pinEntryBuffer += k; }
+      updatePinDots('pinDots', pinEntryBuffer);
+      if(pinEntryBuffer.length === 4){
+        var storedHash = localStorage.getItem(PIN_KEY);
+        if(simpleHash(pinEntryBuffer) === storedHash){
+          unlockApp();
+        }else{
+          document.getElementById('pinError').textContent = 'Incorrect PIN, try again.';
+          pinEntryBuffer = '';
+          setTimeout(function(){ updatePinDots('pinDots', pinEntryBuffer); }, 300);
+        }
+      }
+    }else{
+      // setting a new pin
+      var buf = window._setPinBuffer || '';
+      if(k === 'clear'){ buf = ''; }
+      else if(k === 'back'){ buf = buf.slice(0,-1); }
+      else if(buf.length < 4){ buf += k; }
+      window._setPinBuffer = buf;
+      updatePinDots('setPinDots', buf);
+      if(buf.length === 4){
+        if(newPinFirstEntry === null){
+          newPinFirstEntry = buf;
+          window._setPinBuffer = '';
+          document.getElementById('setPinTitle').textContent = 'Confirm your PIN';
+          setTimeout(function(){ updatePinDots('setPinDots', ''); }, 250);
+        }else{
+          if(buf === newPinFirstEntry){
+            localStorage.setItem(PIN_KEY, simpleHash(buf));
+            document.getElementById('setPinOverlay').classList.remove('show');
+            newPinFirstEntry = null;
+            window._setPinBuffer = '';
+            unlockApp();
+          }else{
+            document.getElementById('setPinError').textContent = 'PINs did not match. Start again.';
+            newPinFirstEntry = null;
+            window._setPinBuffer = '';
+            document.getElementById('setPinTitle').textContent = 'Set a 4-digit PIN';
+            setTimeout(function(){ updatePinDots('setPinDots', ''); }, 250);
+          }
+        }
+      }
+    }
+  }
+  function showSetPinModal(isFirstTime){
+    newPinFirstEntry = null;
+    window._setPinBuffer = '';
+    document.getElementById('setPinTitle').textContent = 'Set a 4-digit PIN';
+    document.getElementById('setPinError').textContent = '';
+    updatePinDots('setPinDots', '');
+    document.getElementById('setPinOverlay').classList.add('show');
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('pinLockScreen').style.display = 'none';
+  }
+
+  // ---------- Category select ----------
+  function populateCategorySelect(){
+    var sel = document.getElementById('categorySelect');
+    sel.innerHTML = '';
+    categories.forEach(function(cat){
+      var opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      sel.appendChild(opt);
+    });
+    var otherOpt = document.createElement('option');
+    otherOpt.value = '__other__';
+    otherOpt.textContent = 'Other (specify)';
+    sel.appendChild(otherOpt);
+  }
+
+  // ---------- Rendering ----------
+  function renderDate(){
+    var d = new Date();
+    var opts = { weekday:'long', month:'long', day:'numeric', year:'numeric' };
+    document.getElementById('todayDate').textContent = d.toLocaleDateString('en-IN', opts);
+  }
+
+  function getTodayEntries(){
+    var t = todayISO();
+    return entries.filter(function(e){ return e.dateISO === t; });
+  }
+
+  function render(){
+    var todays = getTodayEntries();
+    var total = todays.reduce(function(sum, e){ return sum + e.amount; }, 0);
+    document.getElementById('todayTotal').textContent = 'Rs ' + total.toFixed(2);
+
+    renderBreakdown(todays, total);
+    renderEntries(todays);
+    renderLastExportLabel();
+  }
+
+  function renderBreakdown(todays, total){
+    var container = document.getElementById('breakdownList');
+    container.innerHTML = '';
+    if(todays.length === 0){
+      container.innerHTML = '<div class="empty">No expenses yet today.</div>';
+      return;
+    }
+    var byCat = {};
+    todays.forEach(function(e){
+      byCat[e.category] = (byCat[e.category] || 0) + e.amount;
+    });
+    Object.keys(byCat).sort(function(a,b){ return byCat[b]-byCat[a]; }).forEach(function(cat){
+      var amt = byCat[cat];
+      var pct = total > 0 ? (amt/total*100) : 0;
+      var row = document.createElement('div');
+      row.className = 'cat-row';
+      row.innerHTML =
+        '<div class="cat-row-top"><span class="name">' + escapeHtml(cat) + '</span>' +
+        '<span class="val">' + pct.toFixed(0) + '% - Rs ' + amt.toFixed(2) + '</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) + '%"></div></div>';
+      container.appendChild(row);
+    });
+  }
+
+  function renderEntries(todays){
+    var container = document.getElementById('entriesList');
+    container.innerHTML = '';
+    if(todays.length === 0){
+      container.innerHTML = '<div class="empty">No entries yet. Add your first expense above.</div>';
+      return;
+    }
+    var sorted = todays.slice().sort(function(a,b){ return b.timeISO.localeCompare(a.timeISO); });
+    sorted.forEach(function(e){
+      var row = document.createElement('div');
+      row.className = 'entry';
+      var timeLabel = new Date(e.timeISO).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+      row.innerHTML =
+        '<div class="time">' + timeLabel + '</div>' +
+        '<div class="mid">' +
+          '<span class="amt">Rs ' + e.amount.toFixed(2) + '</span>' +
+          '<span class="badge">' + escapeHtml(e.category) + '</span>' +
+          (e.note ? '<div class="note">' + escapeHtml(e.note) + '</div>' : '') +
+        '</div>' +
+        '<button class="del" data-id="' + e.id + '" aria-label="Delete entry">Delete</button>';
+      container.appendChild(row);
+    });
+    container.querySelectorAll('.del').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        deleteEntry(btn.getAttribute('data-id'));
+      });
+    });
+  }
+
+  function renderLastExportLabel(){
+    document.getElementById('lastExportLabel').textContent = lastExport ? lastExport : 'never';
+  }
+
+  function escapeHtml(str){
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---------- Add / delete ----------
+  function addExpense(){
+    var amountInput = document.getElementById('amountInput');
+    var catSelect = document.getElementById('categorySelect');
+    var otherInput = document.getElementById('otherCategoryInput');
+    var noteInput = document.getElementById('noteInput');
+
+    var amount = parseFloat(amountInput.value);
+    if(!amount || amount <= 0){
+      alert('Please enter an amount greater than 0.');
+      return;
+    }
+    var category = catSelect.value;
+    if(category === '__other__'){
+      var newCat = otherInput.value.trim();
+      if(!newCat){
+        alert('Please type a category name.');
+        return;
+      }
+      category = newCat;
+      if(categories.indexOf(newCat) === -1){
+        categories.push(newCat);
+        saveJSON(CATS_KEY, categories);
+        populateCategorySelect();
+      }
+    }
+    var now = new Date();
+    var entry = {
+      id: uuid(),
+      dateISO: todayISO(),
+      timeISO: now.toISOString(),
+      amount: amount,
+      category: category,
+      note: noteInput.value.trim() || null
+    };
+    entries.push(entry);
+    saveJSON(STORAGE_KEY, entries);
+
+    amountInput.value = '';
+    noteInput.value = '';
+    otherInput.value = '';
+    document.getElementById('otherCategoryRow').style.display = 'none';
+    catSelect.value = category === entry.category && categories.indexOf(category) > -1 ? category : catSelect.value;
+
+    render();
+  }
+
+  function deleteEntry(id){
+    var idx = entries.findIndex(function(e){ return e.id === id; });
+    if(idx === -1) return;
+    pendingDelete = entries[idx];
+    entries.splice(idx, 1);
+    saveJSON(STORAGE_KEY, entries);
+    render();
+    showSnackbar('Expense deleted.');
+  }
+
+  function showSnackbar(text){
+    document.getElementById('snackbarText').textContent = text;
+    var bar = document.getElementById('snackbar');
+    bar.classList.add('show');
+    if(snackbarTimer) clearTimeout(snackbarTimer);
+    snackbarTimer = setTimeout(function(){
+      bar.classList.remove('show');
+      pendingDelete = null;
+    }, 5000);
+  }
+
+  function undoDelete(){
+    if(pendingDelete){
+      entries.push(pendingDelete);
+      saveJSON(STORAGE_KEY, entries);
+      pendingDelete = null;
+      render();
+    }
+    document.getElementById('snackbar').classList.remove('show');
+    if(snackbarTimer) clearTimeout(snackbarTimer);
+  }
+
+  // ---------- Retention / archive / export ----------
+  function monthKeyFromDate(dateISO){
+    return dateISO.slice(0,7); // YYYY-MM
+  }
+
+  function checkRetentionAndBanner(){
+    var cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - RETENTION_DAYS);
+    var cutoffISO = cutoff.toISOString().slice(0,10);
+
+    var toArchive = entries.filter(function(e){ return e.dateISO < cutoffISO; });
+    if(toArchive.length > 0){
+      toArchive.forEach(function(e){
+        var mk = monthKeyFromDate(e.dateISO);
+        if(!archive[mk]) archive[mk] = [];
+        archive[mk].push(e);
+      });
+      entries = entries.filter(function(e){ return e.dateISO >= cutoffISO; });
+      saveJSON(STORAGE_KEY, entries);
+      saveJSON(ARCHIVE_KEY, archive);
+      showBanner('Older entries were archived. Export them from Settings whenever you like.', 'Open Settings', openSettings);
+    }
+  }
+
+  function showBanner(text, actionLabel, actionFn){
+    document.getElementById('bannerText').textContent = text;
+    var actionBtn = document.getElementById('bannerAction');
+    actionBtn.textContent = actionLabel;
+    actionBtn.onclick = function(){
+      actionFn();
+      document.getElementById('reminderBanner').classList.remove('show');
+    };
+    document.getElementById('reminderBanner').classList.add('show');
+  }
+
+  function exportToXlsx(dataEntries, filenamePrefix){
+    if(dataEntries.length === 0){
+      alert('No data to export.');
+      return;
+    }
+    ensureXlsxLoaded().then(function(){
+      var rows = [['Date', 'Time', 'Amount (Rs)', 'Category', 'Note']];
+      dataEntries.forEach(function(e){
+        var t = new Date(e.timeISO);
+        var timeStr = t.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+        rows.push([e.dateISO, timeStr, e.amount, e.category, e.note || '']);
+      });
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Expenses');
+      var filename = filenamePrefix + '.xlsx';
+      XLSX.writeFile(wb, filename);
+
+      lastExport = new Date().toLocaleString('en-IN');
+      saveJSON(LASTEXPORT_KEY, lastExport);
+      renderLastExportLabel();
+    }).catch(function(err){
+      alert(err.message || 'Export failed. Please try again with an internet connection.');
+    });
+  }
+
+  function manualExportAll(){
+    var all = entries.slice();
+    Object.keys(archive).forEach(function(mk){
+      all = all.concat(archive[mk]);
+    });
+    exportToXlsx(all, 'expenses_all_' + todayISO());
+  }
+
+  function renderArchiveList(){
+    var container = document.getElementById('archiveList');
+    var keys = Object.keys(archive).sort().reverse();
+    if(keys.length === 0){
+      container.innerHTML = 'No archived months yet.';
+      return;
+    }
+    container.innerHTML = '';
+    keys.forEach(function(mk){
+      var row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.alignItems = 'center';
+      row.style.padding = '8px 0';
+      row.style.borderBottom = '1px solid var(--border)';
+      row.innerHTML = '<span>' + mk + ' (' + archive[mk].length + ' entries)</span>';
+      var btn = document.createElement('button');
+      btn.className = 'btn small';
+      btn.textContent = 'Export';
+      btn.addEventListener('click', function(){
+        exportToXlsx(archive[mk], 'expenses_' + mk);
+      });
+      row.appendChild(btn);
+      container.appendChild(row);
+    });
+  }
+
+  // ---------- Settings modal ----------
+  function openSettings(){
+    renderArchiveList();
+    document.getElementById('settingsOverlay').classList.add('show');
+  }
+  function closeSettingsModal(){
+    document.getElementById('settingsOverlay').classList.remove('show');
+  }
+
+  function wipeAllData(){
+    if(!confirm('This will erase all expenses, categories, archive, and your PIN from this device. This cannot be undone. Continue?')) return;
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(CATS_KEY);
+    localStorage.removeItem(PIN_KEY);
+    localStorage.removeItem(ARCHIVE_KEY);
+    localStorage.removeItem(LASTEXPORT_KEY);
+    location.reload();
+  }
+
+  // ---------- Event binding ----------
+  function bindEvents(){
+    document.getElementById('categorySelect').addEventListener('change', function(){
+      var showOther = this.value === '__other__';
+      document.getElementById('otherCategoryRow').style.display = showOther ? 'block' : 'none';
+    });
+    document.getElementById('addBtn').addEventListener('click', addExpense);
+    document.getElementById('snackbarUndo').addEventListener('click', undoDelete);
+    document.getElementById('settingsBtn').addEventListener('click', openSettings);
+    document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
+    document.getElementById('manualExportBtn').addEventListener('click', manualExportAll);
+    document.getElementById('wipeBtn').addEventListener('click', wipeAllData);
+    document.getElementById('changePinBtn').addEventListener('click', function(){
+      closeSettingsModal();
+      showSetPinModal(false);
+    });
+
+    document.getElementById('pinPad').querySelectorAll('button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        handlePinKey(btn.getAttribute('data-k'), 'unlock');
+      });
+    });
+    document.getElementById('setPinPad').querySelectorAll('button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        handlePinKey(btn.getAttribute('data-k'), 'setnew');
+      });
+    });
+  }
+
+  // ---------- Triple-redundant init for iOS Safari reliability ----------
+  var appInitialized = false;
+  function safeInit(){
+    if(appInitialized) return;
+    appInitialized = true;
+    init();
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', safeInit);
+  }else{
+    safeInit();
+  }
+  window.addEventListener('load', safeInit);
+  setTimeout(safeInit, 300);
+
+})();
+</script>
+</body>
+</html>
