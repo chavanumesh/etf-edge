@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>US Mortgage Learning Hub</title>
+<style>
+:root{
+  --navy:#0B3D91; --navy-dark:#082a66; --teal:#008080; --gold:#F1C232;
+  --bg:#F6F7FB; --card:#ffffff; --ink:#1a2340; --muted:#5b647e; --line:#e3e7f0;
+  --green:#1e8e3e; --red:#c5221f; --amber:#b9770e;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); -webkit-text-size-adjust:100%;}
+header{background:linear-gradient(135deg,var(--navy),var(--navy-dark)); color:#fff; padding:18px 16px 14px;}
+header h1{margin:0 0 2px; font-size:19px; font-weight:700;}
+header p{margin:0; font-size:12.5px; opacity:.85;}
+.badges{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;}
+.badge{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); border-radius:20px; padding:3px 10px; font-size:11px;}
+nav{display:flex; background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:50; overflow-x:auto;}
+nav button{flex:1; min-width:72px; padding:11px 4px; background:none; border:none; font-size:11.5px; font-weight:600; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap;}
+nav button.active{color:var(--navy); border-bottom-color:var(--gold);}
+main{padding:14px; max-width:800px; margin:0 auto; padding-bottom:60px;}
+.view{display:none;}
+.view.active{display:block;}
+.card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(11,61,145,.06);}
+.topic-list{display:grid; gap:10px;}
+.topic-item{display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:var(--card); border:1px solid var(--line); border-radius:12px; cursor:pointer;}
+.topic-item:active{background:#eef1fa;}
+.topic-item .t-title{font-weight:600; font-size:14.5px;}
+.topic-item .t-tag{font-size:11px; color:var(--teal); font-weight:600;}
+.topic-item .arrow{color:var(--gold); font-size:18px;}
+h2.section-title{font-size:15px; color:var(--navy); border-bottom:2px solid var(--gold); display:inline-block; padding-bottom:3px; margin:22px 0 10px;}
+.depth-tabs{display:flex; gap:6px; margin-bottom:10px;}
+.depth-tabs button{flex:1; padding:8px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:12.5px; font-weight:600; color:var(--muted);}
+.depth-tabs button.active{background:var(--teal); color:#fff; border-color:var(--teal);}
+.depth-panel{display:none; line-height:1.55; font-size:14px;}
+.depth-panel.active{display:block;}
+.c5-grid{display:grid; grid-template-columns:1fr; gap:8px;}
+.c5-item{border-left:4px solid var(--gold); background:#fffdf5; padding:8px 10px; border-radius:6px; font-size:13px;}
+.c5-item b{color:var(--navy);}
+.quiz-q{border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px;}
+.quiz-q .diff{font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:10px; color:#fff;}
+.diff.Easy{background:var(--green);} .diff.Medium{background:var(--amber);} .diff.Hard{background:var(--red);}
+.quiz-opt{display:block; width:100%; text-align:left; padding:9px 10px; margin:5px 0; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:13px;}
+.quiz-opt.correct{background:#e6f4ea; border-color:var(--green); font-weight:600;}
+.quiz-opt.wrong{background:#fce8e6; border-color:var(--red);}
+.quiz-explain{display:none; font-size:12.5px; color:var(--muted); margin-top:6px; background:#f6f7fb; padding:8px; border-radius:6px;}
+.flash{perspective:1000px; height:130px; margin-bottom:10px;}
+.flash-inner{position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer;}
+.flash.flipped .flash-inner{transform:rotateY(180deg);}
+.flash-face{position:absolute; inset:0; backface-visibility:hidden; border-radius:10px; padding:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:13.5px; font-weight:600;}
+.flash-front{background:linear-gradient(135deg,var(--navy),var(--teal)); color:#fff;}
+.flash-back{background:#fff; border:2px solid var(--teal); transform:rotateY(180deg); color:var(--ink); font-weight:500;}
+.btn{background:var(--navy); color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:600; font-size:13.5px; cursor:pointer;}
+.btn.gold{background:var(--gold); color:var(--navy-dark);}
+.btn.outline{background:none; border:1px solid var(--navy); color:var(--navy);}
+.searchbox{width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--line); font-size:15px; margin-bottom:12px;}
+.tag-pill{display:inline-block; background:#eef1fa; color:var(--navy); font-size:11px; padding:2px 8px; border-radius:10px; margin-right:4px;}
+.mi-msg{padding:10px 12px; border-radius:10px; margin-bottom:8px; font-size:13.5px; max-width:90%;}
+.mi-q{background:#eef1fa;} .mi-a{background:var(--gold); margin-left:auto; text-align:right;} .mi-f{background:#e6f4ea; border-left:3px solid var(--green);}
+select,input[type=text]{padding:8px; border-radius:8px; border:1px solid var(--line); font-size:13px;}
+.pill-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+.meta{font-size:11.5px; color:var(--muted); margin-top:10px; border-top:1px dashed var(--line); padding-top:8px;}
+.source-link{color:var(--teal); text-decoration:none; font-weight:600;}
+@media print{ nav,.no-print{display:none!important;} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏠 US Mortgage Learning Hub</h1>
+  <p>Fannie Mae & Freddie Mac guided training · one-stop shop</p>
+  <div class="badges">
+    <span class="badge">Fannie Mae Selling Guide</span>
+    <span class="badge">Freddie Mac Guide</span>
+    <span class="badge">v1.0 · Jul 2026</span>
+  </div>
+</header>
+
+<nav>
+  <button class="nav-btn active" data-view="teach">📖 Teach</button>
+  <button class="nav-btn" data-view="search">🔍 Search</button>
+  <button class="nav-btn" data-view="mock">🎤 Mock</button>
+  <button class="nav-btn" data-view="refresh">🔄 Refresh</button>
+  <button class="nav-btn" data-view="export">⬇️ Export</button>
+</nav>
+
+<main>
+
+  <!-- TEACH VIEW -->
+  <div class="view active" id="view-teach">
+    <div class="topic-list" id="topic-list"></div>
+    <div id="topic-detail"></div>
+  </div>
+
+  <!-- SEARCH VIEW -->
+  <div class="view" id="view-search">
+    <div class="card">
+      <input type="text" class="searchbox" id="search-input" placeholder="Search topics, e.g. 'DTI', 'reserves', 'LTV'...">
+      <div id="search-results"></div>
+    </div>
+  </div>
+
+  <!-- MOCK INTERVIEW VIEW -->
+  <div class="view" id="view-mock">
+    <div class="card">
+      <h2 class="section-title" style="margin-top:0">Mock Interview Setup</h2>
+      <div class="pill-row">
+        <label>Level: <select id="mi-level"><option>Junior</option><option>Intermediate</option><option>Senior</option></select></label>
+        <label>Questions: <select id="mi-count"><option>5</option><option>8</option><option>12</option></select></label>
+      </div>
+      <button class="btn" onclick="startMock()">Start Mock Interview</button>
+    </div>
+    <div id="mock-chat"></div>
+  </div>
+
+  <!-- REFRESH VIEW -->
+  <div class="view" id="view-refresh">
+    <div class="card">
+      <h2 class="section-title" style="margin-top:0">Manual Refresh Procedure</h2>
+      <p style="font-size:13.5px; line-height:1.6;">No coding needed — do this every 2–4 weeks to stay current:</p>
+      <ol style="font-size:13.5px; line-height:1.8;">
+        <li>Open <a class="source-link" href="https://selling-guide.fanniemae.com/" target="_blank">Fannie Mae Selling Guide</a> and <a class="source-link" href="https://guide.freddiemac.com/app/guide/segment/selling" target="_blank">Freddie Mac Guide</a></li>
+        <li>Check the "Recently Issued Announcements" or "What's New" section on each site</li>
+        <li>Come back to this chat and say: <i>"Refresh content for [topic name]"</i> — I'll re-check the guide and tell you what changed</li>
+        <li>I'll update the topic's content and add a change-log entry below</li>
+      </ol>
+      <h2 class="section-title">Change Log</h2>
+      <div id="changelog"></div>
+    </div>
+  </div>
+
+  <!-- EXPORT VIEW -->
+  <div class="view" id="view-export">
+    <div class="card">
+      <h2 class="section-title" style="margin-top:0">Export a Topic</h2>
+      <p style="font-size:13px; color:var(--muted);">Pick a topic to download as its own single-file HTML — works offline, opens on any phone.</p>
+      <div id="export-list" class="topic-list"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const TOPICS = [
+{
+  id:"5cs", title:"The 5 C's of Underwriting", tag:"Foundational",
+  summary:"The five factors underwriters weigh to decide if a borrower qualifies: Character, Capacity, Capital, Collateral, Conditions.",
+  simple:"Imagine your friend wants to borrow your favorite bike. You'd think: Do they always return what they borrow? (Character) Do they have money saved up if something breaks? (Capital) Is the bike itself in good shape and worth what they're 'buying'? (Collateral) Can they actually afford new tires and repairs each month? (Capacity) Is now a good time to lend it — like, is it raining and slippery? (Conditions). Lenders ask the same 5 questions about a home loan!",
+  intermediate:"Underwriters evaluate every loan file against these 5 lenses:<br><br><b>Character</b> — credit history, payment patterns, past bankruptcies/foreclosures.<br><b>Capacity</b> — ability to repay, measured mainly through DTI ratio and income stability.<br><b>Capital</b> — cash reserves and assets the borrower has after closing.<br><b>Collateral</b> — the property itself: appraised value, LTV ratio, condition.<br><b>Conditions</b> — loan purpose, occupancy type, and broader economic/market factors.<br><br>A weakness in one C can sometimes be offset by strength in another (called a 'compensating factor') — e.g. lower credit score offset by large cash reserves.",
+  advanced:"Fannie Mae frames this holistically in <b>B3-1-01, Comprehensive Risk Assessment</b> — DU and manual underwriters are both expected to weigh compensating factors rather than apply any single C as a hard cutoff, except where explicit minimums exist (e.g. 620 minimum credit score for manually underwritten loans). Freddie Mac's LPA (Loan Product Advisor) applies an analogous multi-factor model. Edge cases: nontraditional credit borrowers (no score) fall back to alternative Character documentation per B3-5.4-01; high-LTV refinance borrowers under the Alternative Qualification Path bypass standard DTI (Capacity) limits entirely.",
+  c5:null,
+  quiz:[
+    {q:"Which C refers to a borrower's cash reserves after closing?", opts:["Character","Capital","Collateral","Conditions"], correct:1, diff:"Easy", explain:"Capital = liquid assets/reserves remaining after down payment and closing costs."},
+    {q:"A borrower has a 580 credit score but 12 months of reserves. This illustrates:", opts:["A hard decline, no exceptions","A compensating factor offsetting weak Character","Conditions overriding Capacity","None of these C's apply"], correct:1, diff:"Medium", explain:"Strong Capital can compensate for weaker Character, though minimum score floors still apply on manual loans (620)."},
+    {q:"Under Fannie Mae's Alternative Qualification Path for high-LTV refinances, which C's requirement is waived?", opts:["Collateral (no appraisal needed ever)","Capacity (no maximum DTI)","Character (no credit check)","Capital (no reserves ever required)"], correct:1, diff:"Hard", explain:"High LTV refinance loans (except under the Alternative Qualification Path) have no maximum DTI requirement per B5-7-01."}
+  ],
+  flashcards:[
+    ["What does the 'C' in Capacity measure?","Borrower's ability to repay — primarily via DTI ratio"],
+    ["What does Collateral refer to?","The property's value and condition backing the loan"],
+    ["Name a Character red flag","Recent bankruptcy, foreclosure, or serious delinquency"],
+    ["What is a 'compensating factor'?","Strength in one C offsetting weakness in another"],
+    ["Which guide section covers comprehensive risk assessment?","Fannie Mae B3-1-01"]
+  ],
+  scenario:"Borrower: self-employed, 640 credit score, DTI 42%, 6 months reserves, LTV 80%. Docs checklist: 2yr tax returns, YTD P&L, bank statements, appraisal. Underwriter note: DTI within DU's 50% ceiling; credit below ideal but reserves partially offset. Decision: Approve with conditions — verify income stability via 2nd year trend.",
+  sources:[["Fannie Mae B3-1-01, Comprehensive Risk Assessment","https://selling-guide.fanniemae.com/"]]
+},
+{
+  id:"dti", title:"Debt-to-Income (DTI) Ratio", tag:"Capacity",
+  summary:"DTI compares monthly debt obligations to monthly income — the core Capacity measure.",
+  simple:"Imagine you get 10 candies a week as allowance. If you already promised 4 candies to friends you owe, you only have 6 left to spend. DTI is just that idea with money: how much of your monthly paycheck is already 'promised' to other bills before the new house payment.",
+  intermediate:"DTI = Total monthly debt obligations ÷ Total qualifying monthly income.<br><br>Example: Gross monthly income $6,000. Existing debts (car $400, student loan $200) + new mortgage payment $1,800 = $2,400 total.<br>DTI = 2,400 / 6,000 = <b>40%</b>.<br><br>Fannie Mae limits: manually underwritten loans cap at <b>36%</b> (up to 45% with strong credit/reserves per the Eligibility Matrix); loans run through <b>Desktop Underwriter (DU)</b> can go up to <b>50%</b>.",
+  advanced:"Per <b>B3-6-02, Debt-to-Income Ratios</b>: installment debts with fewer than 10 months remaining may be excluded unless large enough to materially affect repayment ability. If new undisclosed debt surfaces before closing and pushes DTI beyond allowed tolerance, the loan must be re-underwritten (D1-2-01). Cash-out refinances processed through DU may have a lower effective ceiling. High-LTV refinance loans (B5-7-01) have no DTI maximum except under the Alternative Qualification Path.",
+  c5:[["Capacity","DTI is the primary quantitative measure of Capacity — it directly answers 'can they afford this?'"]],
+  quiz:[
+    {q:"What is the max DTI for a manually underwritten Fannie Mae loan without compensating factors?", opts:["28%","36%","45%","50%"], correct:1, diff:"Easy", explain:"36% is Fannie Mae's manual underwriting ceiling per B3-6-02."},
+    {q:"A DU loan casefile can be approved up to what maximum DTI?", opts:["36%","41%","45%","50%"], correct:3, diff:"Medium", explain:"DU's ceiling is 50% for standard eligibility, though DU may still return a denial below that if other risk factors are weak."},
+    {q:"An installment loan has 8 months of payments left. How is it treated in DTI?", opts:["Always excluded automatically","Excluded unless it materially affects repayment ability","Always included regardless of remaining term","Only included if over $500/month"], correct:1, diff:"Hard", explain:"Debts under 10 months remaining may be excluded, but if the payment is large enough to affect current ability to repay, it must still count."}
+  ],
+  flashcards:[
+    ["DTI formula","Total monthly debt ÷ Total qualifying monthly income"],
+    ["Manual underwriting DTI ceiling","36% (up to 45% with compensating factors)"],
+    ["DU max DTI","50%"],
+    ["Guide section for DTI rules","Fannie Mae B3-6-02"],
+    ["Does high-LTV refinance have a DTI cap?","No, except under the Alternative Qualification Path"]
+  ],
+  scenario:"Borrower gross income $7,500/mo. Debts: car $350, credit cards min $180, new mortgage PITI $2,470. Total = $3,000. DTI = 3,000/7,500 = 40%. Run through DU → within 50% ceiling → Approve/Eligible, subject to DU conditions.",
+  sources:[["Fannie Mae B3-6-02, Debt-to-Income Ratios","https://selling-guide.fanniemae.com/sel/b3-6-02/debt-income-ratios"],["Fannie Mae Eligibility Matrix","https://www.fanniemae.com/content/eligibility_information/eligibility-matrix.pdf"]]
+},
+{
+  id:"ltv", title:"Loan-to-Value (LTV) Ratio", tag:"Collateral",
+  summary:"LTV compares the loan amount to the property's appraised value — the core Collateral measure.",
+  simple:"If a toy costs $100 and you only have $10 saved, you'd need to borrow $90 — that's 90% of the toy's price. LTV is the same: how much of the home's value is being borrowed versus paid upfront.",
+  intermediate:"LTV = Loan amount ÷ (lesser of sale price or appraised value) × 100.<br><br>Example: Home price $400,000, down payment $40,000 (10%). Loan amount = $360,000.<br>LTV = 360,000 / 400,000 = <b>90%</b>.<br><br>Standard conventional purchase loans typically max out around 97% LTV for 1-unit primary residences; investment properties and 2-4 unit properties have lower maximums (e.g. around 75-85%).",
+  advanced:"CLTV (combined LTV, including 2nd liens) and HCLTV (home equity combined LTV, including undrawn HELOC lines) are separate calculations lenders must also track — see Fannie Mae's Eligibility Matrix. Condo projects may carry lower allowable LTV/CLTV/HCLTV depending on project review type (B4-2.2 series). Community Seconds arrangements can push CLTV up to 105% in specific program structures.",
+  c5:[["Collateral","LTV directly measures how much equity cushion protects the lender if the property must be sold in default."]],
+  quiz:[
+    {q:"LTV formula uses which value if sale price and appraised value differ?", opts:["Always the sale price","Always the appraised value","The lesser of the two","The average of the two"], correct:2, diff:"Easy", explain:"Lenders use the lesser of sale price or appraised value to protect against overpaying."},
+    {q:"What does CLTV add to standard LTV?", opts:["Credit score adjustment","Combined balance of all liens on the property","Cost of mortgage insurance","Closing costs"], correct:1, diff:"Medium", explain:"CLTV includes 2nd mortgages/HELOCs in addition to the first lien."},
+    {q:"Which factor can allow CLTV up to 105%?", opts:["High credit score","Community Seconds program","Low DTI","Large cash reserves"], correct:1, diff:"Hard", explain:"Certain Community Seconds transactions permit CLTV up to 105% per Fannie Mae guidance."}
+  ],
+  flashcards:[
+    ["LTV formula","Loan amount ÷ lesser of sale price or appraised value"],
+    ["What is CLTV?","Combined LTV — includes all liens, not just the first mortgage"],
+    ["What is HCLTV?","Home equity combined LTV — includes undrawn HELOC amounts"],
+    ["Typical max LTV, 1-unit primary purchase","Up to ~97%"],
+    ["Which C does LTV represent?","Collateral"]
+  ],
+  scenario:"Home appraises at $350,000, sale price $355,000. Loan amount requested: $315,000. LTV uses lesser value ($350,000) → LTV = 315,000/350,000 = 90%. Within standard limits for 1-unit primary residence.",
+  sources:[["Fannie Mae Eligibility Matrix","https://www.fanniemae.com/content/eligibility_information/eligibility-matrix.pdf"]]
+},
+{
+  id:"credit", title:"Credit Analysis", tag:"Character",
+  summary:"Evaluating a borrower's credit history, score, and payment patterns as evidence of repayment reliability.",
+  simple:"If your friend always pays you back on time when they borrow lunch money, you trust them more next time. A credit report is like a diary of how well someone has kept past money promises.",
+  intermediate:"Manually underwritten loans require a minimum <b>620 credit score</b>. DU-run loans no longer rely on a hard score cutoff — DU evaluates the full credit report (payment history, derogatory events, utilization) alongside DTI, reserves, and LTV. Major derogatory events carry mandatory waiting periods before eligibility (e.g. Chapter 7 bankruptcy: 4 years for conventional loans; foreclosure: up to 7 years).",
+  advanced:"Per recent Fannie Mae/Freddie Mac policy updates, DU/LPA moved away from a fixed minimum score for automated underwriting, instead weighing the full risk profile. Manual underwriting retains the 620 floor. Nontraditional credit (no score) borrowers follow B3-5.4-01, which requires alternative documentation (rent history, utility payments) and generally caps DTI lower than standard.",
+  c5:[["Character","Credit history is the primary evidence underwriters use to judge repayment reliability and intent."]],
+  quiz:[
+    {q:"Minimum credit score for a manually underwritten conventional loan?", opts:["580","600","620","640"], correct:2, diff:"Easy", explain:"620 is the manual underwriting floor; DU has no fixed score cutoff."},
+    {q:"Waiting period after Chapter 7 bankruptcy for a conventional loan?", opts:["2 years","3 years","4 years","7 years"], correct:2, diff:"Medium", explain:"4 years is standard for conventional loans post Chapter 7 discharge."},
+    {q:"How does DU primarily evaluate credit today, compared to a fixed score cutoff?", opts:["Ignores credit entirely","Uses a holistic review of payment history, DTI, reserves and score together","Only uses FICO score with a hard 620 cutoff", "Requires manual override for any DU decision"], correct:1, diff:"Hard", explain:"DU and Freddie Mac's LPA both moved to holistic risk evaluation rather than a single hard score cutoff."}
+  ],
+  flashcards:[
+    ["Manual underwriting min credit score","620"],
+    ["Ch. 7 bankruptcy waiting period, conventional","4 years"],
+    ["Foreclosure waiting period, conventional","Up to 7 years"],
+    ["Which C does credit analysis represent?","Character"],
+    ["Guide reference for nontraditional credit","Fannie Mae B3-5.4-01"]
+  ],
+  scenario:"Borrower has 610 score, no major derogatories, run through DU. DU returns Approve/Eligible based on overall profile despite score below the manual 620 floor — illustrating DU's holistic risk assessment.",
+  sources:[["LendingTree summary of Fannie Mae credit guidelines","https://www.lendingtree.com/home/mortgage/fannie-mae-guidelines/"]]
+},
+{
+  id:"income", title:"Qualifying Income", tag:"Capacity",
+  summary:"Determining which income sources count, and how much, toward a borrower's DTI calculation.",
+  simple:"If you get allowance every week reliably, your parents can count on it. But if you only get extra money once in a blue moon from a garage sale, that's not something to count on every month. Qualifying income is about which money is steady and countable.",
+  intermediate:"Income must be stable, documented, and likely to continue for at least 3 years. Common types: W-2 wages (2-year history), self-employed (2-year tax returns + YTD P&L), rental income (typically 75% of gross rents per Schedule E or lease, to account for vacancy/expenses), bonus/overtime (2-year averaging with continuance likelihood).",
+  advanced:"Self-employment income calculations often use Fannie Mae's Cash Flow Analysis (Form 1084) to add back non-cash expenses (depreciation) and adjust for one-time gains/losses. Rental income treatment differs based on whether the property is subject or non-subject, and whether it's a purchase or refinance — see B3-3.1-08, Rental Income. Declining income trends year-over-year require additional analysis and may disqualify the income entirely if unexplained.",
+  c5:[["Capacity","Qualifying income is the numerator input that, combined with debts, produces the DTI ratio."]],
+  quiz:[
+    {q:"How many years of tax returns are typically required for self-employed income?", opts:["1 year","2 years","3 years","5 years"], correct:1, diff:"Easy", explain:"2 years of tax returns is the standard requirement for self-employed borrowers."},
+    {q:"What percentage of gross rental income is typically used for qualifying, to account for vacancy/expense?", opts:["50%","65%","75%","100%"], correct:2, diff:"Medium", explain:"75% of gross rents is the standard offset used per Fannie Mae guidance."},
+    {q:"What does Fannie Mae's Form 1084 help calculate?", opts:["LTV ratio","Self-employed cash flow / qualifying income","Credit score adjustment","Appraisal value"], correct:1, diff:"Hard", explain:"Form 1084 is the Cash Flow Analysis worksheet for self-employed borrower income."}
+  ],
+  flashcards:[
+    ["Self-employed income documentation","2 years tax returns + YTD P&L"],
+    ["Rental income offset for vacancy/expenses","Typically 75% of gross rents"],
+    ["Form used for self-employed cash flow","Fannie Mae Form 1084"],
+    ["What guide section covers rental income?","Fannie Mae B3-3.1-08"],
+    ["Which C does qualifying income affect?","Capacity"]
+  ],
+  scenario:"Borrower is self-employed with $80,000 avg net income over 2 years, stable/increasing trend, add-back of $5,000 depreciation. Qualifying income ≈ $85,000/year ÷ 12 = $7,083/month.",
+  sources:[["Fannie Mae B3-3.1-08, Rental Income","https://selling-guide.fanniemae.com/"]]
+}
+];
+
+let CHANGELOG = [
+  {date:"2026-07-07", note:"Initial hub build — seeded 5 foundational topics (5 C's, DTI, LTV, Credit, Qualifying Income)."}
+];
+
+// ---------- NAV ----------
+document.querySelectorAll('.nav-btn').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('view-'+b.dataset.view).classList.add('active');
+  });
+});
+
+// ---------- TEACH ----------
+function renderTopicList(){
+  const list = document.getElementById('topic-list');
+  list.innerHTML = TOPICS.map(t=>`
+    <div class="topic-item" onclick="openTopic('${t.id}')">
+      <div><div class="t-title">${t.title}</div><div class="t-tag">${t.tag}</div></div>
+      <div class="arrow">›</div>
+    </div>`).join('');
+}
+function openTopic(id){
+  const t = TOPICS.find(x=>x.id===id);
+  document.getElementById('topic-list').style.display='none';
+  const d = document.getElementById('topic-detail');
+  d.innerHTML = topicHTML(t);
+  d.querySelectorAll('.depth-tabs button').forEach(btn=>{
+    btn.onclick = ()=>{
+      d.querySelectorAll('.depth-tabs button').forEach(x=>x.classList.remove('active'));
+      d.querySelectorAll('.depth-panel').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      d.querySelector('#panel-'+btn.dataset.d+'-'+t.id).classList.add('active');
+    };
+  });
+  d.querySelectorAll('.quiz-opt').forEach(opt=>{
+    opt.onclick = ()=>{
+      const qDiv = opt.closest('.quiz-q');
+      if(qDiv.dataset.answered) return;
+      qDiv.dataset.answered = "1";
+      const correctIdx = qDiv.dataset.correct;
+      qDiv.querySelectorAll('.quiz-opt').forEach((o,i)=>{
+        if(i==correctIdx) o.classList.add('correct');
+        else if(o===opt) o.classList.add('wrong');
+      });
+      qDiv.querySelector('.quiz-explain').style.display='block';
+    };
+  });
+  d.querySelectorAll('.flash').forEach(f=>{
+    f.onclick = ()=> f.classList.toggle('flipped');
+  });
+}
+function backToList(){
+  document.getElementById('topic-list').style.display='grid';
+  document.getElementById('topic-detail').innerHTML='';
+}
+function topicHTML(t){
+  return `
+  <button class="btn outline" style="margin-bottom:12px" onclick="backToList()">‹ Back to topics</button>
+  <div class="card">
+    <h2 style="margin-top:0; color:var(--navy)">${t.title}</h2>
+    <p style="color:var(--muted); font-size:13.5px">${t.summary}</p>
+
+    <div class="depth-tabs">
+      <button class="active" data-d="simple">Simple</button>
+      <button data-d="intermediate">Intermediate</button>
+      <button data-d="advanced">Advanced</button>
+    </div>
+    <div class="depth-panel active" id="panel-simple-${t.id}">${t.simple}</div>
+    <div class="depth-panel" id="panel-intermediate-${t.id}">${t.intermediate}</div>
+    <div class="depth-panel" id="panel-advanced-${t.id}">${t.advanced}</div>
+
+    ${t.c5 ? `<h2 class="section-title">5 C's Impact</h2><div class="c5-grid">${t.c5.map(c=>`<div class="c5-item"><b>${c[0]}:</b> ${c[1]}</div>`).join('')}</div>` : ''}
+
+    <h2 class="section-title">Quiz</h2>
+    ${t.quiz.map((q,qi)=>`
+      <div class="quiz-q" data-correct="${q.correct}">
+        <span class="diff ${q.diff}">${q.diff}</span>
+        <p style="font-weight:600; font-size:13.5px; margin:8px 0">${q.q}</p>
+        ${q.opts.map(o=>`<button class="quiz-opt">${o}</button>`).join('')}
+        <div class="quiz-explain">${q.explain}</div>
+      </div>`).join('')}
+
+    <h2 class="section-title">Flashcards (tap to flip)</h2>
+    ${t.flashcards.map(f=>`
+      <div class="flash"><div class="flash-inner">
+        <div class="flash-face flash-front">${f[0]}</div>
+        <div class="flash-face flash-back">${f[1]}</div>
+      </div></div>`).join('')}
+
+    <h2 class="section-title">Sample Loan Scenario</h2>
+    <div class="c5-item">${t.scenario}</div>
+
+    <div class="meta">
+      <b>Sources:</b> ${t.sources.map(s=>`<a class="source-link" href="${s[1]}" target="_blank">${s[0]}</a>`).join(' · ')}<br>
+      Last updated: 2026-07-07
+    </div>
+  </div>`;
+}
+
+// ---------- SEARCH ----------
+document.getElementById('search-input').addEventListener('input', e=>{
+  const q = e.target.value.toLowerCase().trim();
+  const results = document.getElementById('search-results');
+  if(!q){ results.innerHTML=''; return; }
+  const matches = TOPICS.filter(t=>
+    (t.title+t.tag+t.summary+t.simple+t.intermediate+t.advanced).toLowerCase().includes(q)
+  );
+  results.innerHTML = matches.length ? matches.map(t=>`
+    <div class="topic-item" onclick="document.querySelector('[data-view=teach]').click(); openTopic('${t.id}'); document.getElementById('topic-list').style.display='none';">
+      <div><div class="t-title">${t.title}</div><span class="tag-pill">${t.tag}</span></div>
+      <div class="arrow">›</div>
+    </div>`).join('') : `<p style="color:var(--muted); font-size:13px">No matches. Try 'DTI', 'reserves', 'credit', 'income', 'LTV'.</p>`;
+});
+
+// ---------- MOCK INTERVIEW ----------
+const MI_BANK = {
+  Junior:[
+    ["What is DTI and how is it calculated?","Total monthly debt ÷ total qualifying monthly income."],
+    ["What does LTV measure?","Loan amount versus the lesser of sale price or appraised value."],
+    ["Name the 5 C's of underwriting.","Character, Capacity, Capital, Collateral, Conditions."],
+    ["What credit score is required for manual underwriting?","620 minimum."],
+    ["What is a compensating factor?","A strength in one area (e.g. reserves) offsetting a weakness elsewhere (e.g. credit score)."]
+  ],
+  Intermediate:[
+    ["Walk me through calculating self-employed qualifying income.","Average 2 years of net income from tax returns, add back non-cash expenses like depreciation, adjust for one-time items, and confirm a stable or increasing trend."],
+    ["A DTI comes in at 48% through DU — is this automatically approved?","No — 50% is DU's ceiling, not a guarantee. DU still performs a full risk assessment and can return a denial or conditions."],
+    ["How is rental income typically qualified?","Generally 75% of gross rents to account for vacancy and expenses, per Schedule E or lease agreement documentation."],
+    ["What happens if new debt is discovered before closing?","The lender must re-underwrite if the new DTI exceeds allowed tolerances, per prefunding QC requirements."]
+  ],
+  Senior:[
+    ["How would you evaluate a borrower with declining self-employed income year over year?","Investigate the cause, require explanation and documentation, consider using the lower/most recent year, and assess whether the trend disqualifies the income entirely under Fannie Mae guidance."],
+    ["Compare DTI treatment for high-LTV refinance vs. standard purchase transactions.","High-LTV refinance loans generally have no maximum DTI requirement except under the Alternative Qualification Path, unlike standard purchases which follow the 36/45/50% tiered structure."],
+    ["How do CLTV and HCLTV differ, and when does each matter?","CLTV includes all recorded liens; HCLTV also includes undrawn HELOC lines. Both matter when evaluating subordinate financing risk beyond the first mortgage."]
+  ]
+};
+let mockState = null;
+function startMock(){
+  const level = document.getElementById('mi-level').value;
+  const count = parseInt(document.getElementById('mi-count').value);
+  const pool = MI_BANK[level];
+  const qs = [];
+  for(let i=0;i<count;i++) qs.push(pool[i % pool.length]);
+  mockState = {qs, idx:0, level};
+  document.getElementById('mock-chat').innerHTML='';
+  askNextMock();
+}
+function askNextMock(){
+  const chat = document.getElementById('mock-chat');
+  if(mockState.idx >= mockState.qs.length){
+    chat.innerHTML += `<div class="card"><b>Interview complete!</b><br>Level: ${mockState.level}<br>Review the model answers above against your own — focus on any topic where your answer missed the guide citation or a key number.</div>`;
+    return;
+  }
+  const [q] = mockState.qs[mockState.idx];
+  chat.innerHTML += `<div class="mi-msg mi-q"><b>Q${mockState.idx+1}:</b> ${q}</div>
+    <div style="margin:6px 0"><input type="text" id="mi-input-${mockState.idx}" style="width:70%" placeholder="Type your answer..."> <button class="btn gold" onclick="answerMock(${mockState.idx})">Submit</button></div>`;
+}
+function answerMock(i){
+  const chat = document.getElementById('mock-chat');
+  const ans = document.getElementById('mi-input-'+i).value || "(no answer given)";
+  const [,model] = mockState.qs[i];
+  chat.innerHTML += `<div class="mi-msg mi-a">${ans}</div>
+    <div class="mi-msg mi-f"><b>Model answer:</b> ${model}</div>`;
+  mockState.idx++;
+  askNextMock();
+}
+
+// ---------- REFRESH / CHANGELOG ----------
+function renderChangelog(){
+  document.getElementById('changelog').innerHTML = CHANGELOG.map(c=>`<div style="font-size:12.5px; margin-bottom:6px"><b>${c.date}:</b> ${c.note}</div>`).join('');
+}
+
+// ---------- EXPORT ----------
+function renderExportList(){
+  document.getElementById('export-list').innerHTML = TOPICS.map(t=>`
+    <div class="topic-item" onclick="exportTopic('${t.id}')">
+      <div class="t-title">${t.title}</div>
+      <div class="arrow">⬇</div>
+    </div>`).join('');
+}
+function exportTopic(id){
+  const t = TOPICS.find(x=>x.id===id);
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${t.title}</title>
+  <style>${document.querySelector('style').innerHTML}</style></head><body>
+  <header><h1>🏠 ${t.title}</h1><p>Exported from US Mortgage Learning Hub</p></header>
+  <main>${topicHTML(t).replace('<button class="btn outline" style="margin-bottom:12px" onclick="backToList()">‹ Back to topics</button>','')}</main>
+  </body></html>`;
+  const blob = new Blob([html], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = t.id + '.html';
+  a.click();
+}
+
+// INIT
+renderTopicList();
+renderChangelog();
+renderExportList();
+</script>
+</body>
+</html>
