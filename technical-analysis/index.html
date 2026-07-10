@@ -147,6 +147,11 @@
   </div>
 </div>
 
+<div class="card">
+  <div class="section-title">Observation - How to Read This</div>
+  <div id="observationText" style="font-size:13px; line-height:1.7; color:var(--text);"></div>
+</div>
+
 <div class="footer-note">
   Educational tool only, not investment advice. Signals are rule-based combinations of RSI, Stochastic, MACD, Moving Averages and Bollinger Bands. Always cross-check with fundamentals and your own risk tolerance.
 </div>
@@ -431,6 +436,45 @@ function analyzeAndRender(data, symbol) {
 
     document.getElementById("supportVal").textContent = "Rs " + support.toFixed(0);
     document.getElementById("resistVal").textContent = "Rs " + resistance.toFixed(0);
+
+    // ---- Observation narrative (student-friendly explanation) ----
+    function buildObservation() {
+      var leadingPart = "";
+      var leadingCount = { buy: 0, sell: 0, hold: 0 };
+      leadingCount[rsiSignal]++; leadingCount[stochSignal]++; leadingCount[macdSignal]++;
+
+      if (leadingCount.buy >= 2) {
+        leadingPart = "The leading indicators (RSI, Stochastic, MACD) are showing early signs of upward momentum building - " + rsiNote.toLowerCase() + ", and " + macdNote.toLowerCase() + ". Leading indicators react fast, so this is a hint, not a confirmation.";
+      } else if (leadingCount.sell >= 2) {
+        leadingPart = "The leading indicators are flashing early weakness - " + rsiNote.toLowerCase() + ", and " + macdNote.toLowerCase() + ". These move fast and can reverse quickly, so treat this as an early warning.";
+      } else {
+        leadingPart = "The leading indicators are mixed right now - RSI is " + rsiNote.toLowerCase() + " while MACD shows " + macdNote.toLowerCase() + ". No strong early signal either way, so momentum is undecided.";
+      }
+
+      var laggingPart = "";
+      var laggingCount = { buy: 0, sell: 0, hold: 0 };
+      laggingCount[maSignal]++; laggingCount[bbSignal]++; laggingCount[dma200Signal]++;
+
+      if (maSignal === "buy") {
+        laggingPart = "On the trend-confirmation side, the 50-DMA sitting above the 200-DMA confirms the broader trend is still up - lagging indicators react slower but are more reliable for confirming a trend already in motion.";
+      } else {
+        laggingPart = "On the trend-confirmation side, the 50-DMA sitting below the 200-DMA confirms the broader trend is still down - this is a slower-moving but more reliable read on the bigger picture.";
+      }
+
+      var agreement = "";
+      var leadDirection = leadingCount.buy > leadingCount.sell ? "buy" : (leadingCount.sell > leadingCount.buy ? "sell" : "hold");
+      if (leadDirection === maSignal) {
+        agreement = "Since both the fast-moving (leading) and slow-moving (lagging) indicators are pointing the same direction, this is a higher-conviction setup - the kind of alignment worth paying attention to.";
+      } else {
+        agreement = "Notice that the leading and lagging indicators are not fully aligned - the short-term momentum and the longer-term trend are telling slightly different stories. This is common and usually means waiting for more confirmation before acting is safer than reacting to just one signal.";
+      }
+
+      var actionPart = "Practical takeaway: the support level (Rs " + support.toFixed(0) + ") is where buyers have historically stepped in - a possible entry zone if you're looking to buy. The resistance level (Rs " + resistance.toFixed(0) + ") is where sellers have historically taken profit - a possible exit zone. Always use a stop-loss below support when entering, since no indicator is guaranteed to be right.";
+
+      return leadingPart + " " + laggingPart + " " + agreement + " " + actionPart;
+    }
+
+    document.getElementById("observationText").textContent = buildObservation();
 
     // ---- Chart ----
     var ctx = document.getElementById("priceChart").getContext("2d");
