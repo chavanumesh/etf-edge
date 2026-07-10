@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Technical Analysis Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #171a21;
+    --border: #262b36;
+    --text: #e8eaed;
+    --muted: #8a90a2;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --blue: #3b82f6;
+    --accent: #6366f1;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 12px;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+  }
+  h1 { font-size: 18px; margin: 4px 0 2px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 14px; margin-bottom: 12px;
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  select, input, button {
+    background: #1f2330; color: var(--text); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px; font-size: 14px; flex: 1;
+  }
+  button {
+    background: var(--accent); border: none; font-weight: 600;
+    cursor: pointer; flex: none;
+  }
+  button:active { opacity: 0.8; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat {
+    background: #1f2330; border-radius: 10px; padding: 10px; text-align: center;
+  }
+  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .stat .value { font-size: 17px; font-weight: 700; margin-top: 2px; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 700;
+  }
+  .badge.buy { background: rgba(34,197,94,0.18); color: var(--green); }
+  .badge.sell { background: rgba(239,68,68,0.18); color: var(--red); }
+  .badge.hold { background: rgba(234,179,8,0.18); color: var(--yellow); }
+  canvas { max-width: 100%; }
+  .verdict-box {
+    text-align: center; padding: 16px; border-radius: 12px;
+    background: linear-gradient(135deg, #1f2330, #171a21);
+    border: 1px solid var(--border);
+  }
+  .verdict-box .signal { font-size: 26px; font-weight: 800; margin: 6px 0; }
+  .verdict-box .price-target { font-size: 13px; color: var(--muted); }
+  .ind-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .ind-row:last-child { border-bottom: none; }
+  .ind-name { font-weight: 600; font-size: 13px; }
+  .ind-note { font-size: 11px; color: var(--muted); }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 4px 0 8px; }
+  .tag { font-size: 10px; padding: 2px 6px; border-radius: 6px; background: #262b36; color: var(--muted); margin-left: 6px; }
+  .footer-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<h1>Technical Analysis Tool</h1>
+<div class="sub">Leading + Lagging indicators - entry/exit signal engine</div>
+
+<div class="card">
+  <div class="row">
+    <input type="text" id="symbolInput" placeholder="e.g. INFY.NS or AAPL" value="INFY.NS" autocapitalize="characters" autocomplete="off">
+    <button id="analyzeBtn">Analyze</button>
+  </div>
+  <div class="footer-note" style="margin-top:8px;">Indian stocks: add .NS (e.g. TCS.NS, RELIANCE.NS). US stocks: plain ticker (e.g. AAPL, MSFT). Data via Yahoo Finance, free.</div>
+  <div id="statusMsg" class="footer-note" style="margin-top:6px;"></div>
+</div>
+
+<div class="card">
+  <canvas id="priceChart" height="220"></canvas>
+</div>
+
+<div class="card">
+  <div class="verdict-box">
+    <div class="ind-note">OVERALL SIGNAL</div>
+    <div class="signal" id="overallSignal">-</div>
+    <div class="price-target" id="priceTarget">-</div>
+  </div>
+</div>
+
+<div class="grid2" style="margin-bottom:12px;">
+  <div class="stat"><div class="label">CMP</div><div class="value" id="cmp">-</div></div>
+  <div class="stat"><div class="label">RSI (14)</div><div class="value" id="rsiVal">-</div></div>
+  <div class="stat"><div class="label">MACD</div><div class="value" id="macdVal">-</div></div>
+  <div class="stat"><div class="label">Stochastic</div><div class="value" id="stochVal">-</div></div>
+</div>
+
+<div class="card">
+  <div class="section-title">Leading Indicators <span class="tag">predict reversals early</span></div>
+  <div class="ind-row">
+    <div><div class="ind-name">RSI (14)</div><div class="ind-note" id="rsiNote">-</div></div>
+    <div id="rsiBadge"></div>
+  </div>
+  <div class="ind-row">
+    <div><div class="ind-name">Stochastic (14,3)</div><div class="ind-note" id="stochNote">-</div></div>
+    <div id="stochBadge"></div>
+  </div>
+  <div class="ind-row">
+    <div><div class="ind-name">MACD (12,26,9)</div><div class="ind-note" id="macdNote">-</div></div>
+    <div id="macdBadge"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Lagging Indicators <span class="tag">confirm trend</span></div>
+  <div class="ind-row">
+    <div><div class="ind-name">50-DMA vs 200-DMA</div><div class="ind-note" id="maNote">-</div></div>
+    <div id="maBadge"></div>
+  </div>
+  <div class="ind-row">
+    <div><div class="ind-name">Bollinger Bands (20,2)</div><div class="ind-note" id="bbNote">-</div></div>
+    <div id="bbBadge"></div>
+  </div>
+  <div class="ind-row">
+    <div><div class="ind-name">Price vs 200-DMA</div><div class="ind-note" id="dma200Note">-</div></div>
+    <div id="dma200Badge"></div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Entry / Exit Levels</div>
+  <div class="grid2">
+    <div class="stat"><div class="label">Support (Entry Zone)</div><div class="value" id="supportVal" style="color:var(--green);">-</div></div>
+    <div class="stat"><div class="label">Resistance (Exit Zone)</div><div class="value" id="resistVal" style="color:var(--red);">-</div></div>
+  </div>
+</div>
+
+<div class="footer-note">
+  Educational tool only, not investment advice. Signals are rule-based combinations of RSI, Stochastic, MACD, Moving Averages and Bollinger Bands. Always cross-check with fundamentals and your own risk tolerance.
+</div>
+
+<script>
+var chartInstance = null;
+
+function setStatus(msg, isError) {
+  var el = document.getElementById("statusMsg");
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? "var(--red)" : "var(--muted)";
+}
+
+// ---- Fetch real price data from Yahoo Finance (free, no key) ----
+async function fetchStockData(symbol) {
+  var directUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(symbol) + "?range=1y&interval=1d";
+  var proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(directUrl);
+  var res;
+  try {
+    res = await fetch(directUrl);
+    if (!res.ok) throw new Error("direct fetch failed");
+  } catch (e) {
+    res = await fetch(proxyUrl);
+  }
+  if (!res.ok) throw new Error("Could not fetch data for " + symbol + ". Check the symbol and try again.");
+  var json = await res.json();
+  var result = json.chart && json.chart.result && json.chart.result[0];
+  if (!result) throw new Error("No data found for " + symbol + ". Check the symbol (NSE stocks need .NS suffix).");
+  var timestamps = result.timestamp;
+  var quote = result.indicators.quote[0];
+  var data = [];
+  for (var i = 0; i < timestamps.length; i++) {
+    if (quote.close[i] === null || quote.close[i] === undefined) continue;
+    data.push({
+      day: i,
+      close: quote.close[i],
+      high: quote.high[i] || quote.close[i],
+      low: quote.low[i] || quote.close[i],
+      volume: quote.volume[i] || 0
+    });
+  }
+  if (data.length < 30) throw new Error("Not enough data returned for " + symbol + ".");
+  return data;
+}
+
+async function runAnalysis(symbol) {
+  try {
+    setStatus("Fetching data for " + symbol + " ...", false);
+    var data = await fetchStockData(symbol);
+    setStatus("Loaded " + data.length + " sessions for " + symbol + ".", false);
+    analyzeAndRender(data, symbol);
+  } catch (err) {
+    setStatus(err.message, true);
+  }
+}
+
+function analyzeAndRender(data, symbol) {
+  try {
+    var closes = data.map(function(d) { return d.close; });
+
+    // ---- Indicator calculations ----
+    function sma(arr, period) {
+      var out = [];
+      for (var i = 0; i < arr.length; i++) {
+        if (i < period - 1) { out.push(null); continue; }
+        var sum = 0;
+        for (var j = i - period + 1; j <= i; j++) sum += arr[j];
+        out.push(sum / period);
+      }
+      return out;
+    }
+
+    function ema(arr, period) {
+      var out = [];
+      var k = 2 / (period + 1);
+      var prev = null;
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i] === null) { out.push(null); continue; }
+        if (prev === null) { prev = arr[i]; out.push(prev); continue; }
+        prev = arr[i] * k + prev * (1 - k);
+        out.push(prev);
+      }
+      return out;
+    }
+
+    function rsiCalc(arr, period) {
+      var out = [];
+      var gains = 0, losses = 0;
+      for (var i = 0; i < arr.length; i++) {
+        if (i === 0) { out.push(null); continue; }
+        var change = arr[i] - arr[i - 1];
+        var gain = change > 0 ? change : 0;
+        var loss = change < 0 ? -change : 0;
+        if (i <= period) {
+          gains += gain; losses += loss;
+          if (i === period) {
+            var avgG = gains / period, avgL = losses / period;
+            var rs = avgL === 0 ? 100 : avgG / avgL;
+            out.push(100 - (100 / (1 + rs)));
+          } else out.push(null);
+        } else {
+          var prevAvgG = out._avgG, prevAvgL = out._avgL;
+        }
+      }
+      // simpler Wilder smoothing pass
+      out = [];
+      var avgGain = null, avgLoss = null;
+      for (var i = 0; i < arr.length; i++) {
+        if (i === 0) { out.push(null); continue; }
+        var change = arr[i] - arr[i - 1];
+        var gain = change > 0 ? change : 0;
+        var loss = change < 0 ? -change : 0;
+        if (i < period) { out.push(null); continue; }
+        if (i === period) {
+          var g = 0, l = 0;
+          for (var j = 1; j <= period; j++) {
+            var c = arr[j] - arr[j - 1];
+            if (c > 0) g += c; else l += -c;
+          }
+          avgGain = g / period; avgLoss = l / period;
+        } else {
+          avgGain = (avgGain * (period - 1) + gain) / period;
+          avgLoss = (avgLoss * (period - 1) + loss) / period;
+        }
+        var rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+        out.push(100 - (100 / (1 + rs)));
+      }
+      return out;
+    }
+
+    function stochastic(data, period, smoothK) {
+      var rawK = [];
+      for (var i = 0; i < data.length; i++) {
+        if (i < period - 1) { rawK.push(null); continue; }
+        var highSlice = [], lowSlice = [];
+        for (var j = i - period + 1; j <= i; j++) {
+          highSlice.push(data[j].high); lowSlice.push(data[j].low);
+        }
+        var hh = Math.max.apply(null, highSlice);
+        var ll = Math.min.apply(null, lowSlice);
+        var k = hh === ll ? 50 : ((data[i].close - ll) / (hh - ll)) * 100;
+        rawK.push(k);
+      }
+      var validK = rawK.filter(function(v) { return v !== null; });
+      var smoothed = sma(rawK.map(function(v) { return v === null ? 0 : v; }), smoothK);
+      return { k: rawK, d: smoothed };
+    }
+
+    function macdCalc(arr) {
+      var ema12 = ema(arr, 12);
+      var ema26 = ema(arr, 26);
+      var macdLine = arr.map(function(_, i) {
+        if (ema12[i] === null || ema26[i] === null) return null;
+        return ema12[i] - ema26[i];
+      });
+      var signalLine = ema(macdLine.map(function(v) { return v === null ? 0 : v; }), 9);
+      var hist = macdLine.map(function(v, i) {
+        if (v === null) return null;
+        return v - signalLine[i];
+      });
+      return { macd: macdLine, signal: signalLine, hist: hist };
+    }
+
+    function bollinger(arr, period, mult) {
+      var mid = sma(arr, period);
+      var upper = [], lower = [];
+      for (var i = 0; i < arr.length; i++) {
+        if (mid[i] === null) { upper.push(null); lower.push(null); continue; }
+        var sumSq = 0;
+        for (var j = i - period + 1; j <= i; j++) sumSq += Math.pow(arr[j] - mid[i], 2);
+        var std = Math.sqrt(sumSq / period);
+        upper.push(mid[i] + mult * std);
+        lower.push(mid[i] - mult * std);
+      }
+      return { mid: mid, upper: upper, lower: lower };
+    }
+
+    var rsi = rsiCalc(closes, 14);
+    var stoch = stochastic(data, 14, 3);
+    var macd = macdCalc(closes);
+    var ma50 = sma(closes, 50);
+    var ma200arr = sma(closes, 50); // placeholder overwritten below with real 200 if enough data
+    var ma200 = sma(closes, Math.min(200, closes.length - 1));
+    var bb = bollinger(closes, 20, 2);
+
+    var last = closes.length - 1;
+    var cmp = closes[last];
+    var rsiLast = rsi[last];
+    var stochKLast = stoch.k[last];
+    var stochDLast = stoch.d[last];
+    var macdLast = macd.macd[last];
+    var macdSignalLast = macd.signal[last];
+    var ma50Last = ma50[last];
+    var ma200Last = ma200[last];
+    var bbUpper = bb.upper[last];
+    var bbLower = bb.lower[last];
+    var bbMid = bb.mid[last];
+
+    // ---- 3. Signal scoring ----
+    var score = 0;
+    var signals = [];
+
+    // RSI
+    var rsiSignal = "hold", rsiNote = "Neutral zone (30-70)";
+    if (rsiLast < 30) { rsiSignal = "buy"; rsiNote = "Oversold - potential bounce"; score += 1; }
+    else if (rsiLast > 70) { rsiSignal = "sell"; rsiNote = "Overbought - potential pullback"; score -= 1; }
+    else if (rsiLast < 45) { rsiNote = "Leaning weak"; score -= 0.3; }
+    else if (rsiLast > 55) { rsiNote = "Leaning strong"; score += 0.3; }
+
+    // Stochastic
+    var stochSignal = "hold", stochNote = "Neutral";
+    if (stochKLast < 20) { stochSignal = "buy"; stochNote = "Oversold, watch for %K crossing %D up"; score += 1; }
+    else if (stochKLast > 80) { stochSignal = "sell"; stochNote = "Overbought, watch for %K crossing %D down"; score -= 1; }
+    else if (stochKLast > stochDLast) { stochNote = "%K above %D - mild bullish"; score += 0.3; }
+    else { stochNote = "%K below %D - mild bearish"; score -= 0.3; }
+
+    // MACD
+    var macdSignal = "hold", macdNote = "Flat momentum";
+    if (macdLast > macdSignalLast && macdLast > 0) { macdSignal = "buy"; macdNote = "Bullish crossover above zero"; score += 1; }
+    else if (macdLast < macdSignalLast && macdLast < 0) { macdSignal = "sell"; macdNote = "Bearish crossover below zero"; score -= 1; }
+    else if (macdLast > macdSignalLast) { macdNote = "Bullish crossover, below zero line"; score += 0.4; }
+    else { macdNote = "Bearish crossover, above zero line"; score -= 0.4; }
+
+    // MA 50 vs 200
+    var maSignal = "hold", maNote = "50-DMA and 200-DMA close together";
+    if (ma50Last > ma200Last) { maSignal = "buy"; maNote = "Golden cross zone - 50-DMA above 200-DMA"; score += 1; }
+    else { maSignal = "sell"; maNote = "Death cross zone - 50-DMA below 200-DMA"; score -= 1; }
+
+    // Bollinger
+    var bbSignal = "hold", bbNote = "Trading within bands";
+    if (cmp <= bbLower) { bbSignal = "buy"; bbNote = "Near lower band - potential support"; score += 1; }
+    else if (cmp >= bbUpper) { bbSignal = "sell"; bbNote = "Near upper band - potential resistance"; score -= 1; }
+
+    // Price vs 200 DMA
+    var dma200Signal = "hold", dma200Note = "Near 200-DMA";
+    if (cmp > ma200Last * 1.02) { dma200Signal = "buy"; dma200Note = "Trading well above 200-DMA - uptrend"; score += 0.5; }
+    else if (cmp < ma200Last * 0.98) { dma200Signal = "sell"; dma200Note = "Trading well below 200-DMA - downtrend"; score -= 0.5; }
+
+    var overall = "HOLD";
+    if (score >= 1.5) overall = "STRONG BUY";
+    else if (score >= 0.6) overall = "BUY";
+    else if (score <= -1.5) overall = "STRONG SELL";
+    else if (score <= -0.6) overall = "SELL";
+
+    var overallColor = overall.indexOf("BUY") >= 0 ? "var(--green)" : (overall.indexOf("SELL") >= 0 ? "var(--red)" : "var(--yellow)");
+
+    // Support / resistance from Bollinger + recent swing
+    var recentLows = data.slice(-20).map(function(d) { return d.low; });
+    var recentHighs = data.slice(-20).map(function(d) { return d.high; });
+    var support = Math.min(bbLower, Math.min.apply(null, recentLows));
+    var resistance = Math.max(bbUpper, Math.max.apply(null, recentHighs));
+
+    // ---- 4. Render ----
+    function badge(el, signal) {
+      var map = { buy: ["BUY", "buy"], sell: ["SELL", "sell"], hold: ["HOLD", "hold"] };
+      el.innerHTML = '<span class="badge ' + map[signal][1] + '">' + map[signal][0] + '</span>';
+    }
+
+    document.getElementById("cmp").textContent = "Rs " + cmp.toFixed(2);
+    document.getElementById("rsiVal").textContent = rsiLast.toFixed(1);
+    document.getElementById("macdVal").textContent = macdLast.toFixed(2);
+    document.getElementById("stochVal").textContent = stochKLast.toFixed(1);
+
+    document.getElementById("overallSignal").textContent = overall;
+    document.getElementById("overallSignal").style.color = overallColor;
+    document.getElementById("priceTarget").textContent = "Entry near Rs " + support.toFixed(0) + " | Exit near Rs " + resistance.toFixed(0);
+
+    document.getElementById("rsiNote").textContent = rsiNote;
+    badge(document.getElementById("rsiBadge"), rsiSignal);
+    document.getElementById("stochNote").textContent = stochNote;
+    badge(document.getElementById("stochBadge"), stochSignal);
+    document.getElementById("macdNote").textContent = macdNote;
+    badge(document.getElementById("macdBadge"), macdSignal);
+
+    document.getElementById("maNote").textContent = maNote;
+    badge(document.getElementById("maBadge"), maSignal);
+    document.getElementById("bbNote").textContent = bbNote;
+    badge(document.getElementById("bbBadge"), bbSignal);
+    document.getElementById("dma200Note").textContent = dma200Note;
+    badge(document.getElementById("dma200Badge"), dma200Signal);
+
+    document.getElementById("supportVal").textContent = "Rs " + support.toFixed(0);
+    document.getElementById("resistVal").textContent = "Rs " + resistance.toFixed(0);
+
+    // ---- Chart ----
+    var ctx = document.getElementById("priceChart").getContext("2d");
+    if (chartInstance) { chartInstance.destroy(); }
+    chartInstance = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.map(function(d) { return "D" + d.day; }),
+        datasets: [
+          { label: "Close", data: closes, borderColor: "#6366f1", borderWidth: 2, pointRadius: 0, tension: 0.15 },
+          { label: "50-DMA", data: ma50, borderColor: "#3b82f6", borderWidth: 1.3, pointRadius: 0, tension: 0.1 },
+          { label: "BB Upper", data: bb.upper, borderColor: "rgba(239,68,68,0.5)", borderWidth: 1, pointRadius: 0, borderDash: [4,4] },
+          { label: "BB Lower", data: bb.lower, borderColor: "rgba(34,197,94,0.5)", borderWidth: 1, pointRadius: 0, borderDash: [4,4] }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { labels: { color: "#8a90a2", boxWidth: 12, font: { size: 10 } } }
+        },
+        scales: {
+          x: { display: false },
+          y: { ticks: { color: "#8a90a2", font: { size: 10 } }, grid: { color: "#262b36" } }
+        }
+      }
+    });
+
+  } catch (err) {
+    setStatus("Error analyzing data: " + err.message, true);
+  }
+}
+
+function initApp() {
+  if (window.__taInit) return;
+  window.__taInit = true;
+  var btn = document.getElementById("analyzeBtn");
+  var input = document.getElementById("symbolInput");
+  btn.addEventListener("click", function() {
+    var sym = (input.value || "").trim().toUpperCase();
+    if (!sym) { setStatus("Enter a stock symbol first.", true); return; }
+    runAnalysis(sym);
+  });
+  input.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") btn.click();
+  });
+  // Load default symbol on first open
+  runAnalysis(input.value.trim().toUpperCase());
+}
+
+// Triple-redundant init for iOS Safari
+if (document.readyState === "complete" || document.readyState === "interactive") {
+  setTimeout(initApp, 1);
+} else {
+  document.addEventListener("DOMContentLoaded", initApp);
+}
+window.addEventListener("load", initApp);
+</script>
+
+</body>
+</html>
