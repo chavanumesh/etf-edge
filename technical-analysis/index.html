@@ -169,17 +169,39 @@ function setStatus(msg, isError) {
 // ---- Fetch real price data from Yahoo Finance (free, no key) ----
 async function fetchStockData(symbol) {
   var directUrl = "https://query1.finance.yahoo.com/v8/finance/chart/" + encodeURIComponent(symbol) + "?range=1y&interval=1d";
-  var proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(directUrl);
-  var res;
+  var proxies = [
+    "https://corsproxy.io/?url=" + encodeURIComponent(directUrl),
+    "https://api.allorigins.win/raw?url=" + encodeURIComponent(directUrl),
+    "https://thingproxy.freeboard.io/fetch/" + directUrl
+  ];
+
+  var lastError = null;
+
+  // Try direct first (works on some networks/browsers)
   try {
-    res = await fetch(directUrl);
-    if (!res.ok) throw new Error("direct fetch failed");
-  } catch (e) {
-    res = await fetch(proxyUrl);
+    var res = await fetch(directUrl, { mode: "cors" });
+    if (res.ok) {
+      var json = await res.json();
+      if (json && json.chart && json.chart.result) return parseYahooJson(json, symbol);
+    }
+  } catch (e) { lastError = e; }
+
+  // Try each proxy in order
+  for (var i = 0; i < proxies.length; i++) {
+    try {
+      var res2 = await fetch(proxies[i]);
+      if (!res2.ok) continue;
+      var text = await res2.text();
+      var json2 = JSON.parse(text);
+      if (json2 && json2.chart && json2.chart.result) return parseYahooJson(json2, symbol);
+    } catch (e) { lastError = e; }
   }
-  if (!res.ok) throw new Error("Could not fetch data for " + symbol + ". Check the symbol and try again.");
-  var json = await res.json();
-  var result = json.chart && json.chart.result && json.chart.result[0];
+
+  throw new Error("Could not load data for " + symbol + ". This can happen if your network blocks these data sources, or the symbol is wrong. Try switching from WiFi to mobile data (or vice versa), or double check the symbol.");
+}
+
+function parseYahooJson(json, symbol) {
+  var result = json.chart.result[0];
   if (!result) throw new Error("No data found for " + symbol + ". Check the symbol (NSE stocks need .NS suffix).");
   var timestamps = result.timestamp;
   var quote = result.indicators.quote[0];
