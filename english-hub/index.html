@@ -1,6 +1,501 @@
-english-hub/
-├── index.html
-├── manifest.json
-└── icons/
-    ├── icon-192.png
-    └── icon-512.png
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Learning Hub</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="English Hub">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+  :root{
+    --font-scale:1;
+    --bg:#fdfaf3; --card:#ffffff; --text:#2b2b2b; --primary:#2563eb; --primary-dark:#1d4ed8;
+    --good:#15803d; --bad:#b91c1c; --border:#d8d2c2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:Georgia, 'Times New Roman', serif;
+    background:var(--bg); color:var(--text);
+    font-size:calc(18px * var(--font-scale));
+    line-height:1.5;
+  }
+  .wrap{max-width:700px; margin:0 auto; padding:20px 16px 60px;}
+  h1{font-size:calc(1.6em); text-align:center; color:var(--primary-dark); margin-bottom:4px;}
+  .subtitle{text-align:center; color:#666; margin-top:0; margin-bottom:20px; font-size:0.9em;}
+  .card{
+    background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:22px; margin-bottom:18px; box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  }
+  .btn{
+    display:inline-block; background:var(--primary); color:#fff; border:none;
+    padding:14px 22px; border-radius:10px; font-size:calc(1em); cursor:pointer;
+    margin:6px 6px 6px 0; font-family:inherit; min-width:120px;
+  }
+  .btn:hover{background:var(--primary-dark);}
+  .btn.secondary{background:#6b7280;}
+  .btn.big{width:100%; font-size:1.1em; padding:16px;}
+  .btn.correct{background:var(--good);}
+  .btn.wrong{background:var(--bad);}
+  .choice-btn{
+    display:block; width:100%; text-align:left; background:#f3f1e9; color:var(--text);
+    border:2px solid var(--border); padding:14px; border-radius:10px; margin:8px 0;
+    font-size:1em; cursor:pointer; font-family:inherit;
+  }
+  .choice-btn:hover{border-color:var(--primary);}
+  .choice-btn.selected{border-color:var(--primary); background:#e0e9ff;}
+  .choice-btn.correct{background:#dcfce7; border-color:var(--good);}
+  .choice-btn.wrong{background:#fee2e2; border-color:var(--bad);}
+  input[type=text], textarea, select{
+    width:100%; padding:12px; font-size:1em; border:2px solid var(--border);
+    border-radius:10px; font-family:inherit; margin:6px 0 14px;
+  }
+  label{font-weight:bold; display:block; margin-top:14px;}
+  .progress{height:10px; background:#e5e0d0; border-radius:6px; overflow:hidden; margin:10px 0;}
+  .progress-fill{height:100%; background:var(--primary); transition:width .3s;}
+  .badge{display:inline-block; background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:8px; font-size:0.85em; margin-right:6px;}
+  .feedback{padding:14px; border-radius:10px; margin-top:12px;}
+  .feedback.ok{background:#dcfce7; color:#14532d;}
+  .feedback.no{background:#fee2e2; color:#7f1d1d;}
+  .controls-row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
+  .speak-btn{background:#f59e0b;}
+  .speak-btn:hover{background:#d97706;}
+  .top-controls{display:flex; justify-content:flex-end; gap:8px; margin-bottom:10px;}
+  .icon-btn{
+    background:#eee; border:1px solid var(--border); border-radius:8px; padding:8px 12px;
+    cursor:pointer; font-size:0.9em;
+  }
+  .hidden{display:none !important;}
+  .score-line{font-size:1.1em; font-weight:bold; margin:10px 0;}
+  footer{text-align:center; color:#999; font-size:0.8em; margin-top:30px;}
+  .high-contrast{--bg:#000; --card:#111; --text:#fff; --border:#555; --primary:#3b82f6;}
+  .high-contrast .choice-btn{background:#1f1f1f; color:#fff;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top-controls">
+    <button class="icon-btn" id="fontDown">A-</button>
+    <button class="icon-btn" id="fontUp">A+</button>
+    <button class="icon-btn" id="contrastToggle">Contrast</button>
+  </div>
+  <h1>🌤️ English Learning Hub</h1>
+  <p class="subtitle">Learn to read, write and speak English — one gentle step at a time.</p>
+
+  <!-- ONBOARDING -->
+  <div id="onboarding" class="card">
+    <h2>Welcome! Let's set things up.</h2>
+    <label for="level">1. What is your current English level?</label>
+    <select id="level">
+      <option value="beginner">Beginner — I know a few words</option>
+      <option value="intermediate">Intermediate — I can make simple sentences</option>
+      <option value="advanced">Advanced — I can hold a conversation</option>
+      <option value="unsure">Not sure — please guide me</option>
+    </select>
+
+    <label for="goal">2. What is your main goal?</label>
+    <select id="goal">
+      <option value="conversation">Daily conversation</option>
+      <option value="speaking">Speaking confidence</option>
+      <option value="writing">Writing</option>
+      <option value="travel">Travel</option>
+      <option value="letters">Formal letters</option>
+    </select>
+
+    <label for="pace">3. Preferences</label>
+    <div class="controls-row">
+      <select id="fontpref" style="flex:1;">
+        <option value="1">Normal font</option>
+        <option value="1.25">Large font</option>
+        <option value="1.5">Extra-large font</option>
+      </select>
+      <select id="pace" style="flex:1;">
+        <option value="0.8">Slow speech</option>
+        <option value="1">Normal speech</option>
+      </select>
+    </div>
+    <button class="btn big" id="startBtn">Start Learning →</button>
+  </div>
+
+  <!-- HOME / DASHBOARD -->
+  <div id="dashboard" class="card hidden">
+    <h2>Hello! 👋</h2>
+    <p id="dashSummary"></p>
+    <div class="progress"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <p id="progressText" style="font-size:0.9em; color:#666;"></p>
+    <h3>Choose a topic</h3>
+    <div id="topicList"></div>
+    <button class="btn secondary" id="resetProgressBtn">Reset my progress</button>
+  </div>
+
+  <!-- LESSON AREA -->
+  <div id="lessonArea" class="hidden"></div>
+
+</div>
+<footer>Made for you, with patience. 🌼</footer>
+
+<script>
+/* ---------------- DATA ---------------- */
+const CURRICULUM = {
+  beginner: [
+    {
+      id: "greetings",
+      title: "Greetings & Introducing Yourself",
+      teach: [
+        "Hello. My name is Asha.",
+        "Good morning! How are you?",
+        "I am fine, thank you.",
+        "I live in Mumbai.",
+        "Nice to meet you."
+      ],
+      questions: [
+        {type:"mcq", q:"Choose the correct greeting for morning.", options:["Good night","Good morning","Good bye","Good food"], answer:1, explain:"We say 'Good morning' when we meet someone early in the day."},
+        {type:"fill", q:"My name ___ Asha.", answer:"is", explain:"Use 'is' with 'name' because it is singular."},
+        {type:"tf", q:"'Nice to meet you' is used when you see someone for the first time.", answer:true, explain:"Correct! We say this when meeting someone new."}
+      ],
+      roleplay: {
+        scenario: "You are at the doctor's office. The nurse asks: 'How are you feeling today?'",
+        prompt: "Type your reply as if you are speaking to the nurse.",
+        keywords: ["fine","good","well","okay","not well","tired","pain"]
+      }
+    },
+    {
+      id: "family",
+      title: "Talking About Family",
+      teach: [
+        "This is my son. His name is Raj.",
+        "I have two daughters.",
+        "My husband works in Pune.",
+        "We live together.",
+        "My grandchildren visit every Sunday."
+      ],
+      questions: [
+        {type:"mcq", q:"Choose the correct sentence.", options:["I have two daughter.","I have two daughters.","I has two daughters.","I have two daughterz."], answer:1, explain:"Add 's' to make 'daughter' plural: daughters."},
+        {type:"fill", q:"My husband ___ in Pune.", answer:"works", explain:"Use 'works' with he/she/it (singular)."},
+        {type:"tf", q:"'Grandchildren' means the children of your children.", answer:true, explain:"Yes, that is correct."}
+      ],
+      roleplay: {
+        scenario: "A new neighbour asks: 'Do you have children?'",
+        prompt: "Type your reply describing your family in 1-2 sentences.",
+        keywords: ["son","daughter","children","husband","wife","grandchildren"]
+      }
+    }
+  ],
+  intermediate: [
+    {
+      id: "shopping",
+      title: "Shopping & Asking Prices",
+      teach: [
+        "Excuse me, how much does this cost?",
+        "That is quite expensive.",
+        "Do you have a smaller size?",
+        "Can I pay by card?",
+        "Thank you, I will take this one."
+      ],
+      questions: [
+        {type:"mcq", q:"Which question asks about price?", options:["How much does this cost?","How old is this?","Where is this from?","How many are these?"], answer:0, explain:"'How much' is used to ask about price."},
+        {type:"fill", q:"Can I pay ___ card?", answer:"by", explain:"We say 'pay by card' or 'pay by cash'."},
+        {type:"tf", q:"'Expensive' means the price is low.", answer:false, explain:"'Expensive' means the price is high. Low price is 'cheap' or 'affordable'."}
+      ],
+      roleplay: {
+        scenario: "You are at a shop. The shopkeeper says: 'This shirt is 800 rupees.'",
+        prompt: "Type how you would respond — maybe ask for a discount or a different size.",
+        keywords: ["discount","cheaper","size","expensive","take","buy"]
+      }
+    }
+  ],
+  advanced: [
+    {
+      id: "opinions",
+      title: "Expressing Opinions Politely",
+      teach: [
+        "In my opinion, that is a good idea.",
+        "I understand your point, but I see it differently.",
+        "I would suggest considering another option.",
+        "I'm not entirely convinced about that.",
+        "That's a fair point, however..."
+      ],
+      questions: [
+        {type:"mcq", q:"Which phrase politely disagrees?", options:["You are wrong.","I see it differently.","That's stupid.","No, never."], answer:1, explain:"'I see it differently' disagrees politely without being harsh."},
+        {type:"fill", q:"I would ___ considering another option.", answer:"suggest", explain:"'Suggest' is the polite word for offering an idea."},
+        {type:"tf", q:"'That's a fair point, however...' means you fully agree with no concerns.", answer:false, explain:"It means you accept part of the point but still have a concern, shown by 'however'."}
+      ],
+      roleplay: {
+        scenario: "A friend says: 'I think we should sell the family house.'",
+        prompt: "Type a polite response giving your own opinion.",
+        keywords: ["opinion","think","understand","however","agree","disagree"]
+      }
+    }
+  ]
+};
+
+/* ---------------- STATE ---------------- */
+const STORAGE_KEY = "englishHub_progress_v1";
+let state = {
+  level: "beginner",
+  goal: "conversation",
+  fontScale: 1,
+  pace: 1,
+  completedTopics: {},   // {topicId: {score, total}}
+};
+
+function loadState(){
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if(saved){
+    try{ state = {...state, ...JSON.parse(saved)}; }catch(e){}
+  }
+}
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+/* ---------------- SPEECH ---------------- */
+function speak(text, rate){
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = rate || state.pace || 1;
+  u.pitch = 1;
+  u.lang = "en-US";
+  window.speechSynthesis.speak(u);
+}
+
+/* ---------------- FONT / CONTRAST ---------------- */
+function applyFont(){
+  document.documentElement.style.setProperty('--font-scale', state.fontScale);
+}
+document.getElementById('fontUp').onclick = ()=>{ state.fontScale = Math.min(1.8, state.fontScale + 0.1); applyFont(); saveState(); };
+document.getElementById('fontDown').onclick = ()=>{ state.fontScale = Math.max(0.9, state.fontScale - 0.1); applyFont(); saveState(); };
+document.getElementById('contrastToggle').onclick = ()=>{ document.body.classList.toggle('high-contrast'); };
+
+/* ---------------- ONBOARDING ---------------- */
+document.getElementById('startBtn').onclick = ()=>{
+  state.level = document.getElementById('level').value;
+  if(state.level === 'unsure') state.level = 'beginner';
+  state.goal = document.getElementById('goal').value;
+  state.fontScale = parseFloat(document.getElementById('fontpref').value);
+  state.pace = parseFloat(document.getElementById('pace').value);
+  applyFont();
+  saveState();
+  document.getElementById('onboarding').classList.add('hidden');
+  showDashboard();
+};
+
+/* ---------------- DASHBOARD ---------------- */
+function showDashboard(){
+  document.getElementById('lessonArea').classList.add('hidden');
+  document.getElementById('lessonArea').innerHTML = '';
+  const dash = document.getElementById('dashboard');
+  dash.classList.remove('hidden');
+  document.getElementById('dashSummary').innerHTML =
+    `Level: <span class="badge">${cap(state.level)}</span> Goal: <span class="badge">${cap(state.goal)}</span>`;
+
+  const topics = CURRICULUM[state.level] || [];
+  const done = topics.filter(t => state.completedTopics[t.id]).length;
+  const pct = topics.length ? Math.round((done/topics.length)*100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${done} of ${topics.length} topics completed`;
+
+  const list = document.getElementById('topicList');
+  list.innerHTML = '';
+  topics.forEach(t=>{
+    const done = state.completedTopics[t.id];
+    const btn = document.createElement('button');
+    btn.className = 'btn big' + (done ? ' correct' : '');
+    btn.textContent = (done ? '✓ ' : '') + t.title + (done ? ` (Score: ${done.score}/${done.total})` : '');
+    btn.onclick = ()=> startLesson(t);
+    list.appendChild(btn);
+  });
+
+  document.getElementById('resetProgressBtn').onclick = ()=>{
+    if(confirm('Reset all your progress?')){
+      state.completedTopics = {};
+      saveState();
+      showDashboard();
+    }
+  };
+}
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+/* ---------------- LESSON FLOW ---------------- */
+function startLesson(topic){
+  document.getElementById('dashboard').classList.add('hidden');
+  const area = document.getElementById('lessonArea');
+  area.classList.remove('hidden');
+
+  let step = 0; // 0 = teach, 1..N = questions, last = roleplay, then summary
+  let score = 0;
+  const totalScored = topic.questions.length + 1; // +1 for roleplay
+
+  renderTeach();
+
+  function renderTeach(){
+    area.innerHTML = `
+      <div class="card">
+        <h2>${topic.title}</h2>
+        <p style="color:#666;">Level: ${cap(state.level)} · Step 1: Learn</p>
+        <div id="teachLines"></div>
+        <button class="btn big" id="toPractice">Start Practice →</button>
+        <button class="btn secondary" id="backDash">← Back to menu</button>
+      </div>`;
+    const linesDiv = document.getElementById('teachLines');
+    topic.teach.forEach(line=>{
+      const row = document.createElement('div');
+      row.style.margin = '10px 0';
+      row.innerHTML = `<span style="font-size:1.05em;">${line}</span> `;
+      const sp = document.createElement('button');
+      sp.className = 'btn speak-btn';
+      sp.textContent = '🔊 Listen';
+      sp.style.padding = '6px 12px';
+      sp.style.fontSize = '0.85em';
+      sp.onclick = ()=> speak(line);
+      row.appendChild(sp);
+      linesDiv.appendChild(row);
+    });
+    document.getElementById('toPractice').onclick = ()=>{ step = 1; renderQuestion(); };
+    document.getElementById('backDash').onclick = showDashboard;
+  }
+
+  function renderQuestion(){
+    const q = topic.questions[step-1];
+    if(!q){ renderRoleplay(); return; }
+    area.innerHTML = `
+      <div class="card">
+        <p style="color:#666;">Step 2: Practice — Question ${step} of ${topic.questions.length}</p>
+        <h3>${q.q}</h3>
+        <div id="qBody"></div>
+        <div id="qFeedback"></div>
+      </div>`;
+    const body = document.getElementById('qBody');
+
+    if(q.type === 'mcq'){
+      q.options.forEach((opt,i)=>{
+        const b = document.createElement('button');
+        b.className = 'choice-btn';
+        b.textContent = opt;
+        b.onclick = ()=> answerMCQ(i, q, body);
+        body.appendChild(b);
+      });
+    } else if(q.type === 'fill'){
+      body.innerHTML = `<input type="text" id="fillInput" placeholder="Type the missing word"><button class="btn" id="fillSubmit">Check</button>`;
+      document.getElementById('fillSubmit').onclick = ()=> answerFill(q, body);
+    } else if(q.type === 'tf'){
+      const b1 = document.createElement('button'); b1.className='choice-btn'; b1.textContent='True';
+      const b2 = document.createElement('button'); b2.className='choice-btn'; b2.textContent='False';
+      b1.onclick = ()=> answerTF(true, q, body);
+      b2.onclick = ()=> answerTF(false, q, body);
+      body.appendChild(b1); body.appendChild(b2);
+    }
+  }
+
+  function showFeedback(correct, explain){
+    const fb = document.getElementById('qFeedback');
+    fb.innerHTML = `<div class="feedback ${correct?'ok':'no'}">${correct? '✅ Correct! ' : '❌ Not quite. '} ${explain}</div>
+      <button class="btn big" id="nextQ">Next →</button>`;
+    if(correct) score++;
+    document.getElementById('nextQ').onclick = ()=>{ step++; renderQuestion(); };
+  }
+
+  function answerMCQ(i, q, body){
+    [...body.children].forEach((btn,idx)=>{
+      btn.disabled = true;
+      if(idx === q.answer) btn.classList.add('correct');
+      else if(idx === i) btn.classList.add('wrong');
+    });
+    showFeedback(i === q.answer, q.explain);
+  }
+  function answerFill(q, body){
+    const val = document.getElementById('fillInput').value.trim().toLowerCase();
+    const correct = val === q.answer.toLowerCase();
+    body.innerHTML += '';
+    showFeedback(correct, q.explain + (correct? '' : ` Correct answer: "${q.answer}".`));
+  }
+  function answerTF(val, q, body){
+    [...body.children].forEach(btn=> btn.disabled = true);
+    showFeedback(val === q.answer, q.explain);
+  }
+
+  function renderRoleplay(){
+    area.innerHTML = `
+      <div class="card">
+        <p style="color:#666;">Step 3: Roleplay</p>
+        <h3>Scenario</h3>
+        <p style="font-size:1.05em;">${topic.roleplay.scenario}
+          <button class="btn speak-btn" style="padding:6px 12px; font-size:0.85em;" id="playScenario">🔊 Listen</button>
+        </p>
+        <label>${topic.roleplay.prompt}</label>
+        <textarea id="roleplayInput" rows="3" placeholder="Type your reply here..."></textarea>
+        <button class="btn big" id="submitRoleplay">Submit Reply</button>
+        <div id="roleplayFeedback"></div>
+      </div>`;
+    document.getElementById('playScenario').onclick = ()=> speak(topic.roleplay.scenario);
+    document.getElementById('submitRoleplay').onclick = ()=>{
+      const val = document.getElementById('roleplayInput').value.trim();
+      const fb = document.getElementById('roleplayFeedback');
+      if(val.length < 2){
+        fb.innerHTML = `<div class="feedback no">Please type a short reply first.</div>`;
+        return;
+      }
+      const lower = val.toLowerCase();
+      const usedKeyword = topic.roleplay.keywords.some(k => lower.includes(k));
+      const isFullSentence = val.trim().split(' ').length >= 3;
+      let comment = '';
+      if(usedKeyword && isFullSentence){
+        comment = "Good! You used relevant words and a full sentence.";
+        score++;
+      } else if(usedKeyword){
+        comment = "Good vocabulary! Try to answer in a full sentence next time.";
+        score += 0.5;
+      } else {
+        comment = "Nice attempt. Try including words related to the topic, in a full sentence.";
+      }
+      fb.innerHTML = `
+        <div class="feedback ${usedKeyword ? 'ok' : 'no'}">
+          <b>Your reply:</b> "${escapeHtml(val)}"<br><br>
+          ${comment}<br><br>
+          <b>Two example replies:</b><br>
+          • Simple: "${topic.teach[0]}"<br>
+          • Natural: "${topic.roleplay.keywords.slice(0,2).join(', ')} — try weaving these words into a full sentence."
+        </div>
+        <button class="btn big" id="finishLesson">See My Score →</button>`;
+      document.getElementById('finishLesson').onclick = renderSummary;
+    };
+  }
+
+  function renderSummary(){
+    const total = totalScored;
+    state.completedTopics[topic.id] = {score: Math.round(score*10)/10, total};
+    saveState();
+    area.innerHTML = `
+      <div class="card">
+        <h2>🎉 Well done!</h2>
+        <p class="score-line">Your score: ${Math.round(score*10)/10} / ${total}</p>
+        <p><b>Homework suggestion:</b> Say these sentences aloud twice each:</p>
+        <ul>${topic.teach.map(l=>`<li>${l}</li>`).join('')}</ul>
+        <button class="btn big" id="toDash">Back to Menu</button>
+        <button class="btn secondary" id="repeatLesson">Repeat this lesson</button>
+      </div>`;
+    document.getElementById('toDash').onclick = showDashboard;
+    document.getElementById('repeatLesson').onclick = ()=> startLesson(topic);
+  }
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------------- INIT ---------------- */
+loadState();
+applyFont();
+if(Object.keys(state.completedTopics).length > 0 || localStorage.getItem(STORAGE_KEY)){
+  // returning user who already onboarded once -> skip straight to dashboard if we have level saved
+}
+// Always show onboarding first for clarity/simplicity (user can redo preferences anytime)
+</script>
+</body>
+</html>
