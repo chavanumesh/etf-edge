@@ -345,6 +345,7 @@
   </div>
 
   <footer>
+    <button class="gear" id="historyBtn" style="margin-right:8px;">History</button>
     <button class="gear" id="settingsBtn">Settings</button>
     <div style="color:var(--muted); font-size:11px; margin-top:8px;">Last export: <span id="lastExportLabel">never</span></div>
   </footer>
@@ -368,6 +369,29 @@
     <button class="btn danger" id="wipeBtn" style="margin-top:10px;">Erase all data</button>
     <p style="font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5;">
       Data is stored only on this device (localStorage). No server, no upload. Add this page to your Home Screen for the most reliable experience on iPhone.
+    </p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="historyOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeHistory">&times;</button>
+    <h3>History</h3>
+    <div class="form-row">
+      <label>View mode</label>
+      <select id="historyMode">
+        <option value="day">Single day</option>
+        <option value="week">Week (7 days ending on a date)</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label for="historyDate">Pick a date</label>
+      <input type="date" id="historyDate">
+    </div>
+    <button class="btn secondary" id="historyGoBtn">Show</button>
+    <div id="historyResult" style="margin-top:16px;"></div>
+    <p style="font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5;">
+      Covers the last 30 days plus any archived months. This view only reads your saved data -- nothing is changed or deleted here.
     </p>
   </div>
 </div>
@@ -868,6 +892,75 @@
     });
   }
 
+  // ---------- History (read-only lookup, never modifies stored data) ----------
+  function getAllKnownEntries(){
+    // Combines active 30-day entries with archived entries, purely for reading/display.
+    var all = entries.slice();
+    Object.keys(archive).forEach(function(mk){
+      all = all.concat(archive[mk]);
+    });
+    return all;
+  }
+
+  function addDaysISO(dateISO, delta){
+    var d = new Date(dateISO + 'T00:00:00');
+    d.setDate(d.getDate() + delta);
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var day = String(d.getDate()).padStart(2,'0');
+    return y + '-' + m + '-' + day;
+  }
+
+  function renderHistoryEntries(list, headingText){
+    var container = document.getElementById('historyResult');
+    var total = list.reduce(function(sum, e){ return sum + e.amount; }, 0);
+    var html = '<div class="card" style="margin-bottom:0;">';
+    html += '<h2>' + escapeHtml(headingText) + '</h2>';
+    html += '<div style="font-size:22px; font-weight:800; margin-bottom:10px;">Rs ' + total.toFixed(2) + '</div>';
+    if(list.length === 0){
+      html += '<div class="empty">No expenses recorded for this period.</div>';
+    }else{
+      var sorted = list.slice().sort(function(a,b){ return a.timeISO.localeCompare(b.timeISO); });
+      sorted.forEach(function(e){
+        var timeLabel = new Date(e.timeISO).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+        html += '<div class="entry"><div class="time">' + e.dateISO.slice(5) + '</div>' +
+          '<div class="mid"><span class="amt">Rs ' + e.amount.toFixed(2) + '</span>' +
+          '<span class="badge">' + escapeHtml(e.category) + '</span>' +
+          (e.note ? '<div class="note">' + escapeHtml(e.note) + '</div>' : '') +
+          '</div></div>';
+      });
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  function showHistory(){
+    var mode = document.getElementById('historyMode').value;
+    var dateVal = document.getElementById('historyDate').value;
+    if(!dateVal){
+      alert('Please pick a date first.');
+      return;
+    }
+    var all = getAllKnownEntries();
+    if(mode === 'day'){
+      var dayList = all.filter(function(e){ return e.dateISO === dateVal; });
+      renderHistoryEntries(dayList, dateVal);
+    }else{
+      var startISO = addDaysISO(dateVal, -6);
+      var weekList = all.filter(function(e){ return e.dateISO >= startISO && e.dateISO <= dateVal; });
+      renderHistoryEntries(weekList, startISO + ' to ' + dateVal);
+    }
+  }
+
+  function openHistory(){
+    document.getElementById('historyDate').value = todayISO();
+    document.getElementById('historyResult').innerHTML = '';
+    document.getElementById('historyOverlay').classList.add('show');
+  }
+  function closeHistoryModal(){
+    document.getElementById('historyOverlay').classList.remove('show');
+  }
+
   // ---------- Settings modal ----------
   function openSettings(){
     renderArchiveList();
@@ -896,6 +989,9 @@
     document.getElementById('addBtn').addEventListener('click', addExpense);
     document.getElementById('snackbarUndo').addEventListener('click', undoDelete);
     document.getElementById('settingsBtn').addEventListener('click', openSettings);
+    document.getElementById('historyBtn').addEventListener('click', openHistory);
+    document.getElementById('closeHistory').addEventListener('click', closeHistoryModal);
+    document.getElementById('historyGoBtn').addEventListener('click', showHistory);
     document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
     document.getElementById('manualExportBtn').addEventListener('click', manualExportAll);
     document.getElementById('wipeBtn').addEventListener('click', wipeAllData);
