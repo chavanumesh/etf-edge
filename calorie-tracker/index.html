@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BrioCal - Calorie & Weight Tracker</title>
+<style>
+:root{
+  --bg-color:#f7f9fc; --card-bg:#ffffff; --text-main:#2d3748; --text-muted:#718096;
+  --primary:#6c5ce7; --success:#00b894; --warning:#fdcb6e; --danger:#d63031; --border:#e2e8f0;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg-color);color:var(--text-main);padding:16px;padding-bottom:40px;}
+.app-container{max-width:480px;margin:0 auto;}
+.header{text-align:center;margin-bottom:16px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);padding:20px;border-radius:20px;color:#fff;box-shadow:0 8px 16px rgba(108,92,231,.2);}
+.header h1{font-size:24px;font-weight:800;}
+.header p{font-size:13px;opacity:.9;margin-top:4px;}
+
+/* Tabs */
+.tabs{display:flex;background:#fff;border-radius:14px;padding:4px;margin-bottom:16px;border:1px solid var(--border);}
+.tab-btn{flex:1;text-align:center;padding:10px;border:none;background:transparent;border-radius:10px;font-weight:700;font-size:13px;color:var(--text-muted);cursor:pointer;}
+.tab-btn.active{background:var(--primary);color:#fff;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.status-card{background:var(--card-bg);border-radius:20px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.05);margin-bottom:24px;border:1px solid var(--border);}
+.main-bar-container{background:#edf2f7;border-radius:12px;height:24px;width:100%;overflow:hidden;margin:15px 0;}
+.main-bar-fill{height:100%;width:0%;background:var(--success);transition:width .5s ease,background-color .3s ease;}
+.metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center;margin-top:10px;}
+.metric-num{font-size:20px;font-weight:700;}
+.metric-label{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;margin-top:2px;}
+
+.section-title{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;}
+.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:24px;}
+.quick-btn{background:var(--card-bg);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,.02);cursor:pointer;}
+.quick-btn:active{transform:scale(.97);background:#f7fafc;}
+.btn-emoji{font-size:26px;margin-right:12px;background:#f1f2f6;padding:6px;border-radius:12px;}
+.btn-info{display:flex;flex-direction:column;align-items:flex-start;}
+.btn-name{font-size:14px;font-weight:600;}
+.btn-cal{font-size:12px;color:var(--primary);font-weight:700;margin-top:2px;}
+
+.custom-box{background:var(--card-bg);border-radius:20px;padding:16px;border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.05);margin-bottom:24px;}
+.input-row{display:flex;gap:10px;margin-bottom:12px;}
+input,select{background:#edf2f7;border:1px solid transparent;padding:12px;border-radius:12px;font-size:16px;color:var(--text-main);outline:none;width:100%;}
+input:focus,select:focus{border-color:var(--primary);background:#fff;}
+#custom-name{flex:2;} #custom-cal{flex:1;}
+.add-btn{width:100%;background:var(--primary);color:#fff;border:none;padding:14px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;}
+
+.log-box{background:var(--card-bg);border-radius:20px;border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.05);max-height:320px;overflow-y:auto;}
+.log-item{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);}
+.log-item:last-child{border-bottom:none;}
+.item-text{font-size:14px;font-weight:600;}
+.item-time{font-size:11px;color:var(--text-muted);margin-top:2px;display:block;}
+.item-right{display:flex;align-items:center;gap:8px;}
+.item-cal{font-weight:700;background:#edf2f7;padding:4px 10px;border-radius:20px;font-size:13px;}
+.icon-btn{background:none;border:none;font-size:16px;cursor:pointer;padding:4px;}
+.clear-txt{color:var(--danger);font-size:13px;font-weight:600;background:none;border:none;cursor:pointer;}
+
+/* Weight tab */
+.weight-row{display:flex;gap:10px;margin-bottom:10px;}
+.weight-list-item{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
+.weight-list-item:last-child{border-bottom:none;}
+
+/* Trends */
+canvas{width:100%;height:180px;display:block;}
+.trend-legend{font-size:12px;color:var(--text-muted);margin-top:8px;text-align:center;}
+
+.edit-modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:99;}
+.edit-modal.show{display:flex;}
+.edit-box{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:360px;}
+.edit-box h3{margin-bottom:14px;font-size:16px;}
+.edit-actions{display:flex;gap:10px;margin-top:14px;}
+.edit-actions button{flex:1;padding:12px;border-radius:10px;border:none;font-weight:700;cursor:pointer;}
+.save-b{background:var(--primary);color:#fff;}
+.cancel-b{background:#edf2f7;color:var(--text-main);}
+</style>
+</head>
+<body>
+<div class="app-container">
+  <div class="header">
+    <h1>BrioCal Tracker</h1>
+    <p>Your 10-15 kg Weight Loss Companion</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="today">Today</button>
+    <button class="tab-btn" data-tab="weight">Weight</button>
+    <button class="tab-btn" data-tab="sleep">Sleep</button>
+    <button class="tab-btn" data-tab="trends">Trends</button>
+  </div>
+
+  <!-- TODAY TAB -->
+  <div class="tab-panel active" id="tab-today">
+    <div class="status-card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;">
+        <span style="font-size:14px;font-weight:600;color:var(--text-muted);">DAILY ENERGY STATUS</span>
+        <span id="status-text" style="font-size:14px;font-weight:700;color:var(--success);">Looking Great! 👍</span>
+      </div>
+      <div class="main-bar-container"><div class="main-bar-fill" id="progress-bar"></div></div>
+      <div class="metrics-grid">
+        <div><div class="metric-num" id="val-budget">2200</div><div class="metric-label">Goal Target</div></div>
+        <div><div class="metric-num" id="val-eaten" style="color:var(--primary);">0</div><div class="metric-label">Total Eaten</div></div>
+        <div><div class="metric-num" id="val-left" style="color:var(--success);">2200</div><div class="metric-label">Left to Eat</div></div>
+      </div>
+    </div>
+
+    <div class="section-title">Tap to Quick Add Food</div>
+    <div class="quick-grid">
+      <div class="quick-btn" onclick="hitQuick('🫓 Roti / Phulka',100)"><span class="btn-emoji">🫓</span><div class="btn-info"><span class="btn-name">Roti</span><span class="btn-cal">100 kcal</span></div></div>
+      <div class="quick-btn" onclick="hitQuick('🍚 Bowl of Rice',200)"><span class="btn-emoji">🍚</span><div class="btn-info"><span class="btn-name">Rice Cup</span><span class="btn-cal">200 kcal</span></div></div>
+      <div class="quick-btn" onclick="hitQuick('🥣 Lentil Dal',150)"><span class="btn-emoji">🥣</span><div class="btn-info"><span class="btn-name">Dal Katori</span><span class="btn-cal">150 kcal</span></div></div>
+      <div class="quick-btn" onclick="hitQuick('🥦 Veg Sabzi',130)"><span class="btn-emoji">🥦</span><div class="btn-info"><span class="btn-name">Veg Sabzi</span><span class="btn-cal">130 kcal</span></div></div>
+      <div class="quick-btn" onclick="hitQuick('🥚 Boiled Egg',78)"><span class="btn-emoji">🥚</span><div class="btn-info"><span class="btn-name">Boiled Egg</span><span class="btn-cal">78 kcal</span></div></div>
+      <div class="quick-btn" onclick="hitQuick('🧈 Cooking Oil/Ghee',120)"><span class="btn-emoji">🧈</span><div class="btn-info"><span class="btn-name">Oil / Ghee</span><span class="btn-cal">120 kcal</span></div></div>
+    </div>
+
+    <div class="section-title">Log Something Else</div>
+    <div class="custom-box">
+      <div class="input-row">
+        <input type="text" id="custom-name" placeholder="Food name (e.g., Poha)">
+        <input type="number" id="custom-cal" placeholder="Calories">
+      </div>
+      <button class="add-btn" onclick="hitCustom()">Add Meal Entry</button>
+    </div>
+
+    <div class="section-title"><span>Today's Plate</span><button class="clear-txt" onclick="resetDay()">Reset Day</button></div>
+    <div class="log-box" id="log-list-target"></div>
+  </div>
+
+  <!-- WEIGHT TAB -->
+  <div class="tab-panel" id="tab-weight">
+    <div class="custom-box">
+      <div class="section-title" style="margin-bottom:14px;">Log Today's Weight</div>
+      <div class="weight-row">
+        <input type="number" step="0.1" id="weight-input" placeholder="Weight in kg (e.g., 101.5)">
+      </div>
+      <button class="add-btn" onclick="addWeight()">Save Weight</button>
+    </div>
+    <div class="section-title">Weight History</div>
+    <div class="log-box" id="weight-list-target"></div>
+  </div>
+
+  <!-- SLEEP TAB -->
+  <div class="tab-panel" id="tab-sleep">
+    <div class="custom-box">
+      <div class="section-title" style="margin-bottom:14px;">Log Last Night's Sleep</div>
+      <div class="input-row">
+        <input type="number" step="0.5" id="sleep-hours" placeholder="Hours slept (e.g., 6.5)">
+      </div>
+      <div class="input-row">
+        <select id="sleep-quality">
+          <option value="Good">😴 Good</option>
+          <option value="Ok">🙂 Ok</option>
+          <option value="Poor">😵 Poor</option>
+        </select>
+      </div>
+      <button class="add-btn" onclick="addSleep()">Save Sleep</button>
+    </div>
+    <div class="section-title">Sleep History</div>
+    <div class="log-box" id="sleep-list-target"></div>
+  </div>
+
+  <!-- TRENDS TAB -->
+  <div class="tab-panel" id="tab-trends">
+    <div class="status-card">
+      <div class="section-title">Last 7 Days — Calories</div>
+      <canvas id="calChart"></canvas>
+      <div class="trend-legend">Green = under budget, Red = over budget</div>
+    </div>
+    <div class="status-card">
+      <div class="section-title">Weight Trend</div>
+      <canvas id="weightChart"></canvas>
+      <div class="trend-legend" id="weight-summary">Log weight regularly to see your trend</div>
+    </div>
+    <div class="status-card">
+      <div class="section-title">Sleep — Last 7 Days</div>
+      <canvas id="sleepChart"></canvas>
+      <div class="trend-legend">Green ≥7h, Yellow 6-7h, Red &lt;6h</div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="edit-modal" id="editModal">
+  <div class="edit-box">
+    <h3>Edit Entry</h3>
+    <div class="input-row" style="flex-direction:column;">
+      <input type="text" id="edit-name" style="margin-bottom:10px;">
+      <input type="number" id="edit-cal">
+    </div>
+    <div class="edit-actions">
+      <button class="cancel-b" onclick="closeEdit()">Cancel</button>
+      <button class="save-b" onclick="saveEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CALORIE_BUDGET = 2200;
+let editIndex = null;
+
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+
+// Data model: { "2026-07-11": [{title,cals,clock}], ... }
+let allLogs = JSON.parse(localStorage.getItem('brioCalLogsV2')) || {};
+let weightLog = JSON.parse(localStorage.getItem('brioWeightLog')) || [];
+let sleepLog = JSON.parse(localStorage.getItem('brioSleepLog')) || [];
+
+function saveLogs(){ localStorage.setItem('brioCalLogsV2', JSON.stringify(allLogs)); }
+function saveWeights(){ localStorage.setItem('brioWeightLog', JSON.stringify(weightLog)); }
+function saveSleep(){ localStorage.setItem('brioSleepLog', JSON.stringify(sleepLog)); }
+
+function getToday(){ return allLogs[todayKey()] || []; }
+function setToday(arr){ allLogs[todayKey()] = arr; saveLogs(); }
+
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='trends'){ drawCalChart(); drawWeightChart(); drawSleepChart(); }
+    if(btn.dataset.tab==='weight'){ renderWeightList(); }
+    if(btn.dataset.tab==='sleep'){ renderSleepList(); }
+  });
+});
+
+function getClockTime(){ return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+
+function renderApp(){
+  let dayLog = getToday();
+  let total = dayLog.reduce((s,i)=>s+i.cals,0);
+  let remaining = CALORIE_BUDGET - total;
+  let pct = Math.min((total/CALORIE_BUDGET)*100,100);
+
+  document.getElementById('val-eaten').innerText = total;
+  document.getElementById('val-left').innerText = remaining;
+
+  const bar = document.getElementById('progress-bar');
+  const statusTxt = document.getElementById('status-text');
+  const leftTxt = document.getElementById('val-left');
+  bar.style.width = pct+'%';
+
+  if(total===0){ bar.style.backgroundColor='var(--success)'; statusTxt.innerText="Ready to track! 🚀"; statusTxt.style.color='var(--text-muted)'; leftTxt.style.color='var(--success)'; }
+  else if(total<=CALORIE_BUDGET*0.75){ bar.style.backgroundColor='var(--success)'; statusTxt.innerText="Looking Great! 👍"; statusTxt.style.color='var(--success)'; leftTxt.style.color='var(--success)'; }
+  else if(total<=CALORIE_BUDGET){ bar.style.backgroundColor='var(--warning)'; statusTxt.innerText="Getting full! ⚠️"; statusTxt.style.color='#d5a100'; leftTxt.style.color='#d5a100'; }
+  else{ bar.style.backgroundColor='var(--danger)'; statusTxt.innerText="Over budget limit! 🛑"; statusTxt.style.color='var(--danger)'; leftTxt.style.color='var(--danger)'; }
+
+  const listEl = document.getElementById('log-list-target');
+  listEl.innerHTML='';
+  if(dayLog.length===0){
+    listEl.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:14px;">Your plate is empty. Tap foods above to eat!</div>';
+    return;
+  }
+  dayLog.forEach((item,idx)=>{
+    let row=document.createElement('div');
+    row.className='log-item';
+    row.innerHTML=`
+      <div>
+        <span class="item-text">${item.title}</span>
+        <span class="item-time">${item.clock}</span>
+      </div>
+      <div class="item-right">
+        <span class="item-cal">${item.cals} kcal</span>
+        <button class="icon-btn" onclick="openEdit(${idx})">✏️</button>
+        <button class="icon-btn" onclick="deleteItem(${idx})">🗑️</button>
+      </div>`;
+    listEl.appendChild(row);
+  });
+}
+
+function hitQuick(name,cals){ let d=getToday(); d.push({title:name,cals:cals,clock:getClockTime()}); setToday(d); renderApp(); }
+
+function hitCustom(){
+  const nameInp=document.getElementById('custom-name');
+  const calInp=document.getElementById('custom-cal');
+  let name=nameInp.value.trim();
+  let cals=parseInt(calInp.value);
+  if(!name||isNaN(cals)||cals<=0){ alert('Please type a meal name and valid calorie amount!'); return; }
+  let d=getToday(); d.push({title:"🍽️ "+name,cals:cals,clock:getClockTime()}); setToday(d);
+  nameInp.value=''; calInp.value=''; renderApp();
+}
+
+function deleteItem(idx){
+  if(!confirm('Delete this entry?')) return;
+  let d=getToday(); d.splice(idx,1); setToday(d); renderApp();
+}
+
+function openEdit(idx){
+  editIndex=idx;
+  let d=getToday(); let item=d[idx];
+  document.getElementById('edit-name').value=item.title;
+  document.getElementById('edit-cal').value=item.cals;
+  document.getElementById('editModal').classList.add('show');
+}
+function closeEdit(){ document.getElementById('editModal').classList.remove('show'); editIndex=null; }
+function saveEdit(){
+  let name=document.getElementById('edit-name').value.trim();
+  let cals=parseInt(document.getElementById('edit-cal').value);
+  if(!name||isNaN(cals)||cals<=0){ alert('Enter valid name and calories'); return; }
+  let d=getToday(); d[editIndex].title=name; d[editIndex].cals=cals; setToday(d);
+  closeEdit(); renderApp();
+}
+
+function resetDay(){
+  if(confirm('Reset today\\'s data?')){ setToday([]); renderApp(); }
+}
+
+/* Weight */
+function addWeight(){
+  let w=parseFloat(document.getElementById('weight-input').value);
+  if(isNaN(w)||w<=0){ alert('Enter a valid weight'); return; }
+  let key=todayKey();
+  let existing=weightLog.findIndex(e=>e.date===key);
+  if(existing>=0) weightLog[existing].weight=w;
+  else weightLog.push({date:key,weight:w});
+  weightLog.sort((a,b)=>a.date.localeCompare(b.date));
+  saveWeights();
+  document.getElementById('weight-input').value='';
+  renderWeightList();
+}
+
+function deleteWeight(idx){
+  if(!confirm('Delete this weight entry?')) return;
+  weightLog.splice(idx,1); saveWeights(); renderWeightList();
+}
+
+function renderWeightList(){
+  const el=document.getElementById('weight-list-target');
+  el.innerHTML='';
+  if(weightLog.length===0){
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:14px;">No weight logged yet.</div>';
+    return;
+  }
+  [...weightLog].reverse().forEach((e)=>{
+    let realIdx=weightLog.findIndex(x=>x.date===e.date);
+    let row=document.createElement('div');
+    row.className='weight-list-item';
+    row.innerHTML=`<span>${e.date}</span><span style="font-weight:700;">${e.weight} kg <button class="icon-btn" onclick="deleteWeight(${realIdx})">🗑️</button></span>`;
+    el.appendChild(row);
+  });
+}
+
+/* Sleep */
+function addSleep(){
+  let hrs=parseFloat(document.getElementById('sleep-hours').value);
+  let quality=document.getElementById('sleep-quality').value;
+  if(isNaN(hrs)||hrs<=0||hrs>24){ alert('Enter valid hours slept'); return; }
+  let key=todayKey();
+  let existing=sleepLog.findIndex(e=>e.date===key);
+  if(existing>=0){ sleepLog[existing].hours=hrs; sleepLog[existing].quality=quality; }
+  else sleepLog.push({date:key,hours:hrs,quality:quality});
+  sleepLog.sort((a,b)=>a.date.localeCompare(b.date));
+  saveSleep();
+  document.getElementById('sleep-hours').value='';
+  renderSleepList();
+}
+
+function deleteSleep(idx){
+  if(!confirm('Delete this sleep entry?')) return;
+  sleepLog.splice(idx,1); saveSleep(); renderSleepList();
+}
+
+function renderSleepList(){
+  const el=document.getElementById('sleep-list-target');
+  el.innerHTML='';
+  if(sleepLog.length===0){
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:14px;">No sleep logged yet.</div>';
+    return;
+  }
+  const qEmoji={Good:'😴',Ok:'🙂',Poor:'😵'};
+  [...sleepLog].reverse().forEach((e)=>{
+    let realIdx=sleepLog.findIndex(x=>x.date===e.date);
+    let row=document.createElement('div');
+    row.className='weight-list-item';
+    row.innerHTML=`<span>${e.date}</span><span style="font-weight:700;">${e.hours}h ${qEmoji[e.quality]||''} <button class="icon-btn" onclick="deleteSleep(${realIdx})">🗑️</button></span>`;
+    el.appendChild(row);
+  });
+}
+
+function drawSleepChart(){
+  const canvas=document.getElementById('sleepChart');
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.clientWidth; canvas.height=180;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  let days=[];
+  for(let i=6;i>=0;i--){
+    let d=new Date(); d.setDate(d.getDate()-i);
+    let key=d.toISOString().slice(0,10);
+    let entry=sleepLog.find(e=>e.date===key);
+    days.push({label:d.toLocaleDateString([],{weekday:'short'}),hours:entry?entry.hours:0});
+  }
+  let maxVal=Math.max(9, ...days.map(d=>d.hours));
+  let barW=canvas.width/days.length*0.6;
+  let gap=canvas.width/days.length;
+  days.forEach((d,i)=>{
+    let h=(d.hours/maxVal)*140;
+    let x=i*gap+gap*0.2;
+    let y=160-h;
+    ctx.fillStyle = d.hours>=7 ? '#00b894' : (d.hours>=6 ? '#fdcb6e' : '#d63031');
+    if(d.hours>0) ctx.fillRect(x,y,barW,h);
+    ctx.fillStyle='#718096';
+    ctx.font='11px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(d.label, x+barW/2, 175);
+    if(d.hours>0){ ctx.fillStyle='#2d3748'; ctx.fillText(d.hours+'h', x+barW/2, y-4); }
+  });
+}
+
+/* Trends - simple canvas bar/line chart, no external library */
+function drawCalChart(){
+  const canvas=document.getElementById('calChart');
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.clientWidth; canvas.height=180;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  let days=[];
+  for(let i=6;i>=0;i--){
+    let d=new Date(); d.setDate(d.getDate()-i);
+    let key=d.toISOString().slice(0,10);
+    let total=(allLogs[key]||[]).reduce((s,it)=>s+it.cals,0);
+    days.push({label:d.toLocaleDateString([],{weekday:'short'}),total});
+  }
+  let maxVal=Math.max(CALORIE_BUDGET, ...days.map(d=>d.total),1);
+  let barW=canvas.width/days.length*0.6;
+  let gap=canvas.width/days.length;
+  days.forEach((d,i)=>{
+    let h=(d.total/maxVal)*140;
+    let x=i*gap+gap*0.2;
+    let y=160-h;
+    ctx.fillStyle = d.total>CALORIE_BUDGET ? '#d63031' : '#00b894';
+    ctx.fillRect(x,y,barW,h);
+    ctx.fillStyle='#718096';
+    ctx.font='11px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText(d.label, x+barW/2, 175);
+    if(d.total>0){ ctx.fillStyle='#2d3748'; ctx.fillText(d.total, x+barW/2, y-4); }
+  });
+  // budget line
+  let by=160-(CALORIE_BUDGET/maxVal)*140;
+  ctx.strokeStyle='#6c5ce7'; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(0,by); ctx.lineTo(canvas.width,by); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawWeightChart(){
+  const canvas=document.getElementById('weightChart');
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.clientWidth; canvas.height=180;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const summary=document.getElementById('weight-summary');
+
+  if(weightLog.length<2){
+    summary.innerText='Log weight regularly to see your trend';
+    return;
+  }
+  let recent=weightLog.slice(-14);
+  let vals=recent.map(e=>e.weight);
+  let minV=Math.min(...vals)-0.5, maxV=Math.max(...vals)+0.5;
+  let stepX=canvas.width/(recent.length-1);
+
+  ctx.beginPath();
+  ctx.strokeStyle='#6c5ce7'; ctx.lineWidth=2;
+  recent.forEach((e,i)=>{
+    let x=i*stepX;
+    let y=160-((e.weight-minV)/(maxV-minV))*140;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+
+  recent.forEach((e,i)=>{
+    let x=i*stepX;
+    let y=160-((e.weight-minV)/(maxV-minV))*140;
+    ctx.fillStyle='#6c5ce7';
+    ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fill();
+  });
+
+  let first=recent[0].weight, last=recent[recent.length-1].weight;
+  let diff=(last-first).toFixed(1);
+  summary.innerText = diff<0 ? `Down ${Math.abs(diff)} kg over this period 🎉` : (diff>0 ? `Up ${diff} kg — check your intake` : 'Steady weight over this period');
+}
+
+renderApp();
+</script>
+</body>
+</html>
