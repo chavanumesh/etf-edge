@@ -66,6 +66,10 @@ input:focus,select:focus{border-color:var(--primary);background:#fff;}
 .sr-name{font-size:13px;font-weight:600;flex:1;padding-right:8px;}
 .sr-cal{font-size:13px;font-weight:700;color:var(--primary);white-space:nowrap;}
 .sr-loading{text-align:center;padding:12px;color:var(--text-muted);font-size:13px;}
+.step-summary-box{display:flex;justify-content:space-around;background:#edf2f7;padding:10px;border-radius:12px;margin-bottom:12px;font-size:13px;font-weight:600;}
+.step-summary-item{text-align:center;}
+.step-summary-val{color:var(--primary);font-weight:700;}
+.burn-note{text-align:center;font-size:12px;color:var(--success);font-weight:600;margin-top:8px;}
 
 /* Trends */
 canvas{width:100%;height:180px;display:block;}
@@ -92,6 +96,7 @@ canvas{width:100%;height:180px;display:block;}
     <button class="tab-btn active" data-tab="today">Today</button>
     <button class="tab-btn" data-tab="weight">Weight</button>
     <button class="tab-btn" data-tab="sleep">Sleep</button>
+    <button class="tab-btn" data-tab="activity">Activity</button>
     <button class="tab-btn" data-tab="history">History</button>
     <button class="tab-btn" data-tab="trends">Trends</button>
   </div>
@@ -109,6 +114,7 @@ canvas{width:100%;height:180px;display:block;}
         <div><div class="metric-num" id="val-eaten" style="color:var(--primary);">0</div><div class="metric-label">Total Eaten</div></div>
         <div><div class="metric-num" id="val-left" style="color:var(--success);">2200</div><div class="metric-label">Left to Eat</div></div>
       </div>
+      <div class="burn-note" id="burn-note" style="display:none;"></div>
     </div>
 
     <div class="section-title">Tap to Quick Add Food</div>
@@ -174,6 +180,56 @@ canvas{width:100%;height:180px;display:block;}
     </div>
     <div class="section-title">Sleep History</div>
     <div class="log-box" id="sleep-list-target"></div>
+  </div>
+
+  <!-- ACTIVITY TAB -->
+  <div class="tab-panel" id="tab-activity">
+    <div class="section-title">Track Steps & Walking Distance</div>
+    <div class="custom-box">
+      <div class="input-row">
+        <input type="number" id="step-count-input" placeholder="Enter steps walked (e.g., 6000)" oninput="calculateLiveSteps()">
+      </div>
+      <div class="step-summary-box">
+        <div class="step-summary-item">Distance: <span id="live-distance" class="step-summary-val">0.00</span> km</div>
+        <div class="step-summary-item">Est. Burn: <span id="live-burn" class="step-summary-val">0</span> kcal</div>
+      </div>
+      <button class="add-btn" style="background:var(--success);" onclick="hitStepsLog()">🚶 Save Step Activity</button>
+    </div>
+
+    <div class="section-title">Log Exercise / Sport / Swimming</div>
+    <div class="custom-box">
+      <div class="input-row">
+        <select id="activity-type" onchange="toggleOtherActivity()">
+          <option value="">Select activity...</option>
+          <option value="Walking (brisk)|4.3">🚶 Walking (brisk)</option>
+          <option value="Running/Jogging|8">🏃 Running / Jogging</option>
+          <option value="Swimming (moderate)|6">🏊 Swimming (moderate)</option>
+          <option value="Swimming (vigorous)|10">🏊 Swimming (vigorous)</option>
+          <option value="Cycling (moderate)|6">🚴 Cycling (moderate)</option>
+          <option value="Cycling (vigorous)|10">🚴 Cycling (vigorous)</option>
+          <option value="Gym / Weight Training|5">🏋️ Gym / Weight Training</option>
+          <option value="Yoga / Stretching|3">🧘 Yoga / Stretching</option>
+          <option value="Badminton / Tennis|7">🏸 Badminton / Tennis</option>
+          <option value="Football / Basketball|8">⚽ Football / Basketball</option>
+          <option value="Dancing|5">💃 Dancing</option>
+          <option value="Household Chores|3">🧹 Household Chores</option>
+          <option value="Other|4">✏️ Other (type manually)</option>
+        </select>
+      </div>
+      <div class="input-row" id="other-activity-row" style="display:none;">
+        <input type="text" id="other-activity-name" placeholder="Type activity name">
+      </div>
+      <div class="input-row">
+        <input type="number" id="activity-minutes" placeholder="Duration in minutes (e.g., 30)" oninput="calculateLiveActivity()">
+      </div>
+      <div class="step-summary-box">
+        <div class="step-summary-item">Est. Burn: <span id="live-activity-burn" class="step-summary-val">0</span> kcal</div>
+      </div>
+      <button class="add-btn" style="background:var(--success);" onclick="hitActivityLog()">🔥 Save Activity</button>
+    </div>
+
+    <div class="section-title">Today's Activity Log</div>
+    <div class="log-box" id="activity-list-target"></div>
   </div>
 
   <!-- HISTORY TAB -->
@@ -256,10 +312,19 @@ function todayKey(){ return new Date().toISOString().slice(0,10); }
 let allLogs = JSON.parse(localStorage.getItem('brioCalLogsV2')) || {};
 let weightLog = JSON.parse(localStorage.getItem('brioWeightLog')) || [];
 let sleepLog = JSON.parse(localStorage.getItem('brioSleepLog')) || [];
+let activityLogs = JSON.parse(localStorage.getItem('brioActivityLogs')) || {};
 
 function saveLogs(){ localStorage.setItem('brioCalLogsV2', JSON.stringify(allLogs)); }
 function saveWeights(){ localStorage.setItem('brioWeightLog', JSON.stringify(weightLog)); }
 function saveSleep(){ localStorage.setItem('brioSleepLog', JSON.stringify(sleepLog)); }
+function saveActivity(){ localStorage.setItem('brioActivityLogs', JSON.stringify(activityLogs)); }
+
+function getTodayActivity(){ return activityLogs[todayKey()] || []; }
+function setTodayActivity(arr){ activityLogs[todayKey()] = arr; saveActivity(); }
+function getUserWeightKg(){
+  if(weightLog.length>0) return weightLog[weightLog.length-1].weight;
+  return 102; // fallback default
+}
 
 function getToday(){ return allLogs[todayKey()] || []; }
 function setToday(arr){ allLogs[todayKey()] = arr; saveLogs(); }
@@ -273,6 +338,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     if(btn.dataset.tab==='trends'){ drawCalChart(); drawWeightChart(); drawSleepChart(); }
     if(btn.dataset.tab==='weight'){ renderWeightList(); }
     if(btn.dataset.tab==='sleep'){ renderSleepList(); }
+    if(btn.dataset.tab==='activity'){ renderActivityList(); }
     if(btn.dataset.tab==='history'){
       const dInput = document.getElementById('history-date');
       if(!dInput.value) dInput.value = todayKey();
@@ -282,6 +348,111 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 
 function getClockTime(){ return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+
+/* ===== Steps & Distance ===== */
+function calculateLiveSteps(){
+  const steps = parseInt(document.getElementById('step-count-input').value) || 0;
+  const weight = getUserWeightKg();
+  const distance = steps * 0.0007484;
+  const caloriesBurned = Math.round(distance * (weight*0.5));
+  document.getElementById('live-distance').innerText = distance.toFixed(2);
+  document.getElementById('live-burn').innerText = caloriesBurned;
+}
+
+function hitStepsLog(){
+  const stepInput = document.getElementById('step-count-input');
+  const steps = parseInt(stepInput.value);
+  if(!steps || steps<=0){ alert('Please enter a valid step count first.'); return; }
+  const weight = getUserWeightKg();
+  const distance = (steps * 0.0007484).toFixed(2);
+  const caloriesBurned = Math.round(distance * (weight*0.5));
+
+  let d = getTodayActivity();
+  d.push({ title: `🚶 Walking: ${steps.toLocaleString()} steps (${distance} km)`, calsBurned: caloriesBurned, clock: getClockTime() });
+  setTodayActivity(d);
+
+  stepInput.value='';
+  document.getElementById('live-distance').innerText='0.00';
+  document.getElementById('live-burn').innerText='0';
+  renderActivityList(); renderApp();
+}
+
+/* ===== General Exercise / Sport / Swimming (MET based) ===== */
+function toggleOtherActivity(){
+  const val = document.getElementById('activity-type').value;
+  const isOther = val.startsWith('Other|');
+  document.getElementById('other-activity-row').style.display = isOther ? 'flex' : 'none';
+  calculateLiveActivity();
+}
+
+function calculateLiveActivity(){
+  const sel = document.getElementById('activity-type').value;
+  const mins = parseFloat(document.getElementById('activity-minutes').value) || 0;
+  if(!sel || mins<=0){ document.getElementById('live-activity-burn').innerText='0'; return; }
+  const met = parseFloat(sel.split('|')[1]);
+  const weight = getUserWeightKg();
+  const burned = Math.round(met * weight * (mins/60));
+  document.getElementById('live-activity-burn').innerText = burned;
+}
+
+function hitActivityLog(){
+  const sel = document.getElementById('activity-type').value;
+  const mins = parseFloat(document.getElementById('activity-minutes').value);
+  if(!sel){ alert('Please select an activity'); return; }
+  if(!mins || mins<=0){ alert('Please enter valid duration in minutes'); return; }
+
+  let [label, metStr] = sel.split('|');
+  if(label==='Other'){
+    let customName = document.getElementById('other-activity-name').value.trim();
+    if(!customName){ alert('Please type the activity name'); return; }
+    label = customName;
+  }
+  const met = parseFloat(metStr);
+  const weight = getUserWeightKg();
+  const burned = Math.round(met * weight * (mins/60));
+
+  let d = getTodayActivity();
+  d.push({ title: `🔥 ${label} (${mins} min)`, calsBurned: burned, clock: getClockTime() });
+  setTodayActivity(d);
+
+  document.getElementById('activity-type').value='';
+  document.getElementById('activity-minutes').value='';
+  document.getElementById('other-activity-name').value='';
+  document.getElementById('other-activity-row').style.display='none';
+  document.getElementById('live-activity-burn').innerText='0';
+  renderActivityList(); renderApp();
+}
+
+function deleteActivity(idx){
+  if(!confirm('Delete this activity entry?')) return;
+  let d = getTodayActivity(); d.splice(idx,1); setTodayActivity(d);
+  renderActivityList(); renderApp();
+}
+
+function renderActivityList(){
+  const el = document.getElementById('activity-list-target');
+  if(!el) return;
+  const d = getTodayActivity();
+  el.innerHTML='';
+  if(d.length===0){
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:14px;">No activity logged today.</div>';
+    return;
+  }
+  d.forEach((item,idx)=>{
+    let row=document.createElement('div');
+    row.className='log-item';
+    row.innerHTML=`
+      <div>
+        <span class="item-text">${item.title}</span>
+        <span class="item-time">${item.clock}</span>
+      </div>
+      <div class="item-right">
+        <span class="item-cal" style="background:#d1f5ea;color:var(--success);">-${item.calsBurned} kcal</span>
+        <button class="icon-btn" onclick="deleteActivity(${idx})">🗑️</button>
+      </div>`;
+    el.appendChild(row);
+  });
+}
 
 /* ===== Online Calorie Lookup (USDA FoodData Central, free) ===== */
 async function searchFood(){
@@ -376,11 +547,18 @@ function viewHistoryDate(){
 function renderApp(){
   let dayLog = getToday();
   let total = dayLog.reduce((s,i)=>s+i.cals,0);
-  let remaining = CALORIE_BUDGET - total;
-  let pct = Math.min((total/CALORIE_BUDGET)*100,100);
+  let burned = getTodayActivity().reduce((s,i)=>s+i.calsBurned,0);
+  let adjustedBudget = CALORIE_BUDGET + burned;
+  let remaining = adjustedBudget - total;
+  let pct = Math.min((total/adjustedBudget)*100,100);
 
   document.getElementById('val-eaten').innerText = total;
   document.getElementById('val-left').innerText = remaining;
+  document.getElementById('val-budget').innerText = adjustedBudget;
+
+  const burnNote = document.getElementById('burn-note');
+  if(burned>0){ burnNote.style.display='block'; burnNote.innerText = `🔥 ${burned} kcal burned today — added to your budget`; }
+  else{ burnNote.style.display='none'; }
 
   const bar = document.getElementById('progress-bar');
   const statusTxt = document.getElementById('status-text');
@@ -388,8 +566,8 @@ function renderApp(){
   bar.style.width = pct+'%';
 
   if(total===0){ bar.style.backgroundColor='var(--success)'; statusTxt.innerText="Ready to track! 🚀"; statusTxt.style.color='var(--text-muted)'; leftTxt.style.color='var(--success)'; }
-  else if(total<=CALORIE_BUDGET*0.75){ bar.style.backgroundColor='var(--success)'; statusTxt.innerText="Looking Great! 👍"; statusTxt.style.color='var(--success)'; leftTxt.style.color='var(--success)'; }
-  else if(total<=CALORIE_BUDGET){ bar.style.backgroundColor='var(--warning)'; statusTxt.innerText="Getting full! ⚠️"; statusTxt.style.color='#d5a100'; leftTxt.style.color='#d5a100'; }
+  else if(total<=adjustedBudget*0.75){ bar.style.backgroundColor='var(--success)'; statusTxt.innerText="Looking Great! 👍"; statusTxt.style.color='var(--success)'; leftTxt.style.color='var(--success)'; }
+  else if(total<=adjustedBudget){ bar.style.backgroundColor='var(--warning)'; statusTxt.innerText="Getting full! ⚠️"; statusTxt.style.color='#d5a100'; leftTxt.style.color='#d5a100'; }
   else{ bar.style.backgroundColor='var(--danger)'; statusTxt.innerText="Over budget limit! 🛑"; statusTxt.style.color='var(--danger)'; leftTxt.style.color='var(--danger)'; }
 
   const listEl = document.getElementById('log-list-target');
@@ -449,7 +627,7 @@ function saveEdit(){
 }
 
 function resetDay(){
-  if(confirm('Reset today\'s data?')){ setToday([]); renderApp(); }
+  if(confirm('Reset today\'s data?')){ setToday([]); setTodayActivity([]); renderApp(); renderActivityList(); }
 }
 
 /* Weight */
@@ -648,6 +826,11 @@ function buildCSV(){
   });
   weightLog.forEach(e=> rows.push(['Weight', e.date, '', '', e.weight+' kg']));
   sleepLog.forEach(e=> rows.push(['Sleep', e.date, '', e.quality, e.hours+' hrs']));
+  Object.keys(activityLogs).sort().forEach(date=>{
+    (activityLogs[date]||[]).forEach(item=>{
+      rows.push(['Activity', date, item.clock, item.title, '-'+item.calsBurned+' kcal']);
+    });
+  });
   return rows.map(r=> r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
 }
 function downloadCSV(filename){
@@ -665,8 +848,8 @@ function exportOnly(){
 function exportAndReset(){
   downloadCSV(`BrioCal_Month_${todayKey()}.csv`);
   if(confirm('File downloaded. Clear tracker data now to start a fresh month?')){
-    allLogs = {}; weightLog = []; sleepLog = [];
-    saveLogs(); saveWeights(); saveSleep();
+    allLogs = {}; weightLog = []; sleepLog = []; activityLogs = {};
+    saveLogs(); saveWeights(); saveSleep(); saveActivity();
     localStorage.setItem('brioTrackStart', todayKey());
     renderApp();
     checkExportBanner();
