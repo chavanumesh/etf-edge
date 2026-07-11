@@ -61,6 +61,12 @@ input:focus,select:focus{border-color:var(--primary);background:#fff;}
 .weight-list-item{display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);}
 .weight-list-item:last-child{border-bottom:none;}
 
+.search-result-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer;background:#f7f9fc;}
+.search-result-item:active{background:#edf2f7;}
+.sr-name{font-size:13px;font-weight:600;flex:1;padding-right:8px;}
+.sr-cal{font-size:13px;font-weight:700;color:var(--primary);white-space:nowrap;}
+.sr-loading{text-align:center;padding:12px;color:var(--text-muted);font-size:13px;}
+
 /* Trends */
 canvas{width:100%;height:180px;display:block;}
 .trend-legend{font-size:12px;color:var(--text-muted);margin-top:8px;text-align:center;}
@@ -114,6 +120,15 @@ canvas{width:100%;height:180px;display:block;}
       <div class="quick-btn" onclick="hitQuick('🧈 Cooking Oil/Ghee',120)"><span class="btn-emoji">🧈</span><div class="btn-info"><span class="btn-name">Oil / Ghee</span><span class="btn-cal">120 kcal</span></div></div>
     </div>
 
+    <div class="section-title">Search & Add Food (Auto Calories)</div>
+    <div class="custom-box">
+      <div class="input-row">
+        <input type="text" id="food-search" placeholder="e.g., banana, chicken breast, oats">
+      </div>
+      <button class="add-btn" onclick="searchFood()" id="search-btn">🔍 Search Calories Online</button>
+      <div id="search-results" style="margin-top:12px;"></div>
+    </div>
+
     <div class="section-title">Log Something Else</div>
     <div class="custom-box">
       <div class="input-row">
@@ -162,6 +177,17 @@ canvas{width:100%;height:180px;display:block;}
 
   <!-- TRENDS TAB -->
   <div class="tab-panel" id="tab-trends">
+    <div class="status-card" id="export-banner" style="display:none;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:6px;">📊 30 Days of Data Ready!</div>
+      <div style="font-size:13px;opacity:.9;margin-bottom:12px;">Download your month as an Excel file, then start fresh.</div>
+      <button class="add-btn" style="background:#fff;color:var(--primary);" onclick="exportAndReset()">Download Excel & Reset</button>
+    </div>
+    <div class="status-card">
+      <div class="section-title">
+        <span>Data since <span id="tracking-start-label"></span></span>
+        <button class="clear-txt" style="color:var(--primary);" onclick="exportOnly()">Export CSV</button>
+      </div>
+    </div>
     <div class="status-card">
       <div class="section-title">Last 7 Days — Calories</div>
       <canvas id="calChart"></canvas>
@@ -226,6 +252,58 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 
 function getClockTime(){ return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+
+/* ===== Online Calorie Lookup (USDA FoodData Central, free) ===== */
+async function searchFood(){
+  const q = document.getElementById('food-search').value.trim();
+  const resultsEl = document.getElementById('search-results');
+  const btn = document.getElementById('search-btn');
+  if(!q){ alert('Type a food name first'); return; }
+
+  resultsEl.innerHTML = '<div class="sr-loading">Searching USDA database...</div>';
+  btn.disabled = true;
+
+  try{
+    const url = `https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(q)}&pageSize=6&api_key=DEMO_KEY`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('API error '+res.status);
+    const data = await res.json();
+    const foods = data.foods || [];
+
+    if(foods.length===0){
+      resultsEl.innerHTML = '<div class="sr-loading">No results found. Try a simpler search term, or add manually below.</div>';
+      return;
+    }
+
+    resultsEl.innerHTML = '';
+    foods.forEach(food=>{
+      let energyNutrient = (food.foodNutrients||[]).find(n => n.nutrientName==='Energy' && n.unitName==='KCAL');
+      let kcal = energyNutrient ? Math.round(energyNutrient.value) : null;
+      if(kcal===null) return;
+      let label = food.description.length>45 ? food.description.slice(0,45)+'…' : food.description;
+      let row = document.createElement('div');
+      row.className = 'search-result-item';
+      row.innerHTML = `<span class="sr-name">${label}</span><span class="sr-cal">${kcal} kcal /100g</span>`;
+      row.onclick = ()=> pickFoodResult(food.description, kcal);
+      resultsEl.appendChild(row);
+    });
+
+    if(resultsEl.innerHTML===''){
+      resultsEl.innerHTML = '<div class="sr-loading">Found items but no calorie data. Try adding manually below.</div>';
+    }
+  }catch(err){
+    resultsEl.innerHTML = '<div class="sr-loading">Could not reach the food database right now. Check internet, or add manually below.</div>';
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+function pickFoodResult(name, kcal){
+  document.getElementById('custom-name').value = name.length>40 ? name.slice(0,40) : name;
+  document.getElementById('custom-cal').value = kcal;
+  document.getElementById('custom-name').scrollIntoView({behavior:'smooth', block:'center'});
+  alert('Values are per 100g from USDA — adjust the calorie number below to match your actual portion size before adding.');
+}
 
 function renderApp(){
   let dayLog = getToday();
@@ -303,7 +381,7 @@ function saveEdit(){
 }
 
 function resetDay(){
-  if(confirm('Reset today\\'s data?')){ setToday([]); renderApp(); }
+  if(confirm('Reset today\'s data?')){ setToday([]); renderApp(); }
 }
 
 /* Weight */
@@ -482,6 +560,58 @@ function drawWeightChart(){
 }
 
 renderApp();
+
+/* ===== Monthly Excel Export ===== */
+function getTrackingStart(){
+  let s = localStorage.getItem('brioTrackStart');
+  if(!s){ s = todayKey(); localStorage.setItem('brioTrackStart', s); }
+  return s;
+}
+function daysSince(dateStr){
+  let d1 = new Date(dateStr), d2 = new Date(todayKey());
+  return Math.floor((d2-d1)/(1000*60*60*24));
+}
+function buildCSV(){
+  let rows = [['Type','Date','Time','Item/Detail','Value']];
+  Object.keys(allLogs).sort().forEach(date=>{
+    (allLogs[date]||[]).forEach(item=>{
+      rows.push(['Meal', date, item.clock, item.title, item.cals+' kcal']);
+    });
+  });
+  weightLog.forEach(e=> rows.push(['Weight', e.date, '', '', e.weight+' kg']));
+  sleepLog.forEach(e=> rows.push(['Sleep', e.date, '', e.quality, e.hours+' hrs']));
+  return rows.map(r=> r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+}
+function downloadCSV(filename){
+  let csv = buildCSV();
+  let blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+}
+function exportOnly(){
+  downloadCSV(`BrioCal_Export_${todayKey()}.csv`);
+}
+function exportAndReset(){
+  downloadCSV(`BrioCal_Month_${todayKey()}.csv`);
+  if(confirm('File downloaded. Clear tracker data now to start a fresh month?')){
+    allLogs = {}; weightLog = []; sleepLog = [];
+    saveLogs(); saveWeights(); saveSleep();
+    localStorage.setItem('brioTrackStart', todayKey());
+    renderApp();
+    checkExportBanner();
+    alert('Tracker reset! Fresh month started.');
+  }
+}
+function checkExportBanner(){
+  let start = getTrackingStart();
+  document.getElementById('tracking-start-label').innerText = start;
+  let days = daysSince(start);
+  document.getElementById('export-banner').style.display = (days>=30) ? 'block' : 'none';
+}
+checkExportBanner();
 </script>
 </body>
 </html>
