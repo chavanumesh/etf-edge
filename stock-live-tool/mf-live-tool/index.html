@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Mutual Fund NAV — ACE Hub</title>
+<style>
+:root{
+  --g-fill:#EAF3DE;--g-text:#27500A;--g-border:#C0DD97;
+  --a-fill:#FAEEDA;--a-text:#854F0B;--a-border:#FAC775;
+  --r-fill:#FCEBEB;--r-text:#A32D2D;--r-border:#F7C1C1;
+  --b-fill:#E6F1FB;--b-text:#185FA5;--b-border:#B5D4F4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#fafafa;color:#222;padding:16px}
+.wrap{max-width:700px;margin:0 auto}
+h1{font-size:18px;margin-bottom:4px}
+.sub{font-size:12px;color:#777;margin-bottom:16px}
+.search-row{display:flex;gap:8px;margin-bottom:10px}
+input{flex:1;padding:12px 14px;border-radius:10px;border:1px solid #ddd;font-size:15px}
+button{padding:12px 18px;border-radius:10px;border:none;background:#222;color:#fff;font-size:14px;font-weight:500}
+button:disabled{opacity:0.5}
+.card{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.status{font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:12px}
+.status.loading{background:var(--b-fill);color:var(--b-text)}
+.status.error{background:var(--r-fill);color:var(--r-text)}
+.status.ok{background:var(--g-fill);color:var(--g-text)}
+.result-list{margin-top:8px}
+.result-item{padding:10px 0;border-bottom:0.5px solid #eee;font-size:13px;cursor:pointer}
+.result-item:hover{background:#f7f7f7}
+.nav-big{font-size:28px;font-weight:600;margin-top:4px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.mc{background:#f7f7f7;border-radius:8px;padding:12px}
+.ml{font-size:10px;text-transform:uppercase;color:#888;margin-bottom:4px}
+.mv{font-size:15px;font-weight:600}
+.hist{margin-top:16px}
+.hist-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #eee;font-size:13px}
+.hist-item span{color:#777}
+.hist-item a{color:var(--b-text);text-decoration:none}
+.disc{font-size:11px;color:#888;margin-top:20px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>💰 Live Mutual Fund NAV</h1>
+  <div class="sub">Search by fund name (e.g. "Nippon India Small Cap") to get the latest NAV, live from AMFI data. Deeper evaluation (benchmark alpha, quality checks, compatibility) still needs a full Claude analysis.</div>
+
+  <div class="search-row">
+    <input id="fundName" type="text" placeholder="e.g. Nippon India Small Cap Direct Growth">
+    <button id="go">Search</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="searchResults"></div>
+  <div id="navResult"></div>
+
+  <div class="card hist">
+    <div style="font-size:11px;text-transform:uppercase;color:#777;margin-bottom:8px">Your saved full evaluations</div>
+    <div class="hist-item"><span>Nippon India Small Cap Fund</span><a href="../Nippon_India_Small_Cap_Fund_Evaluation.html">Open saved report →</a></div>
+    <div class="hist-item"><span>Canara Robeco Large & Mid Cap</span><a href="../Canara_Robeco_Large_Mid_Cap_Evaluation.html">Open saved report →</a></div>
+    <div class="hist-item"><span>HDFC Nifty 50 Index Fund</span><a href="../HDFC_Nifty50_Index_Fund_Evaluation.html">Open saved report →</a></div>
+    <div class="hist-item"><span>Tata Multicap Fund</span><a href="../Tata_Multicap_Fund_Evaluation.html">Open saved report →</a></div>
+  </div>
+
+  <div class="disc">
+    Live NAV data from api.mfapi.in, which mirrors official AMFI daily NAV data (usually updated once per business day, evening). This is not investment advice. For full fund evaluation (benchmark comparison, quality checks, compatibility with your goals), ask Claude to re-run the mutual-fund-evaluator-for-indian-retail-investors skill.
+  </div>
+</div>
+
+<script>
+const statusEl = document.getElementById('status');
+const searchResultsEl = document.getElementById('searchResults');
+const navResultEl = document.getElementById('navResult');
+const input = document.getElementById('fundName');
+const btn = document.getElementById('go');
+
+function setStatus(msg, type){
+  statusEl.innerHTML = msg ? `<div class="status ${type}">${msg}</div>` : '';
+}
+
+async function searchFunds(query){
+  const res = await fetch(`https://api.mfapi.in/mf/search?q=${encodeURIComponent(query)}`);
+  if(!res.ok) throw new Error('Search failed');
+  return await res.json();
+}
+
+async function getNav(code){
+  const res = await fetch(`https://api.mfapi.in/mf/${code}`);
+  if(!res.ok) throw new Error('NAV fetch failed');
+  return await res.json();
+}
+
+async function showNav(code, name){
+  searchResultsEl.innerHTML = '';
+  setStatus('Fetching latest NAV…', 'loading');
+  try{
+    const data = await getNav(code);
+    const latest = data.data?.[0];
+    const prev = data.data?.[1];
+    if(!latest) throw new Error('No NAV history found');
+    const change = prev ? (latest.nav - prev.nav) : null;
+    const changePct = prev ? ((change/prev.nav)*100).toFixed(2) : null;
+
+    navResultEl.innerHTML = `
+      <div class="card">
+        <div style="font-size:14px;font-weight:600">${data.meta?.scheme_name ?? name}</div>
+        <div class="nav-big">₹${latest.nav}</div>
+        ${change !== null ? `<div style="font-size:13px;color:${change>=0?'#27500A':'#A32D2D'}">${change>=0?'+':''}${change.toFixed(4)} (${changePct}%) vs previous NAV date</div>` : ''}
+        <div class="mgrid">
+          <div class="mc"><div class="ml">NAV Date</div><div class="mv">${latest.date}</div></div>
+          <div class="mc"><div class="ml">Fund House</div><div class="mv" style="font-size:12px">${data.meta?.fund_house ?? '—'}</div></div>
+          <div class="mc"><div class="ml">Scheme Type</div><div class="mv" style="font-size:12px">${data.meta?.scheme_type ?? '—'}</div></div>
+          <div class="mc"><div class="ml">Category</div><div class="mv" style="font-size:12px">${data.meta?.scheme_category ?? '—'}</div></div>
+        </div>
+      </div>
+    `;
+    setStatus('Live NAV fetched from AMFI data.', 'ok');
+  } catch(e){
+    setStatus(`Couldn't fetch NAV. Try again or check the fund name.`, 'error');
+  }
+}
+
+async function go(){
+  const q = input.value.trim();
+  if(!q){ setStatus('Type a fund name first.', 'error'); return; }
+  btn.disabled = true;
+  navResultEl.innerHTML = '';
+  setStatus('Searching…', 'loading');
+  try{
+    const results = await searchFunds(q);
+    if(!results || results.length === 0){
+      setStatus('No funds found matching that name. Try a shorter or different search term.', 'error');
+      searchResultsEl.innerHTML = '';
+      return;
+    }
+    setStatus(`Found ${results.length} matching scheme(s) — tap one to see its live NAV.`, 'ok');
+    searchResultsEl.innerHTML = `<div class="card result-list">${
+      results.slice(0, 15).map(r => `<div class="result-item" data-code="${r.schemeCode}" data-name="${r.schemeName.replace(/"/g,'&quot;')}">${r.schemeName}</div>`).join('')
+    }</div>`;
+    searchResultsEl.querySelectorAll('.result-item').forEach(el => {
+      el.addEventListener('click', () => showNav(el.dataset.code, el.dataset.name));
+    });
+  } catch(e){
+    setStatus('Search failed — check your connection and try again.', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+btn.addEventListener('click', go);
+input.addEventListener('keydown', (e) => { if(e.key === 'Enter') go(); });
+</script>
+</body>
+</html>
