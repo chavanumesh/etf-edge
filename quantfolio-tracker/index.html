@@ -3,118 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>QuantFolio · Premium Mobile Portfolio Tracker</title>
+<title>QuantFolio · Portfolio Tracker</title>
 <style>
   :root{
-    --bg:#090d16; --bg2:#0f1524;
-    --panel:#111827; --panel2:#1f2937; --border:rgba(255,255,255,0.08);
-    --text:#f3f4f6; --muted:#9ca3af;
-    --violet:#8b5cf6; --blue:#3b82f6; --cyan:#06b6d4; --teal:#2dd4bf;
-    --up:#10b981; --down:#ef4444; --orange:#f59e0b; --gold:#facc15; --pink:#ec4899;
+    --bg:#0b0f1a; --bg2:#0f1524;
+    --panel:#141a2b; --panel2:#1a2138; --border:#262f47;
+    --text:#eef1f8; --muted:#8891ab;
+    --violet:#8b5cf6; --blue:#3b82f6; --cyan:#22d3ee; --teal:#2dd4bf;
+    --up:#34d399; --down:#fb7185; --gold:#fbbf24; --pink:#f472b6;
     --grad1: linear-gradient(135deg,#8b5cf6 0%,#3b82f6 100%);
-    --grad2: linear-gradient(135deg,#2dd4bf 0%,#06b6d4 100%);
-    --grad3: linear-gradient(135deg,#f59e0b 0%,#f97316 100%);
-    --grad4: linear-gradient(135deg,#ec4899 0%,#8b5cf6 100%);
+    --grad2: linear-gradient(135deg,#2dd4bf 0%,#22d3ee 100%);
+    --grad3: linear-gradient(135deg,#fbbf24 0%,#fb923c 100%);
+    --grad4: linear-gradient(135deg,#f472b6 0%,#8b5cf6 100%);
   }
   *{box-sizing:border-box;}
   body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:radial-gradient(1200px 600px at 10% -10%, #1e1b4b 0%, transparent 60%),
-               radial-gradient(1000px 500px at 100% 0%, #062f4f 0%, transparent 55%),
+    background:radial-gradient(1200px 600px at 10% -10%, #1a1440 0%, transparent 60%),
+               radial-gradient(1000px 500px at 100% 0%, #0b2a3a 0%, transparent 55%),
                var(--bg);
-    color:var(--text);padding-bottom:60px;min-height:100vh;
-    -webkit-tap-highlight-color: transparent;}
+    color:var(--text);padding-bottom:60px;min-height:100vh;}
 
-  header{padding:24px 20px 16px;position:sticky;top:0;z-index:10;
-    background:rgba(9,13,22,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;}
-  .header-left h1{font-size:22px;margin:0 0 4px;font-weight:800;letter-spacing:-0.5px;
+  header{padding:20px 18px 12px;position:sticky;top:0;z-index:10;
+    background:rgba(11,15,26,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);}
+  header h1{font-size:20px;margin:0 0 2px;font-weight:800;letter-spacing:.2px;
     background:var(--grad1);-webkit-background-clip:text;background-clip:text;color:transparent;}
-  .header-left .sub{font-size:12px;color:var(--muted);font-weight:500;}
+  header .sub{font-size:12px;color:var(--muted);}
 
-  .tabs{display:flex;gap:6px;padding:12px 16px 0;overflow-x:auto;position:sticky;top:66px;z-index:9;
-    background:rgba(9,13,22,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
-    scrollbar-width: none;}
-  .tabs::-webkit-scrollbar { display: none; }
-  .tab{padding:10px 16px;font-size:13px;font-weight:700;color:var(--muted);border:1px solid transparent;
-    border-radius:12px 12px 0 0;white-space:nowrap;cursor:pointer;transition:.15s;
-    user-select: none;}
-  .tab.active{color:#fff;background:var(--panel);border-color:var(--border);border-bottom-color:transparent;
-    box-shadow:0 -3px 0 var(--violet) inset;}
-    
-  main{padding:16px 16px 40px;max-width:1000px;margin:0 auto;}
+  .tabs{display:flex;gap:6px;padding:12px 18px 0;overflow-x:auto;position:sticky;top:60px;z-index:9;
+    background:rgba(11,15,26,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);}
+  .tab{padding:9px 15px;font-size:13px;font-weight:600;color:var(--muted);border:1px solid transparent;
+    border-radius:10px 10px 0 0;white-space:nowrap;cursor:pointer;transition:.15s;}
+  .tab.active{color:#fff;background:var(--panel2);border-color:var(--border);border-bottom-color:transparent;
+    box-shadow:0 -2px 0 var(--violet) inset;}
+  main{padding:16px 16px 40px;max-width:920px;margin:0 auto;}
   .section{display:none;}
   .section.active{display:block;animation:fadein .25s ease;}
   @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
 
   .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
-  .card{position:relative;border-radius:18px;padding:16px;overflow:hidden;border:1px solid var(--border);background:var(--panel);
-    transition: transform 0.2s; cursor: default;}
-  .card:active { transform: scale(0.98); }
-  .card::before{content:"";position:absolute;inset:0;opacity:.08;background:var(--grad1);}
+  .card{position:relative;border-radius:16px;padding:16px;overflow:hidden;border:1px solid var(--border);background:var(--panel);}
+  .card::before{content:"";position:absolute;inset:0;opacity:.14;background:var(--grad1);}
   .card.c1::before{background:var(--grad1);} .card.c2::before{background:var(--grad2);}
   .card.c3::before{background:var(--grad3);} .card.c4::before{background:var(--grad4);}
   .card .label{position:relative;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;}
-  .card .value{position:relative;font-size:22px;font-weight:800;margin-top:6px;font-variant-numeric: tabular-nums;}
+  .card .value{position:relative;font-size:21px;font-weight:800;margin-top:6px;}
+  .card .value.up{color:var(--up);} .card .value.down{color:var(--down);}
   .card.wide{grid-column:1/-1;}
 
-  .panel{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:16px;
-    box-shadow:0 8px 32px -16px rgba(0,0,0,.6);}
-  .panel h2{font-size:14px;margin:0 0 16px;color:var(--text);text-transform:uppercase;letter-spacing:.6px;font-weight:800;
-    display:flex;align-items:center;gap:8px;}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;
+    box-shadow:0 8px 24px -12px rgba(0,0,0,.5);}
+  .panel h2{font-size:13px;margin:0 0 12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:800;
+    display:flex;align-items:center;gap:6px;}
 
-  .table-container{overflow-x:auto;margin:0 -16px;padding:0 16px;}
   table{width:100%;border-collapse:collapse;font-size:13px;}
-  th{text-align:right;font-size:10.5px;color:var(--muted);font-weight:700;padding:10px 8px;border-bottom:1px solid var(--border);
-    white-space:nowrap;text-transform:uppercase;letter-spacing:.4px;}
+  th{text-align:right;font-size:10.5px;color:var(--muted);font-weight:700;padding:8px 6px;border-bottom:1px solid var(--border);
+    white-space:nowrap;text-transform:uppercase;letter-spacing:.3px;}
   th:first-child,td:first-child{text-align:left;}
-  td{padding:12px 8px;border-bottom:1px solid rgba(255,255,255,0.03);white-space:nowrap;font-variant-numeric: tabular-nums;}
+  td{padding:9px 6px;border-bottom:1px solid #1c233a;white-space:nowrap;}
   tr:last-child td{border-bottom:none;}
-  tr:hover td{background:rgba(255,255,255,.015);}
-  .name-cell{max-width:180px;white-space:normal;font-size:13px;font-weight:700;}
-  .ticker-tag{font-size:9.5px;color:var(--cyan);font-weight:800;background:rgba(6,182,212,0.1);padding:2px 6px;border-radius:4px;}
-  
-  /* RAG (Red-Amber-Green) Colors */
-  .rag-green{color:var(--up);font-weight:700;} 
-  .rag-orange{color:var(--orange);font-weight:700;} 
-  .rag-red{color:var(--down);font-weight:700;}
-  
-  /* Yellow Price Change Alert */
-  .price-changed {
-    background-color: var(--gold) !important;
-    color: #090d16 !important;
-    font-weight: 800;
-    padding: 3px 6px;
-    border-radius: 5px;
-    animation: flash 2s infinite alternate;
-  }
-  @keyframes flash {
-    0% { opacity: 0.85; }
-    100% { opacity: 1; }
-  }
+  tr:hover td{background:rgba(255,255,255,.02);}
+  .name-cell{max-width:170px;white-space:normal;font-size:13px;font-weight:600;}
+  .ticker-tag{font-size:10px;color:var(--cyan);font-weight:700;}
+  .up{color:var(--up);font-weight:700;} .down{color:var(--down);font-weight:700;}
+  .muted{color:var(--muted);}
+  .pill{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(139,92,246,.15);color:#c4b5fd;}
 
-  .allocbar{height:14px;border-radius:8px;overflow:hidden;display:flex;margin:12px 0 6px;background:rgba(255,255,255,0.05);}
-  .alloc-row{display:flex;justify-content:space-between;font-size:12.5px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.02);}
-  .alloc-row:last-child { border-bottom: none; }
-  .alloc-row b{color:var(--text);font-variant-numeric: tabular-nums;}
-  .swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:8px;vertical-align:middle;}
+  .allocbar{height:12px;border-radius:8px;overflow:hidden;display:flex;margin:10px 0 4px;background:#1c233a;}
+  .alloc-row{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;color:var(--muted);}
+  .alloc-row b{color:var(--text);}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:middle;}
 
-  .gainer,.loser{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:10px 8px;border-bottom:1px solid rgba(255,255,255,0.03);border-radius:8px;}
+  .gainer,.loser{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:9px 4px;border-bottom:1px solid #1c233a;border-radius:8px;}
   .gainer:last-child,.loser:last-child{border-bottom:none;}
   .rank{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;font-size:10px;font-weight:800;margin-right:8px;}
-  .gainer .rank{background:rgba(16,185,129,.18);color:var(--up);}
-  .loser .rank{background:rgba(239,68,68,.18);color:var(--down);}
+  .gainer .rank{background:rgba(52,211,153,.18);color:var(--up);}
+  .loser .rank{background:rgba(251,113,133,.18);color:var(--down);}
 
   .refresh-box{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
-  input[type=text]{flex:1;min-width:180px;background:var(--bg2);border:1px solid var(--border);color:#fff;
-    padding:12px 14px;border-radius:10px;font-size:13px;}
-  input[type=text]:focus{outline:none;border-color:var(--violet);box-shadow:0 0 8px rgba(139,92,246,0.2);}
-  button{background:var(--grad1);color:#fff;border:none;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;
-    box-shadow:0 4px 14px -4px rgba(139,92,246,.5);transition: transform 0.15s;}
-  button:active { transform: scale(0.97); }
+  input[type=text]{flex:1;min-width:180px;background:var(--panel2);border:1px solid var(--border);color:var(--text);
+    padding:11px 12px;border-radius:10px;font-size:13px;}
+  input[type=text]:focus{outline:none;border-color:var(--violet);}
+  button{background:var(--grad1);color:#fff;border:none;padding:11px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;
+    box-shadow:0 4px 14px -4px rgba(139,92,246,.6);}
   button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--border);box-shadow:none;}
   button.ghost{background:transparent;color:var(--muted);border:1px solid var(--border);box-shadow:none;}
-  .status{font-size:12.5px;color:var(--muted);margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--bg2);border-left:4px solid var(--violet);line-height:1.4;}
-  .status.ok{border-left-color:var(--up);color:var(--text);} .status.err{border-left-color:var(--down);color:var(--down);}
+  .status{font-size:12.5px;color:var(--muted);margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--panel2);}
+  .status.ok{color:var(--up);} .status.err{color:var(--down);}
 
   .instructions{font-size:13px;line-height:1.7;color:var(--muted);}
   .instructions code{background:var(--panel2);padding:2px 6px;border-radius:5px;color:var(--cyan);font-size:12px;}
@@ -123,29 +97,27 @@
   .instructions strong{color:var(--text);}
 
   .mode-toggle{display:flex;gap:8px;margin-bottom:14px;}
-  .mode-btn{flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);
+  .mode-btn{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--panel2);
     color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;text-align:center;}
   .mode-btn.active{background:rgba(139,92,246,.15);color:#c4b5fd;border-color:var(--violet);}
 
-  .badge-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;}
-  footer{text-align:center;font-size:11px;color:var(--muted);padding:24px 16px;}
+  .badge-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;}
+  footer{text-align:center;font-size:11px;color:var(--muted);padding:24px;}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="header-left">
-    <h1>⚡ QuantFolio Tracker</h1>
-    <div class="sub" id="lastUpdated">Offline Mode · Preloaded Data</div>
-  </div>
+  <h1>⚡ QuantFolio Tracker</h1>
+  <div class="sub" id="lastUpdated">Loaded from QuantFolio_Portfolio_Tracker.xlsx</div>
 </header>
 
 <div class="tabs">
   <div class="tab active" data-tab="dashboard">🏠 Dashboard</div>
   <div class="tab" data-tab="etf">🇮🇳 Indian ETFs</div>
-  <div class="tab" data-tab="stocks">🏢 Indian Stocks / REITs</div>
+  <div class="tab" data-tab="stocks">🏢 Stocks/REITs</div>
   <div class="tab" data-tab="us">🇺🇸 US Holdings</div>
-  <div class="tab" data-tab="refresh">🔄 Auto-Refresh Engine</div>
+  <div class="tab" data-tab="refresh">🔄 Update Data</div>
 </div>
 
 <main>
@@ -155,29 +127,29 @@
     <div class="cards">
       <div class="card c1"><div class="label">Total Invested</div><div class="value" id="totInvested">-</div></div>
       <div class="card c2"><div class="label">Current Value</div><div class="value" id="totCurrent">-</div></div>
-      <div class="card wide c4"><div class="label">Total Net Profit & Loss</div><div class="value" id="totPnl">-</div></div>
-      <div class="card c3"><div class="label">Total Holdings</div><div class="value" id="totCount">-</div></div>
-      <div class="card c1"><div class="label">USD → INR rate</div><div class="value" id="fxRateShown">-</div></div>
+      <div class="card wide c4"><div class="label">Total P&L</div><div class="value" id="totPnl">-</div></div>
+      <div class="card c3"><div class="label">Holdings</div><div class="value" id="totCount">-</div></div>
+      <div class="card c1"><div class="label">USD → INR</div><div class="value" id="fxRateShown">-</div></div>
     </div>
 
     <div class="panel">
-      <h2>🎨 Asset Class Allocation</h2>
+      <h2>🎨 Allocation by Category</h2>
       <div class="allocbar" id="allocBar"></div>
       <div id="allocList"></div>
     </div>
 
     <div class="panel">
-      <h2>🏆 Top 5 Gainers (Absolute)</h2>
+      <h2>🏆 Top 5 Gainers</h2>
       <div id="topGainers"></div>
     </div>
 
     <div class="panel">
-      <h2>📉 Top 5 Losers (Absolute)</h2>
+      <h2>📉 Top 5 Losers</h2>
       <div id="topLosers"></div>
     </div>
 
     <div class="panel">
-      <h2>🔍 Smart Portfolio Watch Points</h2>
+      <h2>🔍 Watch Points</h2>
       <div id="observations" class="instructions"></div>
     </div>
   </section>
@@ -185,12 +157,10 @@
   <!-- ETF -->
   <section class="section" id="etf">
     <div class="panel">
-      <h2>🇮🇳 Indian ETFs (Detailed Metrics)</h2>
-      <div class="table-container">
-        <table id="etfTable"><thead><tr>
-          <th>Name</th><th>Qty</th><th>Avg Price</th><th>Current Price</th><th>iNAV (₹)</th><th>Expense</th><th>AUM (Cr)</th><th>Invested</th><th>Value</th><th>P&L</th><th>P&L%</th>
-        </tr></thead><tbody></tbody></table>
-      </div>
+      <h2>🇮🇳 Indian ETFs</h2>
+      <table id="etfTable"><thead><tr>
+        <th>Name</th><th>Qty</th><th>Avg ₹</th><th>LTP ₹</th><th>Invested</th><th>Value</th><th>P&L</th><th>P&L%</th><th>Exp%</th>
+      </tr></thead><tbody></tbody></table>
     </div>
   </section>
 
@@ -198,11 +168,9 @@
   <section class="section" id="stocks">
     <div class="panel">
       <h2>🏢 Indian Stocks / REITs / InvITs</h2>
-      <div class="table-container">
-        <table id="stocksTable"><thead><tr>
-          <th>Name</th><th>Qty</th><th>Avg Price</th><th>Current Price</th><th>Invested</th><th>Value</th><th>P&L</th><th>P&L%</th>
-        </tr></thead><tbody></tbody></table>
-      </div>
+      <table id="stocksTable"><thead><tr>
+        <th>Name</th><th>Qty</th><th>Avg ₹</th><th>LTP ₹</th><th>Invested</th><th>Value</th><th>P&L</th><th>P&L%</th>
+      </tr></thead><tbody></tbody></table>
     </div>
   </section>
 
@@ -210,87 +178,77 @@
   <section class="section" id="us">
     <div class="panel">
       <h2>🇺🇸 US Holdings (fractional shares, USD)</h2>
-      <div class="table-container">
-        <table id="usTable"><thead><tr>
-          <th>Name</th><th>Ticker</th><th>Qty</th><th>Avg Price</th><th>Current Price</th><th>Invested</th><th>Value</th><th>P&L</th><th>P&L%</th>
-        </tr></thead><tbody></tbody></table>
-      </div>
+      <table id="usTable"><thead><tr>
+        <th>Name</th><th>Ticker</th><th>Qty</th><th>Avg $</th><th>Price $</th><th>Invested $</th><th>Value $</th><th>P&L $</th><th>P&L%</th>
+      </tr></thead><tbody></tbody></table>
     </div>
   </section>
 
   <!-- REFRESH -->
   <section class="section" id="refresh">
     <div class="panel">
-      <h2>🔄 Live Sync with Google Sheets</h2>
+      <h2>🔄 Update from Google Sheets</h2>
       <p class="instructions">
-        Enable automatic prices by connecting your Google Sheet. It updates prices instantly.
+        Upload <code>QuantFolio_Portfolio_Tracker.xlsx</code> to Google Drive → open it → <strong>File → Save as Google Sheets</strong>.
+        The <code>Prices</code> tab already lists every ticker — just wrap each in <code>=GOOGLEFINANCE("NSE:TICKER")</code> (Indian) or <code>=GOOGLEFINANCE("TICKER")</code> (US) to auto-fetch live prices, and set <code>USD_INR_FX</code> using <code>=GOOGLEFINANCE("CURRENCY:USDINR")</code>.
       </p>
 
       <div class="mode-toggle">
-        <div class="mode-btn active" id="modePriceBtn">💲 Prices only Sync</div>
-        <div class="mode-btn" id="modeFullBtn">➕➖ Full Sync (Structure + Prices)</div>
+        <div class="mode-btn active" id="modePriceBtn">💲 Prices only</div>
+        <div class="mode-btn" id="modeFullBtn">➕➖ Full sync (add/remove holdings)</div>
       </div>
 
       <div class="instructions" id="modePriceHelp">
-        <strong>Prices only mode</strong> — Paste the published link of your <code>Prices</code> tab. This keeps your structure fixed and updates the asset prices.
+        <strong>Prices only</strong> — publish your <code>Prices</code> tab (File → Share → Publish to web → CSV) with columns <code>Ticker, Price</code> (plus a <code>USDINR</code> row for FX). This updates values on existing holdings but won't add or remove rows.
       </div>
       <div class="instructions" id="modeFullHelp" style="display:none;">
-        <strong>Full Sync mode</strong> — Paste the published CSV link of your <code>Raw_Data</code> tab. This allows you to add or delete assets in the Google Sheet and fully syncs the structure.
+        <strong>Full sync</strong> — publish your <code>Raw_Data</code> tab as CSV, with columns <code>Ticker, Name, Exchange, Instrument Type, Quantity, Avg Cost, Current Price, Currency</code>. Every refresh will fully rebuild the holdings list from this sheet — add a new row to buy something, delete a row to remove it, and it reflects here automatically.
       </div>
 
-      <div class="refresh-box" style="margin-top:16px;">
+      <div class="refresh-box" style="margin-top:12px;">
         <input type="text" id="sheetUrl" placeholder="Paste published Google Sheet CSV link here">
       </div>
-      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
-        <button id="saveUrlBtn">💾 Save Connection</button>
-        <button class="secondary" id="refreshBtn">🔄 Refresh Prices Now</button>
-        <button class="ghost" id="resetBtn">🔄 Reset to Defaults</button>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <button id="saveUrlBtn">Save Link</button>
+        <button class="secondary" id="refreshBtn">Refresh Now</button>
+        <button class="ghost" id="resetBtn">Reset to Original</button>
       </div>
-      <div class="status" id="refreshStatus">Showing workbook snapshot. Save a published Google Sheet link to automate.</div>
+      <div class="status" id="refreshStatus">No link saved yet. Showing the snapshot from your uploaded workbook.</div>
     </div>
   </section>
 
 </main>
 
-<footer>QuantFolio · Secure Offline Web App · No Data Collected.</footer>
+<footer>Data stays on your device (no server). Prices/holdings update only when you refresh from your own Google Sheet.</footer>
 
 <script>
-/* ===================== RAW BASE PORTFOLIO (Preloaded) ===================== */
-const RAW = {"holdings": [{"ticker": "CPSE ETF", "name": "CPSE ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 25, "avgCost": 92.03, "currentPrice": 97.42, "currency": "INR", "index": "CPSE Index", "sector": "PSU/CPSE", "marketCap": "Mid Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0005, "aum": 3800, "trackingError": 0.0004, "iNAV": 97.42}, {"ticker": "GROWWPOWER", "name": "Groww BSE Power ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 172, "avgCost": 12.21, "currentPrice": 11.83, "currency": "INR", "index": "BSE Power Index", "sector": "PSU/CPSE", "marketCap": "Multi Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0015, "aum": 120, "trackingError": 0.0008, "iNAV": 11.83}, {"ticker": "HDFC200MOM", "name": "HDFC Nifty 200 Momentum 30 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 30, "avgCost": 30.7, "currentPrice": 30.82, "currency": "INR", "index": "Nifty200 Momentum 30", "sector": "Diversified", "marketCap": "Multi Cap", "assetClass": "Factor", "category": "Momentum", "expenseRatio": 0.0020, "aum": 450, "trackingError": 0.0005, "iNAV": 30.82}, {"ticker": "HDFCBANK", "name": "HDFC Nifty Bank ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 70, "avgCost": 56.46, "currentPrice": 59.72, "currency": "INR", "index": "Nifty Bank", "sector": "Banking/Private Bank", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0016, "aum": 2100, "trackingError": 0.0003, "iNAV": 59.72}, {"ticker": "ICICILOWVOL", "name": "ICICI Pru Nifty 100 Low Vol 30 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 20, "avgCost": 21.82, "currentPrice": 22.1, "currency": "INR", "index": "Nifty100 Low Vol 30", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Factor", "category": "Low Volatility", "expenseRatio": 0.0015, "aum": 620, "trackingError": 0.0004, "iNAV": 22.10}, {"ticker": "ICICIVALUE", "name": "ICICI Pru Nifty 200 Value 30 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 21, "avgCost": 14.55, "currentPrice": 15.44, "currency": "INR", "index": "Nifty200 Value 30", "sector": "Diversified", "marketCap": "Multi Cap", "assetClass": "Factor", "category": "Value", "expenseRatio": 0.0015, "aum": 180, "trackingError": 0.0006, "iNAV": 15.44}, {"ticker": "ICICINV20", "name": "ICICI Pru Nifty 50 Value 20 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 138, "avgCost": 14.57, "currentPrice": 13.81, "currency": "INR", "index": "Nifty50 Value 20", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Factor", "category": "Value", "expenseRatio": 0.0015, "aum": 310, "trackingError": 0.0005, "iNAV": 13.81}, {"ticker": "ICICIALPHALV", "name": "ICICI Pru Nifty Alpha Low Volatility 30", "exchange": "NSE", "type": "Indian ETF", "qty": 5, "avgCost": 27.59, "currentPrice": 27.54, "currency": "INR", "index": "Nifty Alpha Low Volatility 30", "sector": "Diversified", "marketCap": "Multi Cap", "assetClass": "Factor", "category": "Alpha", "expenseRatio": 0.0018, "aum": 250, "trackingError": 0.0006, "iNAV": 27.54}, {"ticker": "ICICIAUTO", "name": "ICICI Pru Nifty Auto ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 165, "avgCost": 27.64, "currentPrice": 27.97, "currency": "INR", "index": "Nifty Auto", "sector": "Auto", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0017, "aum": 850, "trackingError": 0.0004, "iNAV": 27.97}, {"ticker": "ICICIFMCG", "name": "ICICI Pru Nifty FMCG ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 13, "avgCost": 60.36, "currentPrice": 53.72, "currency": "INR", "index": "Nifty FMCG", "sector": "FMCG", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0018, "aum": 420, "trackingError": 0.0005, "iNAV": 53.72}, {"ticker": "ICICIMETAL", "name": "ICICI Pru Nifty Metal ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 252, "avgCost": 10.77, "currentPrice": 12.66, "currency": "INR", "index": "Nifty Metal", "sector": "Metal", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0017, "aum": 340, "trackingError": 0.0005, "iNAV": 12.66}, {"ticker": "ICICIMID150", "name": "ICICI Pru Nifty Midcap 150 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 85, "avgCost": 21.47, "currentPrice": 23.73, "currency": "INR", "index": "Nifty Midcap 150", "sector": "Diversified", "marketCap": "Mid Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0020, "aum": 1100, "trackingError": 0.0005, "iNAV": 23.73}, {"ticker": "ICICINEXT50", "name": "ICICI Pru Nifty Next 50 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 25, "avgCost": 67.82, "currentPrice": 76.14, "currency": "INR", "index": "Nifty Next 50", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0015, "aum": 3800, "trackingError": 0.0004, "iNAV": 76.14}, {"ticker": "ICICIOILGAS", "name": "ICICI Pru Nifty Oil & Gas ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 247, "avgCost": 11.87, "currentPrice": 11.32, "currency": "INR", "index": "Nifty Oil & Gas", "sector": "Oil & Gas", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0018, "aum": 290, "trackingError": 0.0006, "iNAV": 11.32}, {"ticker": "ICICIPRIVAT", "name": "ICICI Pru Nifty Private Bank ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 31, "avgCost": 27.59, "currentPrice": 28.53, "currency": "INR", "index": "Nifty Private Bank", "sector": "Banking/Private Bank", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0015, "aum": 780, "trackingError": 0.0004, "iNAV": 28.53}, {"ticker": "MASGETF", "name": "Mirae Asset Gold ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 21, "avgCost": 97.09, "currentPrice": 141.20, "currency": "INR", "index": "Gold Prices", "sector": "Gold", "marketCap": "None", "assetClass": "Commodity", "category": "None", "expenseRatio": 0.0003, "aum": 1400, "trackingError": 0.0000, "iNAV": 141.20}, {"ticker": "MAHNGSNG", "name": "Mirae Asset Hang Seng Tech ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 14, "avgCost": 22.57, "currentPrice": 21.75, "currency": "INR", "index": "Hang Seng Tech", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None", "expenseRatio": 0.0022, "aum": 280, "trackingError": 0.0008, "iNAV": 21.75}, {"ticker": "MAMID150", "name": "Mirae Asset Nifty Midcap 150 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 195, "avgCost": 22.09, "currentPrice": 23.41, "currency": "INR", "index": "Nifty Midcap 150", "sector": "Diversified", "marketCap": "Mid Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0021, "aum": 950, "trackingError": 0.0005, "iNAV": 23.41}, {"ticker": "MON100", "name": "Motilal Oswal Nasdaq 100 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 11, "avgCost": 214.01, "currentPrice": 332.78, "currency": "INR", "index": "Nasdaq 100", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None", "expenseRatio": 0.0050, "aum": 6200, "trackingError": 0.0012, "iNAV": 332.78}, {"ticker": "MON500", "name": "Motilal Oswal Nifty 500 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 76, "avgCost": 23.59, "currentPrice": 23.87, "currency": "INR", "index": "Nifty 500", "sector": "Diversified", "marketCap": "Multi Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0015, "aum": 450, "trackingError": 0.0006, "iNAV": 23.87}, {"ticker": "MOODEFENCE", "name": "Motilal Oswal Nifty India Defence ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 58, "avgCost": 88.38, "currentPrice": 105.25, "currency": "INR", "index": "Nifty India Defence", "sector": "Defence", "marketCap": "Multi Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0020, "aum": 1900, "trackingError": 0.0006, "iNAV": 105.25}, {"ticker": "MASMALL250", "name": "Motilal Oswal Nifty Smallcap 250 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 233, "avgCost": 16.10, "currentPrice": 18.07, "currency": "INR", "index": "Nifty Smallcap 250", "sector": "Diversified", "marketCap": "Small Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0022, "aum": 1600, "trackingError": 0.0006, "iNAV": 18.07}, {"ticker": "NIFTYBEES", "name": "Nippon Nifty 50 ETF (NIFTYBEES)", "exchange": "NSE", "type": "Indian ETF", "qty": 17, "avgCost": 276.42, "currentPrice": 275.91, "currency": "INR", "index": "Nifty 50", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0004, "aum": 26000, "trackingError": 0.0002, "iNAV": 275.91}, {"ticker": "ITBEES", "name": "Nippon Nifty IT ETF (ITBEES)", "exchange": "NSE", "type": "Indian ETF", "qty": 58, "avgCost": 37.60, "currentPrice": 30.48, "currency": "INR", "index": "Nifty IT", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0022, "aum": 4500, "trackingError": 0.0004, "iNAV": 30.48}, {"ticker": "PHARMABEES", "name": "Nippon Pharma ETF (PHARMABEES)", "exchange": "NSE", "type": "Indian ETF", "qty": 194, "avgCost": 23.22, "currentPrice": 26.48, "currency": "INR", "index": "Nifty Pharma", "sector": "Pharma", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0021, "aum": 1200, "trackingError": 0.0005, "iNAV": 26.48}, {"ticker": "SILVERBEES", "name": "Nippon Silver ETF (SILVERBEES)", "exchange": "NSE", "type": "Indian ETF", "qty": 20, "avgCost": 142.62, "currentPrice": 221.31, "currency": "INR", "index": "Silver Prices", "sector": "Silver", "marketCap": "None", "assetClass": "Commodity", "category": "None", "expenseRatio": 0.0018, "aum": 650, "trackingError": 0.0000, "iNAV": 221.31}, {"ticker": "TATASILVER", "name": "TATA Silver ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 202, "avgCost": 21.10, "currentPrice": 22.46, "currency": "INR", "index": "Silver Prices", "sector": "Silver", "marketCap": "None", "assetClass": "Commodity", "category": "None", "expenseRatio": 0.0018, "aum": 310, "trackingError": 0.0000, "iNAV": 22.46}, {"ticker": "TATAGOLD", "name": "Tata Gold ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 817, "avgCost": 13.14, "currentPrice": 14.13, "currency": "INR", "index": "Gold Prices", "sector": "Gold", "marketCap": "None", "assetClass": "Commodity", "category": "None", "expenseRatio": 0.0005, "aum": 1100, "trackingError": 0.0000, "iNAV": 14.13}, {"ticker": "ZERNIF50", "name": "Zerodha Nifty 50 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 248, "avgCost": 9.49, "currentPrice": 9.72, "currency": "INR", "index": "Nifty 50", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.0005, "aum": 340, "trackingError": 0.0003, "iNAV": 9.72}, {"ticker": "EMBASSYREIT", "name": "Embassy Office Parks REIT", "exchange": "NSE", "type": "Indian Stock", "qty": 1, "avgCost": 429.12, "currentPrice": 446.87, "currency": "INR", "index": "REIT", "sector": "Diversified", "marketCap": "None", "assetClass": "Equity", "category": "None"}, {"ticker": "IRBINVIT", "name": "IRB InvIT Fund", "exchange": "NSE", "type": "Indian Stock", "qty": 34, "avgCost": 60.48, "currentPrice": 60.97, "currency": "INR", "index": "InvIT", "sector": "Diversified", "marketCap": "None", "assetClass": "Equity", "category": "None"}, {"ticker": "PGINVIT", "name": "Powergrid Infrastructure", "exchange": "NSE", "type": "Indian Stock", "qty": 12, "avgCost": 92.94, "currentPrice": 94.01, "currency": "INR", "index": "InvIT", "sector": "PSU/CPSE", "marketCap": "None", "assetClass": "Equity", "category": "None"}, {"ticker": "SOXX", "name": "iShares Semiconductor ETF", "exchange": "NASDAQ", "type": "US ETF", "qty": 0.054302415, "avgCost": 403.85, "currentPrice": 596.25, "currency": "USD", "index": "PHLX Semiconductor", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "QQQM", "name": "Invesco NASDAQ 100 ETF", "exchange": "NASDAQ", "type": "US ETF", "qty": 0.125317083, "avgCost": 246.65, "currentPrice": 297.01, "currency": "USD", "index": "Nasdaq 100", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "ITA", "name": "iShares U.S. Aerospace & Defense ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.079478398, "avgCost": 225.72, "currentPrice": 233.79, "currency": "USD", "index": "US Aerospace & Defense", "sector": "Defence", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "EWY", "name": "iShares MSCI South Korea ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.072448203, "avgCost": 165.08, "currentPrice": 197.45, "currency": "USD", "index": "MSCI South Korea", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None"}, {"ticker": "CPER", "name": "United States Copper Index Fund LP", "exchange": "NYSE", "type": "US ETF", "qty": 1.04504283, "avgCost": 36.26, "currentPrice": 39.55, "currency": "USD", "index": "Copper Prices", "sector": "None", "marketCap": "None", "assetClass": "Commodity", "category": "None"}, {"ticker": "AAPL", "name": "Apple Inc.", "exchange": "NASDAQ", "type": "US Stock", "qty": 0.036331413, "avgCost": 295.43, "currentPrice": 303.33, "currency": "USD", "index": "S&P 500", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "UAE", "name": "iShares Trust iShares MSCI UAE ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.649194045, "avgCost": 18.42, "currentPrice": 19.62, "currency": "USD", "index": "MSCI UAE", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None"}, {"ticker": "SPY", "name": "State Street SPDR S&P 500 ETF Trust", "exchange": "NYSE", "type": "US ETF", "qty": 0.008328737, "avgCost": 718.00, "currentPrice": 741.75, "currency": "USD", "index": "S&P 500", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "GOOGL", "name": "Alphabet Inc. Class A", "exchange": "NASDAQ", "type": "US Stock", "qty": 0.028370216, "avgCost": 351.78, "currentPrice": 359.08, "currency": "USD", "index": "Nasdaq 100", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "AMZN", "name": "Amazon.com Inc.", "exchange": "NASDAQ", "type": "US Stock", "qty": 0.021144426, "avgCost": 236.00, "currentPrice": 238.55, "currency": "USD", "index": "S&P 500", "sector": "FMCG", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "JPM", "name": "JPMorgan Chase & Co.", "exchange": "NYSE", "type": "US Stock", "qty": 0.015152334, "avgCost": 327.50, "currentPrice": 334.47, "currency": "USD", "index": "Financials", "sector": "Banking/Private Bank", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "EEM", "name": "iShares MSCI Emerging Markets ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.031841018, "avgCost": 62.50, "currentPrice": 67.88, "currency": "USD", "index": "MSCI Emerging Markets", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None"}, {"ticker": "GS", "name": "Goldman Sachs Group Inc.", "exchange": "NYSE", "type": "US Stock", "qty": 0.005734353, "avgCost": 1327.30, "currentPrice": 1321.30, "currency": "USD", "index": "Dow Jones Industrial", "sector": "Banking/Private Bank", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "QAT", "name": "iShares Trust iShares MSCI Qatar ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.324647122, "avgCost": 18.42, "currentPrice": 18.60, "currency": "USD", "index": "MSCI Qatar", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None"}, {"ticker": "LIT", "name": "Global X Lithium & Battery Tech ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.060306487, "avgCost": 82.74, "currentPrice": 82.37, "currency": "USD", "index": "Global Lithium & Batteries", "sector": "Auto", "marketCap": "Mid Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "USO", "name": "United States Oil Fund LP", "exchange": "NYSE", "type": "US ETF", "qty": 0.090391484, "avgCost": 110.30, "currentPrice": 125.43, "currency": "USD", "index": "WTI Crude Oil", "sector": "Oil & Gas", "marketCap": "None", "assetClass": "Commodity", "category": "None"}, {"ticker": "NVDA", "name": "NVIDIA Corporation", "exchange": "NASDAQ", "type": "US Stock", "qty": 0.026978381, "avgCost": 222.03, "currentPrice": 205.19, "currency": "USD", "index": "S&P 500", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None"}, {"ticker": "MCHI", "name": "iShares MSCI China ETF", "exchange": "NASDAQ", "type": "US ETF", "qty": 0.179999678, "avgCost": 55.44, "currentPrice": 54.83, "currency": "USD", "index": "MSCI China", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None"}, {"ticker": "UEC", "name": "Uranium Energy Corp", "exchange": "NYSE", "type": "US Stock", "qty": 2.027982326, "avgCost": 13.85, "currentPrice": 11.03, "currency": "USD", "index": "Uranium Index", "sector": "Oil & Gas", "marketCap": "Small Cap", "assetClass": "Equity", "category": "None"}], "fx": 83.5};
+/* ===================== BASE DATA ===================== */
+const RAW = {"holdings": [{"ticker": "CPSE ETF", "name": "CPSE ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 25, "avgCost": 92.03, "currentPrice": 97.42, "currency": "INR", "index": "CPSE Index", "sector": "PSU/CPSE", "marketCap": "Mid Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.05, "aum": 3800, "trackingError": 0.04, "inav": 97.42}, {"ticker": "GROWWPOWER", "name": "Groww BSE Power ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 172, "avgCost": 12.21, "currentPrice": 11.83, "currency": "INR", "index": "BSE Power Index", "sector": "PSU/CPSE", "marketCap": "Multi Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.15, "aum": 120, "trackingError": 0.08, "inav": 11.83}, {"ticker": "HDFC200MOM", "name": "HDFC Nifty 200 Momentum 30 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 30, "avgCost": 30.7, "currentPrice": 30.82, "currency": "INR", "index": "Nifty200 Momentum 30", "sector": "Diversified", "marketCap": "Multi Cap", "assetClass": "Factor", "category": "Momentum", "expenseRatio": 0.2, "aum": 450, "trackingError": 0.05, "inav": 30.82}, {"ticker": "HDFCBANK", "name": "HDFC Nifty Bank ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 70, "avgCost": 56.46, "currentPrice": 59.72, "currency": "INR", "index": "Nifty Bank", "sector": "Banking/Private Bank", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.16, "aum": 2100, "trackingError": 0.03, "inav": 59.72}, {"ticker": "ICICILOWVOL", "name": "ICICI Pru Nifty 100 Low Vol 30 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 20, "avgCost": 21.82, "currentPrice": 22.1, "currency": "INR", "index": "Nifty100 Low Vol 30", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Factor", "category": "Low Volatility", "expenseRatio": 0.15, "aum": 620, "trackingError": 0.04, "inav": 22.1}, {"ticker": "ICICIVALUE", "name": "ICICI Pru Nifty 200 Value 30 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 21, "avgCost": 14.55, "currentPrice": 15.44, "currency": "INR", "index": "Nifty200 Value 30", "sector": "Diversified", "marketCap": "Multi Cap", "assetClass": "Factor", "category": "Value", "expenseRatio": 0.15, "aum": 180, "trackingError": 0.06, "inav": 15.44}, {"ticker": "ICICINV20", "name": "ICICI Pru Nifty 50 Value 20 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 138, "avgCost": 14.57, "currentPrice": 13.81, "currency": "INR", "index": "Nifty50 Value 20", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Factor", "category": "Value", "expenseRatio": 0.15, "aum": 310, "trackingError": 0.05, "inav": 13.81}, {"ticker": "ICICIALPHALV", "name": "ICICI Pru Nifty Alpha Low Volatility 30", "exchange": "NSE", "type": "Indian ETF", "qty": 5, "avgCost": 27.59, "currentPrice": 27.54, "currency": "INR", "index": "Nifty Alpha Low Volatility 30", "sector": "Diversified", "marketCap": "Multi Cap", "assetClass": "Factor", "category": "Alpha", "expenseRatio": 0.18, "aum": 250, "trackingError": 0.06, "inav": 27.54}, {"ticker": "ICICIAUTO", "name": "ICICI Pru Nifty Auto ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 165, "avgCost": 27.64, "currentPrice": 27.97, "currency": "INR", "index": "Nifty Auto", "sector": "Auto", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.17, "aum": 850, "trackingError": 0.04, "inav": 27.97}, {"ticker": "ICICIFMCG", "name": "ICICI Pru Nifty FMCG ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 13, "avgCost": 60.36, "currentPrice": 53.72, "currency": "INR", "index": "Nifty FMCG", "sector": "FMCG", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.18, "aum": 420, "trackingError": 0.05, "inav": 53.72}, {"ticker": "ICICIMETAL", "name": "ICICI Pru Nifty Metal ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 252, "avgCost": 10.77, "currentPrice": 12.66, "currency": "INR", "index": "Nifty Metal", "sector": "Metal", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.17, "aum": 340, "trackingError": 0.05, "inav": 12.66}, {"ticker": "ICICIMID150", "name": "ICICI Pru Nifty Midcap 150 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 85, "avgCost": 21.47, "currentPrice": 23.73, "currency": "INR", "index": "Nifty Midcap 150", "sector": "Diversified", "marketCap": "Mid Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.2, "aum": 1100, "trackingError": 0.05, "inav": 23.73}, {"ticker": "ICICINEXT50", "name": "ICICI Pru Nifty Next 50 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 25, "avgCost": 67.82, "currentPrice": 76.14, "currency": "INR", "index": "Nifty Next 50", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.15, "aum": 3800, "trackingError": 0.04, "inav": 76.14}, {"ticker": "ICICIOILGAS", "name": "ICICI Pru Nifty Oil & Gas ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 247, "avgCost": 11.87, "currentPrice": 11.32, "currency": "INR", "index": "Nifty Oil & Gas", "sector": "Oil & Gas", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.18, "aum": 290, "trackingError": 0.06, "inav": 11.32}, {"ticker": "ICICIPRIVAT", "name": "ICICI Pru Nifty Private Bank ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 31, "avgCost": 27.59, "currentPrice": 28.53, "currency": "INR", "index": "Nifty Private Bank", "sector": "Banking/Private Bank", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.15, "aum": 780, "trackingError": 0.04, "inav": 28.53}, {"ticker": "MASGETF", "name": "Mirae Asset Gold ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 21, "avgCost": 97.09, "currentPrice": 141.2, "currency": "INR", "index": "Gold Prices", "sector": "Gold", "marketCap": "None", "assetClass": "Commodity", "category": "None", "expenseRatio": 0.03, "aum": 1400, "trackingError": 0, "inav": 141.2}, {"ticker": "MAHNGSNG", "name": "Mirae Asset Hang Seng Tech ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 14, "avgCost": 22.57, "currentPrice": 21.75, "currency": "INR", "index": "Hang Seng Tech", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None", "expenseRatio": 0.22, "aum": 280, "trackingError": 0.08, "inav": 21.75}, {"ticker": "MAMID150", "name": "Mirae Asset Nifty Midcap 150 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 195, "avgCost": 22.09, "currentPrice": 23.41, "currency": "INR", "index": "Nifty Midcap 150", "sector": "Diversified", "marketCap": "Mid Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.21, "aum": 950, "trackingError": 0.05, "inav": 23.41}, {"ticker": "MON100", "name": "Motilal Oswal Nasdaq 100 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 11, "avgCost": 214.01, "currentPrice": 332.78, "currency": "INR", "index": "Nasdaq 100", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None", "expenseRatio": 0.5, "aum": 6200, "trackingError": 0.12, "inav": 332.78}, {"ticker": "MON500", "name": "Motilal Oswal Nifty 500 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 76, "avgCost": 23.59, "currentPrice": 23.87, "currency": "INR", "index": "Nifty 500", "sector": "Diversified", "marketCap": "Multi Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.15, "aum": 450, "trackingError": 0.06, "inav": 23.87}, {"ticker": "MOODEFENCE", "name": "Motilal Oswal Nifty India Defence ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 58, "avgCost": 88.38, "currentPrice": 105.25, "currency": "INR", "index": "Nifty India Defence", "sector": "Defence", "marketCap": "Multi Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.2, "aum": 1900, "trackingError": 0.06, "inav": 105.25}, {"ticker": "MASMALL250", "name": "Motilal Oswal Nifty Smallcap 250 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 233, "avgCost": 16.1, "currentPrice": 18.07, "currency": "INR", "index": "Nifty Smallcap 250", "sector": "Diversified", "marketCap": "Small Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.22, "aum": 1600, "trackingError": 0.06, "inav": 18.07}, {"ticker": "NIFTYBEES", "name": "Nippon Nifty 50 ETF (NIFTYBEES)", "exchange": "NSE", "type": "Indian ETF", "qty": 17, "avgCost": 276.42, "currentPrice": 275.91, "currency": "INR", "index": "Nifty 50", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.04, "aum": 26000, "trackingError": 0.02, "inav": 275.91}, {"ticker": "ITBEES", "name": "Nippon Nifty IT ETF (ITBEES)", "exchange": "NSE", "type": "Indian ETF", "qty": 58, "avgCost": 37.6, "currentPrice": 30.48, "currency": "INR", "index": "Nifty IT", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.22, "aum": 4500, "trackingError": 0.04, "inav": 30.48}, {"ticker": "PHARMABEES", "name": "Nippon Pharma ETF (PHARMABEES)", "exchange": "NSE", "type": "Indian ETF", "qty": 194, "avgCost": 23.22, "currentPrice": 26.48, "currency": "INR", "index": "Nifty Pharma", "sector": "Pharma", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.21, "aum": 1200, "trackingError": 0.05, "inav": 26.48}, {"ticker": "SILVERBEES", "name": "Nippon Silver ETF (SILVERBEES)", "exchange": "NSE", "type": "Indian ETF", "qty": 20, "avgCost": 142.62, "currentPrice": 221.31, "currency": "INR", "index": "Silver Prices", "sector": "Silver", "marketCap": "None", "assetClass": "Commodity", "category": "None", "expenseRatio": 0.18, "aum": 650, "trackingError": 0, "inav": 221.31}, {"ticker": "TATASILVER", "name": "TATA Silver ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 202, "avgCost": 21.1, "currentPrice": 22.46, "currency": "INR", "index": "Silver Prices", "sector": "Silver", "marketCap": "None", "assetClass": "Commodity", "category": "None", "expenseRatio": 0.18, "aum": 310, "trackingError": 0, "inav": 22.46}, {"ticker": "TATAGOLD", "name": "Tata Gold ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 817, "avgCost": 13.14, "currentPrice": 14.13, "currency": "INR", "index": "Gold Prices", "sector": "Gold", "marketCap": "None", "assetClass": "Commodity", "category": "None", "expenseRatio": 0.05, "aum": 1100, "trackingError": 0, "inav": 14.13}, {"ticker": "ZERNIF50", "name": "Zerodha Nifty 50 ETF", "exchange": "NSE", "type": "Indian ETF", "qty": 248, "avgCost": 9.49, "currentPrice": 9.72, "currency": "INR", "index": "Nifty 50", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.05, "aum": 340, "trackingError": 0.03, "inav": 9.72}, {"ticker": "EMBASSYREIT", "name": "Embassy Office Parks REIT", "exchange": "NSE", "type": "Indian Stock", "qty": 1, "avgCost": 429.12, "currentPrice": 446.87, "currency": "INR", "index": "REIT", "sector": "Diversified", "marketCap": "None", "assetClass": "Equity", "category": "None", "expenseRatio": 0, "aum": 0, "trackingError": 0, "inav": 446.87}, {"ticker": "IRBINVIT", "name": "IRB InvIT Fund", "exchange": "NSE", "type": "Indian Stock", "qty": 34, "avgCost": 60.48, "currentPrice": 60.97, "currency": "INR", "index": "InvIT", "sector": "Diversified", "marketCap": "None", "assetClass": "Equity", "category": "None", "expenseRatio": 0, "aum": 0, "trackingError": 0, "inav": 60.97}, {"ticker": "PGINVIT", "name": "Powergrid Infrastructure", "exchange": "NSE", "type": "Indian Stock", "qty": 12, "avgCost": 92.94, "currentPrice": 94.01, "currency": "INR", "index": "InvIT", "sector": "PSU/CPSE", "marketCap": "None", "assetClass": "Equity", "category": "None", "expenseRatio": 0, "aum": 0, "trackingError": 0, "inav": 94.01}, {"ticker": "SOXX", "name": "iShares Semiconductor ETF", "exchange": "NASDAQ", "type": "US ETF", "qty": 0.054302415, "avgCost": 403.85, "currentPrice": 596.25, "currency": "USD", "index": "PHLX Semiconductor", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.35, "aum": 15000, "trackingError": 0.01, "inav": 596.25}, {"ticker": "QQQM", "name": "Invesco NASDAQ 100 ETF", "exchange": "NASDAQ", "type": "US ETF", "qty": 0.125317083, "avgCost": 246.65, "currentPrice": 297.01, "currency": "USD", "index": "Nasdaq 100", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.15, "aum": 28000, "trackingError": 0.01, "inav": 297.01}, {"ticker": "ITA", "name": "iShares U.S. Aerospace & Defense ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.079478398, "avgCost": 225.72, "currentPrice": 233.79, "currency": "USD", "index": "US Aerospace & Defense", "sector": "Defence", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.42, "aum": 6000, "trackingError": 0.02, "inav": 233.79}, {"ticker": "EWY", "name": "iShares MSCI South Korea ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.072448203, "avgCost": 165.08, "currentPrice": 197.45, "currency": "USD", "index": "MSCI South Korea", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None", "expenseRatio": 0.57, "aum": 4500, "trackingError": 0.03, "inav": 197.45}, {"ticker": "CPER", "name": "United States Copper Index Fund LP", "exchange": "NYSE", "type": "US ETF", "qty": 1.04504283, "avgCost": 36.26, "currentPrice": 39.55, "currency": "USD", "index": "Copper Prices", "sector": "None", "marketCap": "None", "assetClass": "Commodity", "category": "None", "expenseRatio": 0.85, "aum": 200, "trackingError": 0, "inav": 39.55}, {"ticker": "AAPL", "name": "Apple Inc.", "exchange": "NASDAQ", "type": "US Stock", "qty": 0.036331413, "avgCost": 295.43, "currentPrice": 303.33, "currency": "USD", "index": "S&P 500", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0, "aum": 0, "trackingError": 0, "inav": 303.33}, {"ticker": "UAE", "name": "iShares Trust iShares MSCI UAE ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.649194045, "avgCost": 18.42, "currentPrice": 19.62, "currency": "USD", "index": "MSCI UAE", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None", "expenseRatio": 0.59, "aum": 150, "trackingError": 0.03, "inav": 19.62}, {"ticker": "SPY", "name": "State Street SPDR S&P 500 ETF Trust", "exchange": "NYSE", "type": "US ETF", "qty": 0.008328737, "avgCost": 718, "currentPrice": 741.75, "currency": "USD", "index": "S&P 500", "sector": "Diversified", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.09, "aum": 520000, "trackingError": 0.01, "inav": 741.75}, {"ticker": "GOOGL", "name": "Alphabet Inc. Class A", "exchange": "NASDAQ", "type": "US Stock", "qty": 0.028370216, "avgCost": 351.78, "currentPrice": 359.08, "currency": "USD", "index": "Nasdaq 100", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0, "aum": 0, "trackingError": 0, "inav": 359.08}, {"ticker": "AMZN", "name": "Amazon.com Inc.", "exchange": "NASDAQ", "type": "US Stock", "qty": 0.021144426, "avgCost": 236, "currentPrice": 238.55, "currency": "USD", "index": "S&P 500", "sector": "FMCG", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0, "aum": 0, "trackingError": 0, "inav": 238.55}, {"ticker": "JPM", "name": "JPMorgan Chase & Co.", "exchange": "NYSE", "type": "US Stock", "qty": 0.015152334, "avgCost": 327.5, "currentPrice": 334.47, "currency": "USD", "index": "Financials", "sector": "Banking/Private Bank", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0, "aum": 0, "trackingError": 0, "inav": 334.47}, {"ticker": "EEM", "name": "iShares MSCI Emerging Markets ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.031841018, "avgCost": 62.5, "currentPrice": 67.88, "currency": "USD", "index": "MSCI Emerging Markets", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None", "expenseRatio": 0.69, "aum": 22000, "trackingError": 0.02, "inav": 67.88}, {"ticker": "GS", "name": "Goldman Sachs Group Inc.", "exchange": "NYSE", "type": "US Stock", "qty": 0.005734353, "avgCost": 1327.3, "currentPrice": 1321.3, "currency": "USD", "index": "Dow Jones Industrial", "sector": "Banking/Private Bank", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0, "aum": 0, "trackingError": 0, "inav": 1321.3}, {"ticker": "QAT", "name": "iShares Trust iShares MSCI Qatar ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.324647122, "avgCost": 18.42, "currentPrice": 18.6, "currency": "USD", "index": "MSCI Qatar", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None", "expenseRatio": 0.59, "aum": 120, "trackingError": 0.03, "inav": 18.6}, {"ticker": "LIT", "name": "Global X Lithium & Battery Tech ETF", "exchange": "NYSE", "type": "US ETF", "qty": 0.060306487, "avgCost": 82.74, "currentPrice": 82.37, "currency": "USD", "index": "Global Lithium & Batteries", "sector": "Auto", "marketCap": "Mid Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0.75, "aum": 2800, "trackingError": 0.04, "inav": 82.37}, {"ticker": "USO", "name": "United States Oil Fund LP", "exchange": "NYSE", "type": "US ETF", "qty": 0.090391484, "avgCost": 110.3, "currentPrice": 125.43, "currency": "USD", "index": "WTI Crude Oil", "sector": "Oil & Gas", "marketCap": "None", "assetClass": "Commodity", "category": "None", "expenseRatio": 0.6, "aum": 1500, "trackingError": 0, "inav": 125.43}, {"ticker": "NVDA", "name": "NVIDIA Corporation", "exchange": "NASDAQ", "type": "US Stock", "qty": 0.026978381, "avgCost": 222.03, "currentPrice": 205.19, "currency": "USD", "index": "S&P 500", "sector": "IT", "marketCap": "Large Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0, "aum": 0, "trackingError": 0, "inav": 205.19}, {"ticker": "MCHI", "name": "iShares MSCI China ETF", "exchange": "NASDAQ", "type": "US ETF", "qty": 0.179999678, "avgCost": 55.44, "currentPrice": 54.83, "currency": "USD", "index": "MSCI China", "sector": "Global", "marketCap": "Large Cap", "assetClass": "Global", "category": "None", "expenseRatio": 0.59, "aum": 6500, "trackingError": 0.03, "inav": 54.83}, {"ticker": "UEC", "name": "Uranium Energy Corp", "exchange": "NYSE", "type": "US Stock", "qty": 2.027982326, "avgCost": 13.85, "currentPrice": 11.03, "currency": "USD", "index": "Uranium Index", "sector": "Oil & Gas", "marketCap": "Small Cap", "assetClass": "Equity", "category": "None", "expenseRatio": 0, "aum": 0, "trackingError": 0, "inav": 11.03}], "fx": 87.5};
 const DEFAULT_FX = RAW.fx;
+
+const CATEGORY_COLORS = {
+  "Indian ETF": "#8b5cf6", "Indian Stock": "#3b82f6", "REIT": "#22d3ee", "InvIT": "#2dd4bf",
+  "US ETF": "#fbbf24", "US Stock": "#f472b6"
+};
 
 function toHoldingsState(rawHoldings){
   return rawHoldings.map(h=>{
+    const isUSD = h.currency === 'USD';
     return {
       ticker: h.ticker, name: h.name, exchange: h.exchange, type: h.type,
       qty: Number(h.qty), avgCost: Number(h.avgCost), currentPrice: Number(h.currentPrice),
-      currency: h.currency, index: h.index, sector: h.sector, marketCap: h.marketCap, 
-      assetClass: h.assetClass, category: h.category,
-      expenseRatio: h.expenseRatio || 0, aum: h.aum || 0, trackingError: h.trackingError || 0, iNAV: h.iNAV || 0
+      currency: h.currency,
+      index: h.index, sector: h.sector, marketCap: h.marketCap, assetClass: h.assetClass, category: h.category,
+      expenseRatio: h.expenseRatio, aum: h.aum, trackingError: h.trackingError, inav: h.inav
     };
   });
 }
 
-// Global active state
 let state = { holdings: toHoldingsState(RAW.holdings) };
 let fxRate = DEFAULT_FX;
-let lastUpdatedLabel = "Default Snapshot (Not Sync'd)";
+let lastUpdatedLabel = "Uploaded workbook snapshot";
 
-// Load saved config & data on launch
-const savedCsvData = localStorage.getItem('quantfolio_active_data');
-const savedLastUpdate = localStorage.getItem('quantfolio_last_update_time');
-const savedFxRate = localStorage.getItem('quantfolio_fx_rate');
-
-if (savedCsvData) {
-  try {
-    state.holdings = JSON.parse(savedCsvData);
-    if (savedLastUpdate) lastUpdatedLabel = savedLastUpdate;
-    if (savedFxRate) fxRate = parseFloat(savedFxRate);
-  } catch(e) {
-    console.error("Error reading cached local storage data:", e);
-  }
-}
-
+/* derived groupings */
 function group(){
   const isIndianEquity = h => h.currency==='INR' && h.type==='Indian ETF';
   const isIndianStock = h => h.currency==='INR' && h.type!=='Indian ETF';
@@ -304,17 +262,14 @@ function group(){
 
 function calc(h){
   const fx = h.currency==='USD' ? fxRate : 1;
-  const invested = h.qty * h.avgCost;
-  const currentValue = h.qty * h.currentPrice;
+  const invested = h.qty * h.avgCost;         // native currency
+  const currentValue = h.qty * h.currentPrice; // native currency
   const pnl = currentValue - invested;
   const pnlPct = invested ? (pnl/invested*100) : 0;
-  return {
-    invested, currentValue, pnl, pnlPct, 
-    investedINR: invested*fx, currentValueINR: currentValue*fx, pnlINR: pnl*fx
-  };
+  return {invested, currentValue, pnl, pnlPct, investedINR: invested*fx, currentValueINR: currentValue*fx, pnlINR: pnl*fx};
 }
 
-/* ===================== TAB NAVIGATION ===================== */
+/* ===================== TAB SWITCHING ===================== */
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.addEventListener('click', ()=>{
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -324,114 +279,62 @@ document.querySelectorAll('.tab').forEach(tab=>{
   });
 });
 
-/* ===================== MODE SELECTION ===================== */
+/* ===================== MODE TOGGLE (refresh tab) ===================== */
 let refreshMode = 'price';
-const localMode = localStorage.getItem('quantfolio_sync_mode');
-if (localMode) {
-  refreshMode = localMode;
-  updateModeUI();
-}
-
-function updateModeUI() {
-  if (refreshMode === 'price') {
-    document.getElementById('modePriceBtn').classList.add('active');
-    document.getElementById('modeFullBtn').classList.remove('active');
-    document.getElementById('modePriceHelp').style.display='block';
-    document.getElementById('modeFullHelp').style.display='none';
-  } else {
-    document.getElementById('modeFullBtn').classList.add('active');
-    document.getElementById('modePriceBtn').classList.remove('active');
-    document.getElementById('modeFullHelp').style.display='block';
-    document.getElementById('modePriceHelp').style.display='none';
-  }
-}
-
 document.getElementById('modePriceBtn').addEventListener('click', ()=>{
   refreshMode='price';
-  localStorage.setItem('quantfolio_sync_mode', 'price');
-  updateModeUI();
+  document.getElementById('modePriceBtn').classList.add('active');
+  document.getElementById('modeFullBtn').classList.remove('active');
+  document.getElementById('modePriceHelp').style.display='block';
+  document.getElementById('modeFullHelp').style.display='none';
 });
 document.getElementById('modeFullBtn').addEventListener('click', ()=>{
   refreshMode='full';
-  localStorage.setItem('quantfolio_sync_mode', 'full');
-  updateModeUI();
+  document.getElementById('modeFullBtn').classList.add('active');
+  document.getElementById('modePriceBtn').classList.remove('active');
+  document.getElementById('modeFullHelp').style.display='block';
+  document.getElementById('modePriceHelp').style.display='none';
 });
 
 /* ===================== FORMATTING HELPERS ===================== */
 function inr(n){ if(n==null||isNaN(n)) return '—'; return '₹'+Number(n).toLocaleString('en-IN',{maximumFractionDigits:2,minimumFractionDigits:2}); }
 function usd(n){ if(n==null||isNaN(n)) return '—'; return '$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:2,minimumFractionDigits:2}); }
 function pct(n){ if(n==null||isNaN(n)) return '—'; return (n>=0?'+':'')+Number(n).toFixed(2)+'%'; }
-
-// RAG Color Code logic: green (>=0), orange (0 to -5%), red (<= -5%)
-function getRagClass(pnlPct){
-  if (pnlPct >= 0) return 'rag-green';
-  if (pnlPct > -5) return 'rag-orange';
-  return 'rag-red';
-}
+function cls(n){ return n>=0?'up':'down'; }
 
 /* ===================== RENDER TABLES ===================== */
 function renderTable(id, rows, currencyFn){
   const tbody = document.querySelector('#'+id+' tbody');
   tbody.innerHTML='';
-  
-  // Load previous price highlights
-  let prevPrices = {};
-  try {
-    prevPrices = JSON.parse(localStorage.getItem('quantfolio_prev_prices') || '{}');
-  } catch(e){}
-
   rows.forEach(h=>{
     const c = calc(h);
     const tr = document.createElement('tr');
-    
-    // Check if price changed relative to saved prices
-    const cleanedTicker = h.ticker.toUpperCase();
-    const isChanged = prevPrices[cleanedTicker] && prevPrices[cleanedTicker] !== h.currentPrice;
-    const priceClass = isChanged ? 'price-changed' : '';
-
-    if(id==='etfTable'){
-      tr.innerHTML = `
-        <td class="name-cell">${h.name}<br><span class="ticker-tag">${h.ticker}</span></td>
-        <td>${h.qty}</td>
-        <td>${currencyFn(h.avgCost)}</td>
-        <td><span class="${priceClass}">${currencyFn(h.currentPrice)}</span></td>
-        <td>${h.iNAV > 0 ? currencyFn(h.iNAV) : '—'}</td>
-        <td>${h.expenseRatio > 0 ? (h.expenseRatio * 100).toFixed(2) + '%' : '—'}</td>
-        <td>${h.aum > 0 ? h.aum + ' Cr' : '—'}</td>
-        <td>${currencyFn(c.invested)}</td>
+    if(id==='usTable'){
+      tr.innerHTML = `<td class="name-cell">${h.name}<br><span class="ticker-tag">${h.ticker}</span></td><td>${h.exchange||''}</td>
+        <td>${h.qty.toFixed(4)}</td><td>${currencyFn(h.avgCost)}</td>
+        <td>${currencyFn(h.currentPrice)}</td><td>${currencyFn(c.invested)}</td>
         <td>${currencyFn(c.currentValue)}</td>
-        <td class="${getRagClass(c.pnlPct)}">${currencyFn(c.pnl)}</td>
-        <td class="${getRagClass(c.pnlPct)}">${pct(c.pnlPct)}</td>
-      `;
-    } else if(id==='stocksTable'){
-      tr.innerHTML = `
-        <td class="name-cell">${h.name}<br><span class="ticker-tag">${h.ticker}</span></td>
-        <td>${h.qty}</td>
-        <td>${currencyFn(h.avgCost)}</td>
-        <td><span class="${priceClass}">${currencyFn(h.currentPrice)}</span></td>
-        <td>${currencyFn(c.invested)}</td>
-        <td>${currencyFn(c.currentValue)}</td>
-        <td class="${getRagClass(c.pnlPct)}">${currencyFn(c.pnl)}</td>
-        <td class="${getRagClass(c.pnlPct)}">${pct(c.pnlPct)}</td>
-      `;
-    } else { // usTable
-      tr.innerHTML = `
-        <td class="name-cell">${h.name}<br><span class="ticker-tag">${h.ticker}</span></td>
-        <td>${h.exchange||''}</td>
-        <td>${h.qty.toFixed(4)}</td>
-        <td>${currencyFn(h.avgCost)}</td>
-        <td><span class="${priceClass}">${currencyFn(h.currentPrice)}</span></td>
-        <td>${currencyFn(c.invested)}</td>
-        <td>${currencyFn(c.currentValue)}</td>
-        <td class="${getRagClass(c.pnlPct)}">${currencyFn(c.pnl)}</td>
-        <td class="${getRagClass(c.pnlPct)}">${pct(c.pnlPct)}</td>
-      `;
+        <td class="${cls(c.pnl)}">${currencyFn(c.pnl)}</td>
+        <td class="${cls(c.pnlPct)}">${pct(c.pnlPct)}</td>`;
+    } else if(id==='etfTable'){
+      tr.innerHTML = `<td class="name-cell">${h.name}<span class="pill" style="margin-left:6px;">${h.marketCap||''}</span></td><td>${h.qty}</td>
+        <td>${currencyFn(h.avgCost)}</td><td>${currencyFn(h.currentPrice)}</td>
+        <td>${currencyFn(c.invested)}</td><td>${currencyFn(c.currentValue)}</td>
+        <td class="${cls(c.pnl)}">${currencyFn(c.pnl)}</td>
+        <td class="${cls(c.pnlPct)}">${pct(c.pnlPct)}</td>
+        <td class="muted">${h.expenseRatio!=null? Number(h.expenseRatio).toFixed(2)+'%':'—'}</td>`;
+    } else {
+      tr.innerHTML = `<td class="name-cell">${h.name}<span class="pill" style="margin-left:6px;">${h.marketCap||''}</span></td><td>${h.qty}</td>
+        <td>${currencyFn(h.avgCost)}</td><td>${currencyFn(h.currentPrice)}</td>
+        <td>${currencyFn(c.invested)}</td><td>${currencyFn(c.currentValue)}</td>
+        <td class="${cls(c.pnl)}">${currencyFn(c.pnl)}</td>
+        <td class="${cls(c.pnlPct)}">${pct(c.pnlPct)}</td>`;
     }
     tbody.appendChild(tr);
   });
 }
 
-/* ===================== DASHBOARD COMPILING ===================== */
+/* ===================== DASHBOARD CALCS ===================== */
 function computeSummary(){
   const g = group();
 
@@ -448,27 +351,23 @@ function computeSummary(){
 
   document.getElementById('totInvested').textContent = inr(totInvested);
   document.getElementById('totCurrent').textContent = inr(totCurrent);
-  
   const pnlEl = document.getElementById('totPnl');
   pnlEl.textContent = inr(totPnl)+' ('+pct(totPnlPct)+')';
-  pnlEl.className = 'value '+getRagClass(totPnlPct);
-  
+  pnlEl.className = 'value '+cls(totPnl);
   document.getElementById('totCount').textContent = state.holdings.length;
   document.getElementById('fxRateShown').textContent = fxRate.toFixed(2);
 
-  // Allocate by Asset Class
+  // Allocation by asset class
   const buckets = {};
   state.holdings.forEach(h=>{
     const c = calc(h);
     const key = h.assetClass || h.type;
     buckets[key] = (buckets[key]||0) + c.currentValueINR;
   });
-  
-  const palette = ['#8b5cf6','#3b82f6','#06b6d4','#2dd4bf','#f59e0b','#ec4899','#10b981'];
+  const palette = ['#8b5cf6','#3b82f6','#22d3ee','#2dd4bf','#fbbf24','#f472b6','#34d399'];
   const allocTotal = Object.values(buckets).reduce((s,v)=>s+v,0);
   const bar = document.getElementById('allocBar'); bar.innerHTML='';
   const list = document.getElementById('allocList'); list.innerHTML='';
-  
   Object.entries(buckets).sort((a,b)=>b[1]-a[1]).forEach(([label,value],i)=>{
     const color = palette[i%palette.length];
     const w = allocTotal? (value/allocTotal*100):0;
@@ -481,7 +380,7 @@ function computeSummary(){
     list.appendChild(row);
   });
 
-  // Top Gainers / Losers in INR
+  // Gainers / losers (INR terms)
   const allRows = state.holdings.map(h=>{
     const c = calc(h);
     return {name:h.name+(h.currency==='USD'?' ('+h.ticker+')':''), pnl:c.pnlINR, pnlPct:c.pnlPct};
@@ -490,54 +389,36 @@ function computeSummary(){
   const losers = [...allRows].sort((a,b)=>a.pnl-b.pnl).slice(0,5);
 
   document.getElementById('topGainers').innerHTML = gainers.map((r,i)=>
-    `<div class="gainer"><span><span class="rank">${i+1}</span>${r.name}</span><span class="${getRagClass(r.pnlPct)}">${inr(r.pnl)} (${pct(r.pnlPct)})</span></div>`).join('');
+    `<div class="gainer"><span><span class="rank">${i+1}</span>${r.name}</span><span class="up">${inr(r.pnl)} (${pct(r.pnlPct)})</span></div>`).join('');
   document.getElementById('topLosers').innerHTML = losers.map((r,i)=>
-    `<div class="loser"><span><span class="rank">${i+1}</span>${r.name}</span><span class="${getRagClass(r.pnlPct)}">${inr(r.pnl)} (${pct(r.pnlPct)})</span></div>`).join('');
+    `<div class="loser"><span><span class="rank">${i+1}</span>${r.name}</span><span class="down">${inr(r.pnl)} (${pct(r.pnlPct)})</span></div>`).join('');
 
-  // Observations & Audit Warnings
+  // Observations
   const obs = [];
   const goldSilver = g.etf.filter(h=>/gold|silver/i.test(h.name));
   const goldSilverVal = goldSilver.reduce((s,h)=>s+calc(h).currentValue,0);
-  if(totCurrent && goldSilverVal/totCurrent > 0.15) {
-    obs.push(`<span class="badge-dot" style="background:var(--orange)"></span><strong>Over-Concentration Alert:</strong> Gold/Silver represents ${(goldSilverVal/totCurrent*100).toFixed(1)}% of capital (Threshold: 15%). Consider balancing.`);
-  }
-  
+  if(totCurrent && goldSilverVal/totCurrent > 0.15) obs.push(`Gold+Silver ETFs are ${(goldSilverVal/totCurrent*100).toFixed(1)}% of the portfolio — above the typical 15% comfort threshold for a single commodity theme.`);
   const usShare = totCurrent? (usCurINR/totCurrent*100):0;
-  obs.push(`<span class="badge-dot" style="background:var(--cyan)"></span><strong>Geographic Diversification:</strong> US holdings comprise ${usShare.toFixed(1)}% of overall wealth.`);
-
-  // Duplications
-  const overlaps = {};
-  state.holdings.forEach(h=>{
-    if(h.index && h.index !== 'Diversified' && h.index !== 'None' && h.index !== 'InvIT' && h.index !== 'REIT') {
-      overlaps[h.index] = (overlaps[h.index] || 0) + 1;
-    }
-  });
-  Object.keys(overlaps).forEach(idx => {
-    if(overlaps[idx] > 1) {
-      const matchHoldings = state.holdings.filter(h=>h.index===idx).map(h=>h.name);
-      obs.push(`<span class="badge-dot" style="background:var(--down)"></span><strong>Overlap Detected:</strong> ${overlaps[idx]} ETFs track <strong>${idx}</strong> (${matchHoldings.join(' and ')}). Consolidating could optimize tracking errors.`);
-    }
-  });
-
-  const worstLoss = state.holdings.filter(h=>calc(h).pnlPct<=-5);
-  if(worstLoss.length) {
-    obs.push(`<span class="badge-dot" style="background:var(--down)"></span><strong>RAG Alert:</strong> ${worstLoss.length} assets down 5% or more: ${worstLoss.map(h=>h.name+' ('+pct(calc(h).pnlPct)+')').join(', ')}.`);
-  }
-  document.getElementById('observations').innerHTML = obs.map(o=>'<div style="margin-bottom:8px;">'+o+'</div>').join('');
+  obs.push(`US holdings are ${usShare.toFixed(1)}% of the portfolio (in INR terms), giving international diversification alongside the Indian ETF base.`);
+  const nifty50likes = g.etf.filter(h=>/nifty\s?50\b/i.test(h.name));
+  if(nifty50likes.length>1) obs.push(`${nifty50likes.length} separate ETFs track the Nifty 50 (${nifty50likes.map(h=>h.name).join(', ')}) — overlapping exposure, worth consolidating.`);
+  const worstLoss = state.holdings.filter(h=>calc(h).pnlPct<=-10);
+  if(worstLoss.length) obs.push(`${worstLoss.length} holding(s) down 10%+ from cost: ${worstLoss.map(h=>h.name+' ('+pct(calc(h).pnlPct)+')').join(', ')}.`);
+  document.getElementById('observations').innerHTML = obs.map(o=>'• '+o).join('<br><br>');
 }
 
-/* ===================== RENDER RUN ===================== */
+/* ===================== INITIAL RENDER ===================== */
 function renderAll(){
   const g = group();
   renderTable('etfTable', g.etf, inr);
   renderTable('stocksTable', g.stocks, inr);
   renderTable('usTable', g.us, usd);
   computeSummary();
-  document.getElementById('lastUpdated').textContent = 'Sync Status: ' + lastUpdatedLabel;
+  document.getElementById('lastUpdated').textContent = 'Last updated: '+lastUpdatedLabel;
 }
 renderAll();
 
-/* ===================== REFRESH AUTOMATION ===================== */
+/* ===================== GOOGLE SHEET REFRESH ===================== */
 const urlInput = document.getElementById('sheetUrl');
 const statusEl = document.getElementById('refreshStatus');
 
@@ -546,23 +427,18 @@ if(savedUrl) urlInput.value = savedUrl;
 
 document.getElementById('saveUrlBtn').addEventListener('click', ()=>{
   const url = urlInput.value.trim();
-  if(!url){ statusEl.textContent='Please paste a valid Google Sheets URL.'; statusEl.className='status err'; return; }
+  if(!url){ statusEl.textContent='Please paste a CSV link first.'; statusEl.className='status err'; return; }
   localStorage.setItem('sheetCsvUrl', url);
-  statusEl.textContent='Google Sheet link saved successfully. Tap "Refresh Prices Now" below.';
+  statusEl.textContent='Link saved. Tap Refresh Now to pull the latest data.';
   statusEl.className='status ok';
 });
 
 document.getElementById('resetBtn').addEventListener('click', ()=>{
-  localStorage.removeItem('quantfolio_active_data');
-  localStorage.removeItem('quantfolio_last_update_time');
-  localStorage.removeItem('quantfolio_fx_rate');
-  localStorage.removeItem('quantfolio_prev_prices');
-  
   state = { holdings: toHoldingsState(RAW.holdings) };
   fxRate = DEFAULT_FX;
-  lastUpdatedLabel = "Default Snapshot";
+  lastUpdatedLabel = 'Uploaded workbook snapshot';
   renderAll();
-  statusEl.textContent = 'Cleared cache. Reset to standard snapshot successfully.';
+  statusEl.textContent = 'Reset to the original uploaded workbook.';
   statusEl.className='status ok';
 });
 
@@ -583,9 +459,8 @@ function parseCsv(text){
 
 document.getElementById('refreshBtn').addEventListener('click', async ()=>{
   const url = urlInput.value.trim() || localStorage.getItem('sheetCsvUrl');
-  if(!url){ statusEl.textContent='No Google Sheet link saved. Save a published CSV link first.'; statusEl.className='status err'; return; }
-  statusEl.textContent = 'Syncing with Google Sheets...'; statusEl.className='status';
-  
+  if(!url){ statusEl.textContent='No link saved. Paste your Google Sheet CSV link and tap Save first.'; statusEl.className='status err'; return; }
+  statusEl.textContent = 'Fetching latest data…'; statusEl.className='status';
   try{
     const res = await fetch(url, {cache:'no-store'});
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -593,18 +468,10 @@ document.getElementById('refreshBtn').addEventListener('click', async ()=>{
     const rows = parseCsv(text);
     const header = rows[0].map(h=>h.toLowerCase());
 
-    // Save previous price list to flag yellow changes
-    const prevPrices = {};
-    state.holdings.forEach(h => {
-      prevPrices[h.ticker.toUpperCase()] = h.currentPrice;
-    });
-    localStorage.setItem('quantfolio_prev_prices', JSON.stringify(prevPrices));
-
     if(refreshMode === 'price'){
       const tickerIdx = header.indexOf('ticker');
-      const priceIdx = header.indexOf('currentprice');
-      if(tickerIdx===-1 || priceIdx===-1) throw new Error('Sheet must have "Ticker" and "CurrentPrice" columns');
-      
+      const priceIdx = header.indexOf('price')>-1 ? header.indexOf('price') : header.indexOf('current price');
+      if(tickerIdx===-1 || priceIdx===-1) throw new Error('Sheet must have a "Ticker" column and either a "Price" or "Current Price" column');
       const priceMap = {};
       for(let i=1;i<rows.length;i++){
         const key = (rows[i][tickerIdx]||'').trim();
@@ -617,30 +484,19 @@ document.getElementById('refreshBtn').addEventListener('click', async ()=>{
         const p = priceMap[h.ticker.toUpperCase()];
         if(p!=null){ h.currentPrice = p; matched++; }
       });
-      
-      lastUpdatedLabel = "Updated: " + new Date().toLocaleTimeString('en-US');
-      localStorage.setItem('quantfolio_active_data', JSON.stringify(state.holdings));
-      localStorage.setItem('quantfolio_last_update_time', lastUpdatedLabel);
-      localStorage.setItem('quantfolio_fx_rate', fxRate);
-      
+      lastUpdatedLabel = new Date().toLocaleString('en-IN');
       renderAll();
-      statusEl.textContent = `Refreshed successfully! ${matched} price changes imported.`;
+      statusEl.textContent = `Refreshed — ${matched} price(s) updated from your sheet.`;
       statusEl.className='status ok';
     } else {
-      // Rebuild entire holdings dynamically (Full Sync)
+      // full sync mode: rebuild holdings entirely from Raw_Data-style CSV
       const idx = {
         ticker: header.indexOf('ticker'), name: header.indexOf('name'),
         exchange: header.indexOf('exchange'), type: header.indexOf('instrument type'),
         qty: header.indexOf('quantity'), avgCost: header.indexOf('avg cost'),
-        price: header.indexOf('current price'), currency: header.indexOf('currency'),
-        index: header.indexOf('index tracked'), sector: header.indexOf('sector'),
-        mcap: header.indexOf('market cap'), assetClass: header.indexOf('asset class'),
-        category: header.indexOf('category'), expense: header.indexOf('expense ratio (%)'),
-        aum: header.indexOf('aum (cr)'), error: header.indexOf('tracking error (%)'),
-        inav: header.indexOf('inav (₹)')
+        price: header.indexOf('current price'), currency: header.indexOf('currency')
       };
-      
-      if(idx.ticker===-1 || idx.qty===-1 || idx.avgCost===-1) throw new Error('Sheet must contain Ticker, Quantity, Avg Cost columns (Raw_Data format)');
+      if(idx.ticker===-1 || idx.qty===-1 || idx.avgCost===-1) throw new Error('Sheet must have Ticker, Quantity, Avg Cost columns (Raw_Data format)');
       const newHoldings = [];
       for(let i=1;i<rows.length;i++){
         const r = rows[i];
@@ -648,37 +504,26 @@ document.getElementById('refreshBtn').addEventListener('click', async ()=>{
         const ticker = r[idx.ticker].trim();
         const existing = state.holdings.find(h=>h.ticker===ticker) || {};
         newHoldings.push({
-          ticker, 
-          name: idx.name>-1 && r[idx.name] ? r[idx.name] : ticker,
-          exchange: idx.exchange>-1 && r[idx.exchange] ? r[idx.exchange] : (existing.exchange || 'NSE'),
-          type: idx.type>-1 && r[idx.type] ? r[idx.type] : (existing.type || 'Indian ETF'),
-          qty: parseFloat((r[idx.qty]||'0').replace(/,/g,''))||0,
-          avgCost: parseFloat((r[idx.avgCost]||'0').replace(/[^0-9.\-]/g,''))||0,
-          currentPrice: idx.price>-1 && r[idx.price] ? parseFloat(r[idx.price].replace(/[^0-9.\-]/g,'')) : (existing.currentPrice||0),
-          currency: idx.currency>-1 && r[idx.currency] ? r[idx.currency] : (existing.currency||'INR'),
-          index: idx.index>-1 && r[idx.index] ? r[idx.index] : (existing.index || 'Diversified'),
-          sector: idx.sector>-1 && r[idx.sector] ? r[idx.sector] : (existing.sector || 'Diversified'),
-          marketCap: idx.mcap>-1 && r[idx.mcap] ? r[idx.mcap] : (existing.marketCap || 'None'),
-          assetClass: idx.assetClass>-1 && r[idx.assetClass] ? r[idx.assetClass] : (existing.assetClass || 'Equity'),
-          category: idx.category>-1 && r[idx.category] ? r[idx.category] : (existing.category || 'None'),
-          expenseRatio: idx.expense>-1 && r[idx.expense] ? parseFloat(r[idx.expense].replace(/%/g,''))/100 : (existing.expenseRatio || 0),
-          aum: idx.aum>-1 && r[idx.aum] ? parseFloat(r[idx.aum].replace(/,/g,'')) : (existing.aum || 0),
-          trackingError: idx.error>-1 && r[idx.error] ? parseFloat(r[idx.error].replace(/%/g,''))/100 : (existing.trackingError || 0),
-          iNAV: idx.inav>-1 && r[idx.inav] ? parseFloat(r[idx.inav].replace(/[^0-9.\-]/g,'')) : (existing.iNAV || 0)
+          ticker, name: idx.name>-1? r[idx.name] : ticker,
+          exchange: idx.exchange>-1? r[idx.exchange] : existing.exchange,
+          type: idx.type>-1? r[idx.type] : existing.type,
+          qty: parseFloat(r[idx.qty])||0,
+          avgCost: parseFloat(r[idx.avgCost])||0,
+          currentPrice: idx.price>-1? (parseFloat(r[idx.price])||existing.currentPrice||0) : (existing.currentPrice||0),
+          currency: idx.currency>-1? r[idx.currency] : (existing.currency||'INR'),
+          index: existing.index, sector: existing.sector, marketCap: existing.marketCap,
+          assetClass: existing.assetClass, category: existing.category,
+          expenseRatio: existing.expenseRatio, aum: existing.aum, trackingError: existing.trackingError, inav: existing.inav
         });
       }
       state.holdings = newHoldings;
-      lastUpdatedLabel = "Synced: " + new Date().toLocaleTimeString('en-US');
-      
-      localStorage.setItem('quantfolio_active_data', JSON.stringify(state.holdings));
-      localStorage.setItem('quantfolio_last_update_time', lastUpdatedLabel);
-      
+      lastUpdatedLabel = new Date().toLocaleString('en-IN');
       renderAll();
-      statusEl.textContent = `Full Sync Completed! Loaded ${newHoldings.length} assets.`;
+      statusEl.textContent = `Full sync complete — ${newHoldings.length} holdings loaded from your sheet (added/removed automatically).`;
       statusEl.className='status ok';
     }
   }catch(err){
-    statusEl.textContent = 'Sync Failed: ' + err.message + '. Ensure tab is published as CSV.';
+    statusEl.textContent = 'Could not refresh: '+err.message+'. Check the link is published as CSV and try again.';
     statusEl.className='status err';
   }
 });
