@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Stock Fundamentals — ACE Hub</title>
+<style>
+:root{
+  --g-fill:#EAF3DE;--g-text:#27500A;--g-border:#C0DD97;
+  --a-fill:#FAEEDA;--a-text:#854F0B;--a-border:#FAC775;
+  --r-fill:#FCEBEB;--r-text:#A32D2D;--r-border:#F7C1C1;
+  --b-fill:#E6F1FB;--b-text:#185FA5;--b-border:#B5D4F4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#fafafa;color:#222;padding:16px}
+.wrap{max-width:700px;margin:0 auto}
+h1{font-size:18px;margin-bottom:4px}
+.sub{font-size:12px;color:#777;margin-bottom:16px}
+.search-row{display:flex;gap:8px;margin-bottom:16px}
+input{flex:1;padding:12px 14px;border-radius:10px;border:1px solid #ddd;font-size:15px}
+button{padding:12px 18px;border-radius:10px;border:none;background:#222;color:#fff;font-size:14px;font-weight:500}
+button:disabled{opacity:0.5}
+.card{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.mc{background:#f7f7f7;border-radius:8px;padding:12px}
+.ml{font-size:10px;text-transform:uppercase;color:#888;margin-bottom:4px}
+.mv{font-size:17px;font-weight:600}
+.status{font-size:12px;padding:10px 14px;border-radius:8px;margin-bottom:12px}
+.status.loading{background:var(--b-fill);color:var(--b-text)}
+.status.error{background:var(--r-fill);color:var(--r-text)}
+.status.ok{background:var(--g-fill);color:var(--g-text)}
+.hist{margin-top:16px}
+.hist-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #eee;font-size:13px}
+.hist-item span{color:#777}
+.hist-item a{color:var(--b-text);text-decoration:none}
+.disc{font-size:11px;color:#888;margin-top:20px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📈 Live Stock Snapshot</h1>
+  <div class="sub">Type an NSE ticker (e.g. INFY, ACE, TCS) for a live price/valuation pull. Deeper fundamentals (ROE, promoter holding, peer comparison) still need a full Claude analysis — this only pulls what's live-fetchable.</div>
+
+  <div class="search-row">
+    <input id="ticker" type="text" placeholder="e.g. INFY, ACE, RELIANCE" autocapitalize="characters">
+    <button id="go">Fetch</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="result"></div>
+
+  <div class="card hist">
+    <div style="font-size:11px;text-transform:uppercase;color:#777;margin-bottom:8px">Your saved full analyses</div>
+    <div class="hist-item"><span>Infosys (INFY)</span><a href="../Infosys_Fundamental_Analysis.html">Open saved report →</a></div>
+    <div class="hist-item"><span>Action Construction Equipment (ACE)</span><a href="../ACE_Fundamental_Analysis.html">Open saved report →</a></div>
+  </div>
+
+  <div class="disc">
+    Live data via Yahoo Finance (through a public CORS proxy — same approach as your technical-analysis tool). Prices may be delayed 15-20 minutes. This is not investment advice. For full fundamentals (ROE, promoter holding, peer comparison, news), ask Claude to re-run the indian-stock-fundamental-analyser skill — that part can't be automated live since NSE/Screener.in don't allow open browser access to that data.
+  </div>
+</div>
+
+<script>
+const statusEl = document.getElementById('status');
+const resultEl = document.getElementById('result');
+const input = document.getElementById('ticker');
+const btn = document.getElementById('go');
+
+function setStatus(msg, type){
+  statusEl.innerHTML = msg ? `<div class="status ${type}">${msg}</div>` : '';
+}
+
+async function fetchQuote(symbol){
+  const proxies = [
+    (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`
+  ];
+  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.NS`;
+  let lastErr;
+  for (const wrap of proxies){
+    try{
+      const res = await fetch(wrap(yahooUrl));
+      if(!res.ok) throw new Error('Bad response');
+      const data = await res.json();
+      const result = data?.chart?.result?.[0];
+      if(!result) throw new Error('No data for this ticker');
+      return result;
+    } catch(e){ lastErr = e; }
+  }
+  throw lastErr || new Error('All proxies failed');
+}
+
+async function go(){
+  const raw = input.value.trim().toUpperCase();
+  if(!raw){ setStatus('Enter a ticker symbol first.', 'error'); return; }
+  btn.disabled = true;
+  resultEl.innerHTML = '';
+  setStatus('Fetching live data…', 'loading');
+  try{
+    const result = await fetchQuote(raw);
+    const meta = result.meta;
+    const price = meta.regularMarketPrice;
+    const prevClose = meta.chartPreviousClose || meta.previousClose;
+    const change = price - prevClose;
+    const changePct = (change/prevClose*100).toFixed(2);
+    const high52 = meta.fiftyTwoWeekHigh;
+    const low52 = meta.fiftyTwoWeekLow;
+    const currency = meta.currency || 'INR';
+
+    resultEl.innerHTML = `
+      <div class="card">
+        <div style="font-size:15px;font-weight:600">${meta.symbol}</div>
+        <div style="font-size:28px;font-weight:600;margin-top:4px">₹${price?.toFixed(2) ?? '—'}</div>
+        <div style="font-size:13px;color:${change>=0?'#27500A':'#A32D2D'}">${change>=0?'+':''}${change?.toFixed(2)} (${changePct}%) today</div>
+        <div class="mgrid">
+          <div class="mc"><div class="ml">52W High</div><div class="mv">₹${high52?.toFixed(2) ?? '—'}</div></div>
+          <div class="mc"><div class="ml">52W Low</div><div class="mv">₹${low52?.toFixed(2) ?? '—'}</div></div>
+          <div class="mc"><div class="ml">Currency</div><div class="mv">${currency}</div></div>
+          <div class="mc"><div class="ml">Exchange</div><div class="mv">${meta.exchangeName ?? 'NSE'}</div></div>
+        </div>
+      </div>
+    `;
+    setStatus('Live data fetched. Prices may be delayed 15-20 min.', 'ok');
+  } catch(e){
+    setStatus(`Couldn't fetch live data for "${raw}". Check the ticker symbol, or your network/proxy may be blocked. Try again, or ask Claude to run the full fundamentals skill instead.`, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+btn.addEventListener('click', go);
+input.addEventListener('keydown', (e) => { if(e.key === 'Enter') go(); });
+</script>
+</body>
+</html>
