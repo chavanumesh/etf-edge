@@ -23,6 +23,21 @@ body{background:var(--bg-color);color:var(--text-main);padding:16px;padding-bott
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
 
+.subtabs{display:flex;background:#edf2f7;border-radius:12px;padding:3px;margin-bottom:16px;overflow-x:auto;gap:2px;}
+.subtab-btn{flex:1;min-width:70px;text-align:center;padding:8px 6px;border:none;background:transparent;border-radius:9px;font-weight:700;font-size:12px;color:var(--text-muted);cursor:pointer;white-space:nowrap;}
+.subtab-btn.active{background:var(--primary);color:#fff;}
+.subtab-panel{display:none;}
+.subtab-panel.active{display:block;}
+
+.water-glass-row{display:flex;justify-content:center;align-items:center;gap:16px;margin:16px 0;}
+.water-circle-btn{width:60px;height:60px;border-radius:50%;border:none;font-size:26px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.water-minus{background:#edf2f7;color:var(--text-main);}
+.water-plus{background:var(--primary);color:#fff;}
+.water-count-display{font-size:32px;font-weight:800;color:#2563eb;text-align:center;}
+.water-glasses-visual{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin:14px 0;}
+.water-drop{font-size:22px;opacity:.25;}
+.water-drop.filled{opacity:1;}
+
 .status-card{background:var(--card-bg);border-radius:20px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.05);margin-bottom:24px;border:1px solid var(--border);}
 .main-bar-container{background:#edf2f7;border-radius:12px;height:24px;width:100%;overflow:hidden;margin:15px 0;}
 .main-bar-fill{height:100%;width:0%;background:var(--success);transition:width .5s ease,background-color .3s ease;}
@@ -94,9 +109,7 @@ canvas{width:100%;height:180px;display:block;}
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="today">Today</button>
-    <button class="tab-btn" data-tab="weight">Weight</button>
-    <button class="tab-btn" data-tab="sleep">Sleep</button>
-    <button class="tab-btn" data-tab="activity">Activity</button>
+    <button class="tab-btn" data-tab="log">Log</button>
     <button class="tab-btn" data-tab="history">History</button>
     <button class="tab-btn" data-tab="trends">Trends</button>
   </div>
@@ -149,87 +162,111 @@ canvas{width:100%;height:180px;display:block;}
     <div class="log-box" id="log-list-target"></div>
   </div>
 
-  <!-- WEIGHT TAB -->
-  <div class="tab-panel" id="tab-weight">
-    <div class="custom-box">
-      <div class="section-title" style="margin-bottom:14px;">Log Today's Weight</div>
-      <div class="weight-row">
-        <input type="number" step="0.1" id="weight-input" placeholder="Weight in kg (e.g., 101.5)">
-      </div>
-      <button class="add-btn" onclick="addWeight()">Save Weight</button>
-    </div>
-    <div class="section-title">Weight History</div>
-    <div class="log-box" id="weight-list-target"></div>
-  </div>
-
-  <!-- SLEEP TAB -->
-  <div class="tab-panel" id="tab-sleep">
-    <div class="custom-box">
-      <div class="section-title" style="margin-bottom:14px;">Log Last Night's Sleep</div>
-      <div class="input-row">
-        <input type="number" step="0.5" id="sleep-hours" placeholder="Hours slept (e.g., 6.5)">
-      </div>
-      <div class="input-row">
-        <select id="sleep-quality">
-          <option value="Good">😴 Good</option>
-          <option value="Ok">🙂 Ok</option>
-          <option value="Poor">😵 Poor</option>
-        </select>
-      </div>
-      <button class="add-btn" onclick="addSleep()">Save Sleep</button>
-    </div>
-    <div class="section-title">Sleep History</div>
-    <div class="log-box" id="sleep-list-target"></div>
-  </div>
-
-  <!-- ACTIVITY TAB -->
-  <div class="tab-panel" id="tab-activity">
-    <div class="section-title">Track Steps & Walking Distance</div>
-    <div class="custom-box">
-      <div class="input-row">
-        <input type="number" id="step-count-input" placeholder="Enter steps walked (e.g., 6000)" oninput="calculateLiveSteps()">
-      </div>
-      <div class="step-summary-box">
-        <div class="step-summary-item">Distance: <span id="live-distance" class="step-summary-val">0.00</span> km</div>
-        <div class="step-summary-item">Est. Burn: <span id="live-burn" class="step-summary-val">0</span> kcal</div>
-      </div>
-      <button class="add-btn" style="background:var(--success);" onclick="hitStepsLog()">🚶 Save Step Activity</button>
+  <!-- LOG TAB (Weight, Sleep, Activity, Water sub-tabs) -->
+  <div class="tab-panel" id="tab-log">
+    <div class="subtabs">
+      <button class="subtab-btn active" data-subtab="water">💧 Water</button>
+      <button class="subtab-btn" data-subtab="weight">⚖️ Weight</button>
+      <button class="subtab-btn" data-subtab="sleep">😴 Sleep</button>
+      <button class="subtab-btn" data-subtab="activity">🔥 Activity</button>
     </div>
 
-    <div class="section-title">Log Exercise / Sport / Swimming</div>
-    <div class="custom-box">
-      <div class="input-row">
-        <select id="activity-type" onchange="toggleOtherActivity()">
-          <option value="">Select activity...</option>
-          <option value="Walking (brisk)|4.3">🚶 Walking (brisk)</option>
-          <option value="Running/Jogging|8">🏃 Running / Jogging</option>
-          <option value="Swimming (moderate)|6">🏊 Swimming (moderate)</option>
-          <option value="Swimming (vigorous)|10">🏊 Swimming (vigorous)</option>
-          <option value="Cycling (moderate)|6">🚴 Cycling (moderate)</option>
-          <option value="Cycling (vigorous)|10">🚴 Cycling (vigorous)</option>
-          <option value="Gym / Weight Training|5">🏋️ Gym / Weight Training</option>
-          <option value="Yoga / Stretching|3">🧘 Yoga / Stretching</option>
-          <option value="Badminton / Tennis|7">🏸 Badminton / Tennis</option>
-          <option value="Football / Basketball|8">⚽ Football / Basketball</option>
-          <option value="Dancing|5">💃 Dancing</option>
-          <option value="Household Chores|3">🧹 Household Chores</option>
-          <option value="Other|4">✏️ Other (type manually)</option>
-        </select>
+    <!-- WATER SUB-PANEL -->
+    <div class="subtab-panel active" id="subtab-water">
+      <div class="status-card">
+        <div class="section-title" style="margin-bottom:6px;">Today's Water Intake</div>
+        <div class="water-count-display"><span id="water-count-num">0</span> / 8 glasses</div>
+        <div class="water-glasses-visual" id="water-glasses-visual"></div>
+        <div class="water-glass-row">
+          <button class="water-circle-btn water-minus" onclick="changeWater(-1)">−</button>
+          <button class="water-circle-btn water-plus" onclick="changeWater(1)">+</button>
+        </div>
+        <div class="trend-legend" id="water-status-note"></div>
       </div>
-      <div class="input-row" id="other-activity-row" style="display:none;">
-        <input type="text" id="other-activity-name" placeholder="Type activity name">
-      </div>
-      <div class="input-row">
-        <input type="number" id="activity-minutes" placeholder="Duration in minutes (e.g., 30)" oninput="calculateLiveActivity()">
-      </div>
-      <div class="step-summary-box">
-        <div class="step-summary-item">Est. Burn: <span id="live-activity-burn" class="step-summary-val">0</span> kcal</div>
-      </div>
-      <button class="add-btn" style="background:var(--success);" onclick="hitActivityLog()">🔥 Save Activity</button>
     </div>
 
-    <div class="section-title">Today's Activity Log</div>
-    <div class="log-box" id="activity-list-target"></div>
+    <!-- WEIGHT SUB-PANEL -->
+    <div class="subtab-panel" id="subtab-weight">
+      <div class="custom-box">
+        <div class="section-title" style="margin-bottom:14px;">Log Today's Weight</div>
+        <div class="weight-row">
+          <input type="number" step="0.1" id="weight-input" placeholder="Weight in kg (e.g., 101.5)">
+        </div>
+        <button class="add-btn" onclick="addWeight()">Save Weight</button>
+      </div>
+      <div class="section-title">Weight History</div>
+      <div class="log-box" id="weight-list-target"></div>
+    </div>
+
+    <!-- SLEEP SUB-PANEL -->
+    <div class="subtab-panel" id="subtab-sleep">
+      <div class="custom-box">
+        <div class="section-title" style="margin-bottom:14px;">Log Last Night's Sleep</div>
+        <div class="input-row">
+          <input type="number" step="0.5" id="sleep-hours" placeholder="Hours slept (e.g., 6.5)">
+        </div>
+        <div class="input-row">
+          <select id="sleep-quality">
+            <option value="Good">😴 Good</option>
+            <option value="Ok">🙂 Ok</option>
+            <option value="Poor">😵 Poor</option>
+          </select>
+        </div>
+        <button class="add-btn" onclick="addSleep()">Save Sleep</button>
+      </div>
+      <div class="section-title">Sleep History</div>
+      <div class="log-box" id="sleep-list-target"></div>
+    </div>
+
+    <!-- ACTIVITY SUB-PANEL -->
+    <div class="subtab-panel" id="subtab-activity">
+      <div class="section-title">Track Steps & Walking Distance</div>
+      <div class="custom-box">
+        <div class="input-row">
+          <input type="number" id="step-count-input" placeholder="Enter steps walked (e.g., 6000)" oninput="calculateLiveSteps()">
+        </div>
+        <div class="step-summary-box">
+          <div class="step-summary-item">Distance: <span id="live-distance" class="step-summary-val">0.00</span> km</div>
+          <div class="step-summary-item">Est. Burn: <span id="live-burn" class="step-summary-val">0</span> kcal</div>
+        </div>
+        <button class="add-btn" style="background:var(--success);" onclick="hitStepsLog()">🚶 Save Step Activity</button>
+      </div>
+
+      <div class="section-title">Log Exercise / Sport / Swimming</div>
+      <div class="custom-box">
+        <div class="input-row">
+          <select id="activity-type" onchange="toggleOtherActivity()">
+            <option value="">Select activity...</option>
+            <option value="Walking (brisk)|4.3">🚶 Walking (brisk)</option>
+            <option value="Running/Jogging|8">🏃 Running / Jogging</option>
+            <option value="Swimming (moderate)|6">🏊 Swimming (moderate)</option>
+            <option value="Swimming (vigorous)|10">🏊 Swimming (vigorous)</option>
+            <option value="Cycling (moderate)|6">🚴 Cycling (moderate)</option>
+            <option value="Cycling (vigorous)|10">🚴 Cycling (vigorous)</option>
+            <option value="Gym / Weight Training|5">🏋️ Gym / Weight Training</option>
+            <option value="Yoga / Stretching|3">🧘 Yoga / Stretching</option>
+            <option value="Badminton / Tennis|7">🏸 Badminton / Tennis</option>
+            <option value="Football / Basketball|8">⚽ Football / Basketball</option>
+            <option value="Dancing|5">💃 Dancing</option>
+            <option value="Household Chores|3">🧹 Household Chores</option>
+            <option value="Other|4">✏️ Other (type manually)</option>
+          </select>
+        </div>
+        <div class="input-row" id="other-activity-row" style="display:none;">
+          <input type="text" id="other-activity-name" placeholder="Type activity name">
+        </div>
+        <div class="input-row">
+          <input type="number" id="activity-minutes" placeholder="Duration in minutes (e.g., 30)" oninput="calculateLiveActivity()">
+        </div>
+        <div class="step-summary-box">
+          <div class="step-summary-item">Est. Burn: <span id="live-activity-burn" class="step-summary-val">0</span> kcal</div>
+        </div>
+        <button class="add-btn" style="background:var(--success);" onclick="hitActivityLog()">🔥 Save Activity</button>
+      </div>
+
+      <div class="section-title">Today's Activity Log</div>
+      <div class="log-box" id="activity-list-target"></div>
+    </div>
   </div>
 
   <!-- HISTORY TAB -->
@@ -313,11 +350,13 @@ let allLogs = JSON.parse(localStorage.getItem('brioCalLogsV2')) || {};
 let weightLog = JSON.parse(localStorage.getItem('brioWeightLog')) || [];
 let sleepLog = JSON.parse(localStorage.getItem('brioSleepLog')) || [];
 let activityLogs = JSON.parse(localStorage.getItem('brioActivityLogs')) || {};
+let waterLog = JSON.parse(localStorage.getItem('brioWaterLog')) || {};
 
 function saveLogs(){ localStorage.setItem('brioCalLogsV2', JSON.stringify(allLogs)); }
 function saveWeights(){ localStorage.setItem('brioWeightLog', JSON.stringify(weightLog)); }
 function saveSleep(){ localStorage.setItem('brioSleepLog', JSON.stringify(sleepLog)); }
 function saveActivity(){ localStorage.setItem('brioActivityLogs', JSON.stringify(activityLogs)); }
+function saveWater(){ localStorage.setItem('brioWaterLog', JSON.stringify(waterLog)); }
 
 function getTodayActivity(){ return activityLogs[todayKey()] || []; }
 function setTodayActivity(arr){ activityLogs[todayKey()] = arr; saveActivity(); }
@@ -336,14 +375,21 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='trends'){ drawCalChart(); drawWeightChart(); drawSleepChart(); }
-    if(btn.dataset.tab==='weight'){ renderWeightList(); }
-    if(btn.dataset.tab==='sleep'){ renderSleepList(); }
-    if(btn.dataset.tab==='activity'){ renderActivityList(); }
+    if(btn.dataset.tab==='log'){ renderWeightList(); renderSleepList(); renderActivityList(); renderWater(); }
     if(btn.dataset.tab==='history'){
       const dInput = document.getElementById('history-date');
       if(!dInput.value) dInput.value = todayKey();
       dInput.max = todayKey();
     }
+  });
+});
+
+document.querySelectorAll('.subtab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.subtab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('subtab-'+btn.dataset.subtab).classList.add('active');
   });
 });
 
@@ -421,6 +467,37 @@ function hitActivityLog(){
   document.getElementById('other-activity-row').style.display='none';
   document.getElementById('live-activity-burn').innerText='0';
   renderActivityList(); renderApp();
+}
+
+/* ===== Water Intake ===== */
+function changeWater(delta){
+  const key = todayKey();
+  let current = waterLog[key] || 0;
+  current = Math.max(0, current + delta);
+  waterLog[key] = current;
+  saveWater();
+  renderWater();
+}
+
+function renderWater(){
+  const key = todayKey();
+  const count = waterLog[key] || 0;
+  const target = 8;
+  document.getElementById('water-count-num').innerText = count;
+
+  const visual = document.getElementById('water-glasses-visual');
+  visual.innerHTML='';
+  for(let i=1;i<=Math.max(target,count);i++){
+    let span = document.createElement('span');
+    span.className = 'water-drop' + (i<=count ? ' filled' : '');
+    span.innerText = '💧';
+    visual.appendChild(span);
+  }
+
+  const note = document.getElementById('water-status-note');
+  if(count===0) note.innerText = 'Start hydrating! Aim for 8 glasses today.';
+  else if(count<target) note.innerText = `${target-count} more glasses to hit your daily goal.`;
+  else note.innerText = 'Goal reached! Great hydration today 💪';
 }
 
 function deleteActivity(idx){
@@ -627,7 +704,7 @@ function saveEdit(){
 }
 
 function resetDay(){
-  if(confirm('Reset today\'s data?')){ setToday([]); setTodayActivity([]); renderApp(); renderActivityList(); }
+  if(confirm('Reset today\'s data?')){ setToday([]); setTodayActivity([]); delete waterLog[todayKey()]; saveWater(); renderApp(); renderActivityList(); renderWater(); }
 }
 
 /* Weight */
@@ -831,6 +908,9 @@ function buildCSV(){
       rows.push(['Activity', date, item.clock, item.title, '-'+item.calsBurned+' kcal']);
     });
   });
+  Object.keys(waterLog).sort().forEach(date=>{
+    rows.push(['Water', date, '', '', waterLog[date]+' glasses']);
+  });
   return rows.map(r=> r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
 }
 function downloadCSV(filename){
@@ -848,8 +928,8 @@ function exportOnly(){
 function exportAndReset(){
   downloadCSV(`BrioCal_Month_${todayKey()}.csv`);
   if(confirm('File downloaded. Clear tracker data now to start a fresh month?')){
-    allLogs = {}; weightLog = []; sleepLog = []; activityLogs = {};
-    saveLogs(); saveWeights(); saveSleep(); saveActivity();
+    allLogs = {}; weightLog = []; sleepLog = []; activityLogs = {}; waterLog = {};
+    saveLogs(); saveWeights(); saveSleep(); saveActivity(); saveWater();
     localStorage.setItem('brioTrackStart', todayKey());
     renderApp();
     checkExportBanner();
