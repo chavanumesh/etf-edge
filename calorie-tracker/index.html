@@ -38,6 +38,22 @@ body{background:var(--bg-color);color:var(--text-main);padding:16px;padding-bott
 .water-drop{font-size:22px;opacity:.25;}
 .water-drop.filled{opacity:1;}
 
+.med-card{padding:14px 16px;border-bottom:1px solid var(--border);}
+.med-card:last-child{border-bottom:none;}
+.med-name{font-size:14px;font-weight:700;margin-bottom:8px;}
+.med-slots{display:flex;gap:8px;flex-wrap:wrap;}
+.med-slot-btn{flex:1;min-width:80px;padding:8px;border-radius:10px;border:1px solid var(--border);background:#f7f9fc;font-size:12px;font-weight:700;cursor:pointer;text-align:center;color:var(--text-muted);}
+.med-slot-btn.taken{background:#d1f5ea;border-color:var(--success);color:var(--success);}
+.med-slot-btn.disabled{opacity:.35;cursor:default;}
+.med-delete{float:right;background:none;border:none;color:var(--danger);font-size:13px;cursor:pointer;}
+
+.food-suggest-box{position:relative;}
+.food-suggest-list{border:1px solid var(--border);border-radius:12px;margin-top:-4px;margin-bottom:12px;overflow:hidden;background:#fff;}
+.food-suggest-item{display:flex;justify-content:space-between;padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);}
+.food-suggest-item:last-child{border-bottom:none;}
+.food-suggest-item:active{background:#f7f9fc;}
+.food-suggest-item span:last-child{color:var(--primary);font-weight:700;}
+
 .status-card{background:var(--card-bg);border-radius:20px;padding:20px;box-shadow:0 4px 12px rgba(0,0,0,.05);margin-bottom:24px;border:1px solid var(--border);}
 .main-bar-container{background:#edf2f7;border-radius:12px;height:24px;width:100%;overflow:hidden;margin:15px 0;}
 .main-bar-fill{height:100%;width:0%;background:var(--success);transition:width .5s ease,background-color .3s ease;}
@@ -151,10 +167,11 @@ canvas{width:100%;height:180px;display:block;}
 
     <div class="section-title">Log Something Else</div>
     <div class="custom-box">
-      <div class="input-row">
-        <input type="text" id="custom-name" placeholder="Food name (e.g., Poha)">
+      <div class="input-row food-suggest-box">
+        <input type="text" id="custom-name" placeholder="Food name (e.g., Poha)" autocomplete="off" oninput="renderFoodSuggestions()">
         <input type="number" id="custom-cal" placeholder="Calories">
       </div>
+      <div id="custom-food-suggestions"></div>
       <button class="add-btn" onclick="hitCustom()">Add Meal Entry</button>
     </div>
 
@@ -169,6 +186,7 @@ canvas{width:100%;height:180px;display:block;}
       <button class="subtab-btn" data-subtab="weight">⚖️ Weight</button>
       <button class="subtab-btn" data-subtab="sleep">😴 Sleep</button>
       <button class="subtab-btn" data-subtab="activity">🔥 Activity</button>
+      <button class="subtab-btn" data-subtab="medicine">💊 Medicine</button>
     </div>
 
     <!-- WATER SUB-PANEL -->
@@ -267,6 +285,30 @@ canvas{width:100%;height:180px;display:block;}
       <div class="section-title">Today's Activity Log</div>
       <div class="log-box" id="activity-list-target"></div>
     </div>
+
+    <!-- MEDICINE SUB-PANEL -->
+    <div class="subtab-panel" id="subtab-medicine">
+      <div class="custom-box">
+        <div class="section-title" style="margin-bottom:14px;">Add a Medicine</div>
+        <div class="input-row">
+          <input type="text" id="med-name" placeholder="Medicine name (e.g., Metformin)">
+        </div>
+        <div class="section-title" style="font-size:13px;margin-bottom:8px;color:var(--text-muted);">Remind me:</div>
+        <div class="input-row" style="margin-bottom:14px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="checkbox" id="med-morning" style="width:auto;"> Morning</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="checkbox" id="med-afternoon" style="width:auto;"> Afternoon</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;"><input type="checkbox" id="med-night" style="width:auto;"> Night</label>
+        </div>
+        <button class="add-btn" onclick="addMedicine()">Save Medicine</button>
+      </div>
+
+      <div class="status-card" style="background:#fff8e1;border-color:#fdcb6e;">
+        <div style="font-size:12px;color:#8a6d00;">⚠️ <b>Important:</b> Reminders only pop up while this app is open in Safari — iOS doesn't allow websites to send background notifications for free. Keep the app open (or check it) around your medicine times.</div>
+      </div>
+
+      <div class="section-title">My Medicines & Today's Status</div>
+      <div class="log-box" id="medicine-list-target"></div>
+    </div>
   </div>
 
   <!-- HISTORY TAB -->
@@ -295,6 +337,11 @@ canvas{width:100%;height:180px;display:block;}
 
   <!-- TRENDS TAB -->
   <div class="tab-panel" id="tab-trends">
+    <div class="status-card" id="backup-reminder-banner" style="display:none;background:linear-gradient(135deg,#00b894,#55efc4);color:#fff;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:6px;">💾 Time for a Backup</div>
+      <div style="font-size:13px;opacity:.9;margin-bottom:12px;">It's been over a week. Clearing Safari data or deleting your Home Screen icon can wipe everything — back up now, just in case.</div>
+      <button class="add-btn" style="background:#fff;color:var(--success);" onclick="downloadBackup()">Download Backup Now</button>
+    </div>
     <div class="status-card" id="export-banner" style="display:none;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:#fff;">
       <div style="font-weight:700;font-size:14px;margin-bottom:6px;">📊 30 Days of Data Ready!</div>
       <div style="font-size:13px;opacity:.9;margin-bottom:12px;">Download your month as an Excel file, then start fresh.</div>
@@ -305,6 +352,15 @@ canvas{width:100%;height:180px;display:block;}
         <span>Data since <span id="tracking-start-label"></span></span>
         <button class="clear-txt" style="color:var(--primary);" onclick="exportOnly()">Export CSV</button>
       </div>
+    </div>
+    <div class="status-card">
+      <div class="section-title" style="margin-bottom:10px;">Backup & Restore</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">A full backup saves every entry (meals, weight, sleep, activity, water, medicines, food memory). Keep this file safe — in Files app, email it to yourself, or save to iCloud Drive.</div>
+      <button class="add-btn" onclick="downloadBackup()">📥 Download Full Backup</button>
+      <div style="margin:10px 0;text-align:center;font-size:12px;color:var(--text-muted);">— or —</div>
+      <label for="restore-file-input" class="add-btn" style="display:block;text-align:center;background:#edf2f7;color:var(--text-main);cursor:pointer;">📤 Restore From Backup File</label>
+      <input type="file" id="restore-file-input" accept="application/json" style="display:none;" onchange="restoreBackup(event)">
+      <div id="last-backup-note" style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:10px;"></div>
     </div>
     <div class="status-card">
       <div class="section-title">Last 7 Days — Calories</div>
@@ -351,12 +407,18 @@ let weightLog = JSON.parse(localStorage.getItem('brioWeightLog')) || [];
 let sleepLog = JSON.parse(localStorage.getItem('brioSleepLog')) || [];
 let activityLogs = JSON.parse(localStorage.getItem('brioActivityLogs')) || {};
 let waterLog = JSON.parse(localStorage.getItem('brioWaterLog')) || {};
+let medicineList = JSON.parse(localStorage.getItem('brioMedicineList')) || [];
+let medicineTaken = JSON.parse(localStorage.getItem('brioMedicineTaken')) || {};
+let savedFoods = JSON.parse(localStorage.getItem('brioSavedFoods')) || {};
 
 function saveLogs(){ localStorage.setItem('brioCalLogsV2', JSON.stringify(allLogs)); }
 function saveWeights(){ localStorage.setItem('brioWeightLog', JSON.stringify(weightLog)); }
 function saveSleep(){ localStorage.setItem('brioSleepLog', JSON.stringify(sleepLog)); }
 function saveActivity(){ localStorage.setItem('brioActivityLogs', JSON.stringify(activityLogs)); }
 function saveWater(){ localStorage.setItem('brioWaterLog', JSON.stringify(waterLog)); }
+function saveMedicineList(){ localStorage.setItem('brioMedicineList', JSON.stringify(medicineList)); }
+function saveMedicineTaken(){ localStorage.setItem('brioMedicineTaken', JSON.stringify(medicineTaken)); }
+function saveSavedFoods(){ localStorage.setItem('brioSavedFoods', JSON.stringify(savedFoods)); }
 
 function getTodayActivity(){ return activityLogs[todayKey()] || []; }
 function setTodayActivity(arr){ activityLogs[todayKey()] = arr; saveActivity(); }
@@ -375,7 +437,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
     if(btn.dataset.tab==='trends'){ drawCalChart(); drawWeightChart(); drawSleepChart(); }
-    if(btn.dataset.tab==='log'){ renderWeightList(); renderSleepList(); renderActivityList(); renderWater(); }
+    if(btn.dataset.tab==='log'){ renderWeightList(); renderSleepList(); renderActivityList(); renderWater(); renderMedicineList(); }
     if(btn.dataset.tab==='history'){
       const dInput = document.getElementById('history-date');
       if(!dInput.value) dInput.value = todayKey();
@@ -469,6 +531,12 @@ function hitActivityLog(){
   renderActivityList(); renderApp();
 }
 
+function deleteActivity(idx){
+  if(!confirm('Delete this activity entry?')) return;
+  let d = getTodayActivity(); d.splice(idx,1); setTodayActivity(d);
+  renderActivityList(); renderApp();
+}
+
 /* ===== Water Intake ===== */
 function changeWater(delta){
   const key = todayKey();
@@ -500,10 +568,125 @@ function renderWater(){
   else note.innerText = 'Goal reached! Great hydration today 💪';
 }
 
-function deleteActivity(idx){
-  if(!confirm('Delete this activity entry?')) return;
-  let d = getTodayActivity(); d.splice(idx,1); setTodayActivity(d);
-  renderActivityList(); renderApp();
+/* ===== Medicine Tracker ===== */
+function addMedicine(){
+  const name = document.getElementById('med-name').value.trim();
+  const morning = document.getElementById('med-morning').checked;
+  const afternoon = document.getElementById('med-afternoon').checked;
+  const night = document.getElementById('med-night').checked;
+  if(!name){ alert('Please enter a medicine name'); return; }
+  if(!morning && !afternoon && !night){ alert('Select at least one time to remind you'); return; }
+
+  medicineList.push({ id: Date.now().toString(), name, morning, afternoon, night });
+  saveMedicineList();
+
+  document.getElementById('med-name').value='';
+  document.getElementById('med-morning').checked=false;
+  document.getElementById('med-afternoon').checked=false;
+  document.getElementById('med-night').checked=false;
+  renderMedicineList();
+}
+
+function deleteMedicine(id){
+  if(!confirm('Remove this medicine?')) return;
+  medicineList = medicineList.filter(m=>m.id!==id);
+  saveMedicineList();
+  renderMedicineList();
+}
+
+function toggleMedTaken(medId, slot){
+  const key = todayKey();
+  if(!medicineTaken[key]) medicineTaken[key] = {};
+  if(!medicineTaken[key][medId]) medicineTaken[key][medId] = {};
+  medicineTaken[key][medId][slot] = !medicineTaken[key][medId][slot];
+  saveMedicineTaken();
+  renderMedicineList();
+}
+
+function renderMedicineList(){
+  const el = document.getElementById('medicine-list-target');
+  if(!el) return;
+  el.innerHTML='';
+  if(medicineList.length===0){
+    el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:14px;">No medicines added yet.</div>';
+    return;
+  }
+  const key = todayKey();
+  const takenToday = medicineTaken[key] || {};
+
+  medicineList.forEach(med=>{
+    const takenState = takenToday[med.id] || {};
+    let card = document.createElement('div');
+    card.className='med-card';
+    let slotsHtml = '';
+    ['morning','afternoon','night'].forEach(slot=>{
+      if(!med[slot]) return;
+      const isTaken = !!takenState[slot];
+      const label = slot.charAt(0).toUpperCase()+slot.slice(1);
+      slotsHtml += `<button class="med-slot-btn${isTaken?' taken':''}" onclick="toggleMedTaken('${med.id}','${slot}')">${isTaken?'✅ ':''}${label}</button>`;
+    });
+    card.innerHTML = `<button class="med-delete" onclick="deleteMedicine('${med.id}')">🗑️</button><div class="med-name">💊 ${med.name}</div><div class="med-slots">${slotsHtml}</div>`;
+    el.appendChild(card);
+  });
+}
+
+/* In-app reminder checker: only fires while this tab/app is open, fixed times */
+const MED_REMINDER_TIMES = { morning: 9, afternoon: 14, night: 21 }; // 24hr clock
+function checkMedicineReminders(){
+  const now = new Date();
+  const hour = now.getHours();
+  const key = todayKey();
+  const takenToday = medicineTaken[key] || {};
+  const alertedKey = 'brioMedAlerted_'+key;
+  let alerted = JSON.parse(localStorage.getItem(alertedKey)) || {};
+
+  Object.entries(MED_REMINDER_TIMES).forEach(([slot, hr])=>{
+    if(hour < hr) return; // not time yet
+    const dueMeds = medicineList.filter(m=> m[slot] && !(takenToday[m.id] && takenToday[m.id][slot]));
+    if(dueMeds.length===0) return;
+    if(alerted[slot]) return; // already reminded once today for this slot
+
+    alerted[slot] = true;
+    localStorage.setItem(alertedKey, JSON.stringify(alerted));
+    const names = dueMeds.map(m=>m.name).join(', ');
+    alert(`💊 Medicine Reminder (${slot}):\n${names}\n\nOpen Log → Medicine to mark as taken.`);
+  });
+}
+setInterval(checkMedicineReminders, 60000);
+checkMedicineReminders();
+
+/* ===== Saved Foods memory (for quick recall) ===== */
+function rememberFood(name, cals){
+  const key = name.trim().toLowerCase();
+  if(!key) return;
+  savedFoods[key] = { name: name.trim(), cals: cals };
+  saveSavedFoods();
+}
+
+function renderFoodSuggestions(){
+  const input = document.getElementById('custom-name');
+  const val = input.value.trim().toLowerCase();
+  const listEl = document.getElementById('custom-food-suggestions');
+  if(!val){ listEl.innerHTML=''; return; }
+
+  const matches = Object.values(savedFoods).filter(f=> f.name.toLowerCase().includes(val)).slice(0,6);
+  if(matches.length===0){ listEl.innerHTML=''; return; }
+
+  listEl.innerHTML='';
+  const box = document.createElement('div');
+  box.className='food-suggest-list';
+  matches.forEach(f=>{
+    let row=document.createElement('div');
+    row.className='food-suggest-item';
+    row.innerHTML=`<span>${f.name}</span><span>${f.cals} kcal</span>`;
+    row.onclick=()=>{
+      document.getElementById('custom-name').value=f.name;
+      document.getElementById('custom-cal').value=f.cals;
+      listEl.innerHTML='';
+    };
+    box.appendChild(row);
+  });
+  listEl.appendChild(box);
 }
 
 function renderActivityList(){
@@ -579,6 +762,7 @@ async function searchFood(){
 function pickFoodResult(name, kcal){
   document.getElementById('custom-name').value = name.length>40 ? name.slice(0,40) : name;
   document.getElementById('custom-cal').value = kcal;
+  rememberFood(name.length>40 ? name.slice(0,40) : name, kcal);
   document.getElementById('custom-name').scrollIntoView({behavior:'smooth', block:'center'});
   alert('Values are per 100g from USDA — adjust the calorie number below to match your actual portion size before adding.');
 }
@@ -679,6 +863,7 @@ function hitCustom(){
   let cals=parseInt(calInp.value);
   if(!name||isNaN(cals)||cals<=0){ alert('Please type a meal name and valid calorie amount!'); return; }
   let d=getToday(); d.push({title:"🍽️ "+name,cals:cals,clock:getClockTime()}); setToday(d);
+  rememberFood(name, cals);
   nameInp.value=''; calInp.value=''; renderApp();
 }
 
@@ -911,6 +1096,15 @@ function buildCSV(){
   Object.keys(waterLog).sort().forEach(date=>{
     rows.push(['Water', date, '', '', waterLog[date]+' glasses']);
   });
+  Object.keys(medicineTaken).sort().forEach(date=>{
+    Object.entries(medicineTaken[date]).forEach(([medId, slots])=>{
+      const med = medicineList.find(m=>m.id===medId);
+      const medName = med ? med.name : medId;
+      Object.entries(slots).forEach(([slot, taken])=>{
+        if(taken) rows.push(['Medicine', date, '', medName, slot+' - taken']);
+      });
+    });
+  });
   return rows.map(r=> r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
 }
 function downloadCSV(filename){
@@ -943,6 +1137,76 @@ function checkExportBanner(){
   document.getElementById('export-banner').style.display = (days>=30) ? 'block' : 'none';
 }
 checkExportBanner();
+
+/* ===== Full Backup & Restore (JSON) ===== */
+function downloadBackup(){
+  const backup = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    allLogs, weightLog, sleepLog, activityLogs, waterLog,
+    medicineList, medicineTaken, savedFoods,
+    trackingStart: localStorage.getItem('brioTrackStart')
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `BrioCal_Backup_${todayKey()}.json`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+
+  localStorage.setItem('brioLastBackup', todayKey());
+  checkBackupReminder();
+  alert('Backup downloaded! Keep this file safe (Files app, email, or iCloud Drive).');
+}
+
+function restoreBackup(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!data.allLogs && !data.weightLog){ alert('This does not look like a valid BrioCal backup file.'); return; }
+      if(!confirm('This will REPLACE your current data with the backup from '+(data.exportedAt ? data.exportedAt.slice(0,10) : 'this file')+'. Continue?')) return;
+
+      allLogs = data.allLogs || {};
+      weightLog = data.weightLog || [];
+      sleepLog = data.sleepLog || [];
+      activityLogs = data.activityLogs || {};
+      waterLog = data.waterLog || {};
+      medicineList = data.medicineList || [];
+      medicineTaken = data.medicineTaken || {};
+      savedFoods = data.savedFoods || {};
+
+      saveLogs(); saveWeights(); saveSleep(); saveActivity(); saveWater();
+      saveMedicineList(); saveMedicineTaken(); saveSavedFoods();
+      if(data.trackingStart) localStorage.setItem('brioTrackStart', data.trackingStart);
+
+      renderApp(); renderWeightList(); renderSleepList(); renderActivityList();
+      renderWater(); renderMedicineList(); checkExportBanner();
+      alert('Backup restored successfully!');
+    }catch(err){
+      alert('Could not read this file. Make sure it is a BrioCal backup .json file.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function checkBackupReminder(){
+  const last = localStorage.getItem('brioLastBackup');
+  const noteEl = document.getElementById('last-backup-note');
+  const bannerEl = document.getElementById('backup-reminder-banner');
+  if(!last){
+    noteEl.innerText = 'No backup taken yet.';
+    bannerEl.style.display = 'block';
+    return;
+  }
+  const days = daysSince(last);
+  noteEl.innerText = `Last backup: ${last} (${days} day${days===1?'':'s'} ago)`;
+  bannerEl.style.display = (days>=7) ? 'block' : 'none';
+}
+checkBackupReminder();
 </script>
 </body>
 </html>
