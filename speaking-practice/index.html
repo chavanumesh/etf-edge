@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Speaking Practice</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #171a21;
+    --accent: #5b8cff;
+    --accent2: #34c98e;
+    --text: #e8eaf0;
+    --muted: #8b93a7;
+    --danger: #ff5b6e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 16px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 1.3rem; margin: 8px 0 4px; }
+  .subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 16px; }
+  .streak {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--card); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;
+  }
+  .streak .num { font-size: 1.4rem; font-weight: 700; color: var(--accent2); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab {
+    flex: 1; min-width: 70px; text-align: center; padding: 10px 4px; border-radius: 10px;
+    background: var(--card); color: var(--muted); font-size: 0.75rem; cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .tab.active { background: var(--accent); color: white; }
+  .card {
+    background: var(--card); border-radius: 14px; padding: 18px; margin-bottom: 14px;
+  }
+  .card h2 { font-size: 1rem; margin: 0 0 4px; }
+  .card .hint { color: var(--muted); font-size: 0.8rem; margin-bottom: 10px; }
+  .target-text {
+    font-size: 1.15rem; line-height: 1.6; padding: 12px; background: #1f232d;
+    border-radius: 10px; margin-bottom: 12px;
+  }
+  button {
+    border: none; border-radius: 10px; padding: 12px 16px; font-size: 0.95rem;
+    font-weight: 600; cursor: pointer; width: 100%; margin-bottom: 8px;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-secondary { background: #262b36; color: var(--text); }
+  .btn-listen { background: var(--accent2); color: #08130d; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .chip { padding: 6px 12px; border-radius: 20px; background: #262b36; color: var(--muted); font-size: 0.75rem; cursor: pointer; }
+  .chip.active { background: var(--accent); color: white; }
+  .result { margin-top: 12px; padding: 12px; background: #1f232d; border-radius: 10px; font-size: 0.9rem; }
+  .result.good { border-left: 4px solid var(--accent2); }
+  .result.bad { border-left: 4px solid var(--danger); }
+  .result.mid { border-left: 4px solid #e0b23a; }
+  .transcript { color: var(--muted); font-style: italic; margin-top: 6px; }
+  .score { font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
+  .word-diff { line-height: 2; margin-top: 8px; }
+  .word-diff span { padding: 2px 6px; border-radius: 6px; margin-right: 4px; display: inline-block; font-size: 0.95rem; }
+  .w-hit { background: rgba(52,201,142,0.18); color: #6fe3b4; }
+  .w-miss { background: rgba(255,91,110,0.18); color: #ff8b98; text-decoration: line-through; }
+  .timer { font-size: 2rem; font-weight: 700; text-align: center; margin: 10px 0; color: var(--accent); }
+  .status { text-align: center; color: var(--muted); font-size: 0.85rem; margin-bottom: 8px; min-height: 18px; }
+  .log { max-height: 160px; overflow-y: auto; }
+  .log-entry { padding: 8px; border-bottom: 1px solid #262b36; font-size: 0.8rem; color: var(--muted); }
+  .footer-note { text-align: center; color: var(--muted); font-size: 0.75rem; margin-top: 20px; padding-bottom: 20px; }
+  .hidden { display: none; }
+  .rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); display: inline-block; margin-right: 6px; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .weak-sounds { font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
+  .weak-sounds b { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<h1>🗣️ Daily Speaking Practice</h1>
+<div class="subtitle">15 minutes a day: articulation, pronunciation, vocabulary, impromptu speaking — today's set refreshes automatically</div>
+
+<div class="streak">
+  <div>
+    <div style="font-size:0.75rem;color:var(--muted)">Current streak</div>
+    <div class="num" id="streakNum">0 days</div>
+  </div>
+  <div>
+    <div style="font-size:0.75rem;color:var(--muted)">Sessions logged</div>
+    <div class="num" id="sessionCount" style="color:var(--accent)">0</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="articulation">Articulation</div>
+  <div class="tab" data-tab="pronounce">Pronunciation</div>
+  <div class="tab" data-tab="vocab">Vocabulary</div>
+  <div class="tab" data-tab="impromptu">Impromptu</div>
+</div>
+
+<div class="card" id="tab-articulation">
+  <h2>Articulation Drill</h2>
+  <div class="hint">Targets sounds Indian English speakers most often blur in office speech (TH, V/W, R/L, word endings, word stress).</div>
+  <div class="chip-row" id="soundChips"></div>
+  <div class="target-text" id="artText">Loading...</div>
+  <button class="btn-listen" onclick="speakTarget('artText')">🔊 Hear correct articulation</button>
+  <button class="btn-primary" id="artRecordBtn" onclick="startArticulationCheck()">🎙️ Say it clearly</button>
+  <button class="btn-secondary" onclick="nextArticulation()">Next drill →</button>
+  <div class="status" id="artStatus"></div>
+  <div id="artResult"></div>
+  <div class="weak-sounds" id="weakSounds"></div>
+</div>
+
+<div class="card hidden" id="tab-pronounce">
+  <h2>Sentence Pronunciation</h2>
+  <div class="hint">Full-sentence check — see exactly which words came through clearly.</div>
+  <div class="target-text" id="pronounceText">Loading...</div>
+  <button class="btn-listen" onclick="speakTarget('pronounceText')">🔊 Hear it spoken</button>
+  <button class="btn-primary" id="pronounceRecordBtn" onclick="startPronunciationCheck()">🎙️ Record my attempt</button>
+  <button class="btn-secondary" onclick="nextPronunciation()">Next phrase →</button>
+  <div class="status" id="pronounceStatus"></div>
+  <div id="pronounceResult"></div>
+</div>
+
+<div class="card hidden" id="tab-vocab">
+  <h2>Vocabulary Builder</h2>
+  <div class="target-text" id="vocabWord">Loading...</div>
+  <div id="vocabMeaning" style="color:var(--muted);font-size:0.9rem;margin-bottom:10px;"></div>
+  <button class="btn-listen" onclick="speakTarget('vocabWord')">🔊 Hear pronunciation</button>
+  <button class="btn-primary" id="vocabRecordBtn" onclick="startVocabCheck()">🎙️ Use it in a sentence</button>
+  <button class="btn-secondary" onclick="nextVocab()">Next word →</button>
+  <div class="status" id="vocabStatus"></div>
+  <div id="vocabResult"></div>
+</div>
+
+<div class="card hidden" id="tab-impromptu">
+  <h2>Impromptu Speaking</h2>
+  <div class="target-text" id="impromptuTopic">Loading...</div>
+  <div class="timer" id="impromptuTimer">01:00</div>
+  <button class="btn-primary" id="impromptuStartBtn" onclick="startImpromptu()">🎙️ Start speaking (60s)</button>
+  <button class="btn-secondary" onclick="nextImpromptu()">New topic →</button>
+  <div class="status" id="impromptuStatus"></div>
+  <div id="impromptuResult"></div>
+</div>
+
+<div class="card">
+  <h2>Recent Sessions</h2>
+  <div class="log" id="sessionLog"><div class="log-entry">No sessions yet — start practicing above.</div></div>
+  <button class="btn-secondary" onclick="clearHistory()" style="margin-top:8px;">Clear history</button>
+</div>
+
+<div class="footer-note">All data stays on this device (browser storage). Works best in Chrome (Android) or Safari (iOS 14.5+).</div>
+
+<script>
+const articulationBank = {
+  "TH sound": [
+    "I think we should thoroughly review this through the third quarter.",
+    "The theory behind this thinking needs further thought.",
+    "Both the theme and the thesis were thoughtfully written.",
+    "This is worth thinking through with the whole team.",
+    "The thirty-third milestone is the theme of this month.",
+    "Thanks for thinking this through so thoroughly.",
+    "The theory needs three more thorough revisions.",
+    "We are thankful for the thoughtful feedback this month.",
+    "This month's theme is thinking beyond the obvious.",
+    "The threshold for this thesis is thirteen months."
+  ],
+  "V / W": [
+    "We will verify the vendor's value proposition this week.",
+    "Wendy will review the workflow and the vendor's version.",
+    "The event went very well, we were very pleased with the venue.",
+    "We value the vendor's willingness to work with us.",
+    "The vice president will visit the venue on Wednesday.",
+    "Very few vendors offer this level of value.",
+    "We watched the vendor verify the workflow twice.",
+    "The wireless version worked very well overall.",
+    "We will review the vendor's proposal this evening.",
+    "Value and workflow were the two vital variables."
+  ],
+  "R / L": [
+    "Let's align our roles and responsibilities clearly.",
+    "The leadership team will review the relevant results regularly.",
+    "Really, the rollout relies on reliable resources.",
+    "Our leaders regularly rely on clear roles.",
+    "The relevant results really look reliable.",
+    "Let's rally around the leadership's real priorities.",
+    "The rollout relies on regular reviews and reliable planning.",
+    "Real leadership requires reliable role clarity.",
+    "We rarely relax our review of the results.",
+    "The roles are really relevant to our long-term rollout."
+  ],
+  "Word endings": [
+    "We finished the tasks and completed the reports as planned.",
+    "The clients asked for updated drafts and detailed accounts.",
+    "Costs, budgets, and targets were discussed at length.",
+    "The results and requirements were listed and tracked.",
+    "We revisited the contracts, drafts, and reports.",
+    "The teams delivered projects, products, and results.",
+    "Deadlines, budgets, and targets were finalized and approved.",
+    "The clients requested detailed notes and updated documents.",
+    "We tracked the costs, counts, and contracts closely.",
+    "The reports, drafts, and requirements were reviewed and completed."
+  ],
+  "Word stress": [
+    "The PRESent findings will inform our strategy for the FUture.",
+    "We need to CONtract with a vendor who can COMbine both services.",
+    "Let's REcord this and CONduct a review next week.",
+    "Please PREsent the OBject of this proposal clearly.",
+    "We must PROject the CORrect budget for this CONtract.",
+    "The PROgress rePORT will help us proCEED confidently.",
+    "Let's CONtrast the two OPtions before we deCIDE.",
+    "The comMITtee will conDUCT a thorough reVIEW.",
+    "We should PROduce a clear reCORD of this deCIsion.",
+    "The IMpact of this UPdate will be significant."
+  ]
+};
+const soundKeys = Object.keys(articulationBank);
+let currentSound = soundKeys[0];
+let currentArtIndex = 0;
+
+function renderSoundChips() {
+  const wrap = document.getElementById("soundChips");
+  wrap.innerHTML = soundKeys.map(k =>
+    `<div class="chip ${k === currentSound ? 'active' : ''}" data-sound="${k}">${k}</div>`
+  ).join("");
+  wrap.querySelectorAll(".chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      currentSound = chip.dataset.sound;
+      currentArtIndex = 0;
+      renderSoundChips();
+      loadArticulation();
+    });
+  });
+}
+function loadArticulation() {
+  document.getElementById("artText").textContent = articulationBank[currentSound][currentArtIndex];
+  document.getElementById("artResult").innerHTML = "";
+  document.getElementById("artStatus").textContent = "";
+}
+function nextArticulation() {
+  currentArtIndex = (currentArtIndex + 1) % articulationBank[currentSound].length;
+  loadArticulation();
+}
+
+const pronouncePhrases = [
+  "The weather today is absolutely wonderful.",
+  "She sells seashells by the seashore.",
+  "I would like to schedule a meeting for Thursday.",
+  "Entrepreneurship requires resilience and patience.",
+  "Could you please clarify your requirements?",
+  "The quarterly results exceeded our expectations.",
+  "Communication is the foundation of leadership.",
+  "I appreciate your prompt response to my query.",
+  "Let's collaborate to achieve our objectives.",
+  "The presentation was thorough and well organized.",
+  "We need to escalate this issue to management.",
+  "Please circulate the agenda before the meeting.",
+  "The stakeholders were satisfied with our proposal.",
+  "Let's prioritize the tasks with the nearest deadlines.",
+  "I will follow up with the client tomorrow morning.",
+  "Our objective is to streamline the entire process.",
+  "The feedback was constructive and much appreciated.",
+  "We should document every step of this procedure.",
+  "The negotiation concluded on mutually favorable terms.",
+  "Let's revisit this topic during the next review cycle."
+];
+
+const vocabBank = [
+  { word: "Meticulous", meaning: "Showing great attention to detail; very careful and precise." },
+  { word: "Eloquent", meaning: "Fluent and persuasive in speaking or writing." },
+  { word: "Resilient", meaning: "Able to recover quickly from difficulties." },
+  { word: "Pragmatic", meaning: "Dealing with things sensibly and realistically." },
+  { word: "Ambiguous", meaning: "Open to more than one interpretation; unclear." },
+  { word: "Candid", meaning: "Truthful and straightforward; frank." },
+  { word: "Diligent", meaning: "Having or showing care in one's work or duties." },
+  { word: "Versatile", meaning: "Able to adapt to many different functions or activities." },
+  { word: "Concise", meaning: "Giving information clearly in few words." },
+  { word: "Tenacious", meaning: "Persistent, determined, not easily giving up." },
+  { word: "Proactive", meaning: "Acting in advance to deal with an expected difficulty." },
+  { word: "Cohesive", meaning: "Forming a unified whole; working well together." },
+  { word: "Astute", meaning: "Having sharp judgment; showing shrewdness." },
+  { word: "Feasible", meaning: "Possible to do easily or conveniently." },
+  { word: "Rigorous", meaning: "Thorough, exhaustive, and extremely careful." },
+  { word: "Articulate", meaning: "Able to express ideas clearly and effectively." },
+  { word: "Adept", meaning: "Very skilled or proficient at something." },
+  { word: "Prudent", meaning: "Acting with care and thought for the future." },
+  { word: "Coherent", meaning: "Logical and consistent; easy to follow." },
+  { word: "Decisive", meaning: "Able to make decisions quickly and effectively." }
+];
+
+const impromptuTopics = [
+  "Describe your ideal weekend.",
+  "Talk about a skill you'd like to learn and why.",
+  "What does success mean to you?",
+  "Describe a challenge you overcame recently.",
+  "If you could change one thing about your city, what would it be?",
+  "Talk about a book, movie, or show that influenced you.",
+  "Describe your morning routine.",
+  "What advice would you give your younger self?",
+  "Talk about the importance of lifelong learning.",
+  "Describe a goal you're currently working towards.",
+  "Talk about a time you had to convince someone at work.",
+  "Describe how you handle disagreements with colleagues.",
+  "What makes a good leader, in your opinion?",
+  "Talk about a project you're proud of.",
+  "Describe how you stay organized under pressure.",
+  "What's a mistake you learned a lot from?",
+  "Talk about how you'd explain your job to a child.",
+  "Describe a time you had to speak up in a meeting.",
+  "What does work-life balance mean to you?",
+  "Talk about a trend in your industry you find interesting."
+];
+
+// Deterministic "today's set" — same formula every device, changes once per calendar day,
+// so opening the app fresh each day shows new content without needing any server or internet.
+function dayOfYear() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  return Math.floor((now - start) / 86400000);
+}
+function todayIndex(len) {
+  return dayOfYear() % len;
+}
+
+let currentPronounce = todayIndex(pronouncePhrases.length);
+let currentVocab = todayIndex(vocabBank.length);
+let currentImpromptu = todayIndex(impromptuTopics.length);
+currentArtIndex = todayIndex(articulationBank[currentSound].length);
+
+const STORAGE_KEY = "speakingPracticeData";
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { sessions: [], lastDate: null, streak: 0, weak: {} };
+  } catch (e) { return { sessions: [], lastDate: null, streak: 0, weak: {} }; }
+}
+function saveData(data) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { console.error(e); }
+}
+function logSession(type, detail) {
+  const data = loadData();
+  const today = new Date().toDateString();
+  if (data.lastDate !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    data.streak = (data.lastDate === yesterday) ? data.streak + 1 : 1;
+    data.lastDate = today;
+  }
+  data.sessions.unshift({ type, detail, time: new Date().toLocaleString() });
+  data.sessions = data.sessions.slice(0, 50);
+  saveData(data);
+  renderStats();
+}
+function logWeakSound(soundKey, missCount) {
+  if (missCount <= 0) return;
+  const data = loadData();
+  data.weak = data.weak || {};
+  data.weak[soundKey] = (data.weak[soundKey] || 0) + missCount;
+  saveData(data);
+  renderWeakSounds();
+}
+function renderWeakSounds() {
+  const data = loadData();
+  const weak = data.weak || {};
+  const entries = Object.entries(weak).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const el = document.getElementById("weakSounds");
+  if (entries.length === 0) { el.textContent = ""; return; }
+  el.innerHTML = "Sounds to keep working on: " + entries.map(e => `<b>${e[0]}</b>`).join(", ");
+}
+function renderStats() {
+  const data = loadData();
+  document.getElementById("streakNum").textContent = data.streak + (data.streak === 1 ? " day" : " days");
+  document.getElementById("sessionCount").textContent = data.sessions.length;
+  const logEl = document.getElementById("sessionLog");
+  if (data.sessions.length === 0) {
+    logEl.innerHTML = '<div class="log-entry">No sessions yet — start practicing above.</div>';
+  } else {
+    logEl.innerHTML = data.sessions.map(s =>
+      `<div class="log-entry"><strong>${s.type}</strong> — ${s.detail}<br>${s.time}</div>`
+    ).join("");
+  }
+  renderWeakSounds();
+}
+function clearHistory() {
+  if (confirm("Clear all saved progress?")) {
+    saveData({ sessions: [], lastDate: null, streak: 0, weak: {} });
+    renderStats();
+  }
+}
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".card[id^='tab-']").forEach(c => c.classList.add("hidden"));
+    tab.classList.add("active");
+    document.getElementById("tab-" + tab.dataset.tab).classList.remove("hidden");
+  });
+});
+
+function speakTarget(elId) {
+  const text = document.getElementById(elId).textContent;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.85;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
+
+function getRecognizer() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert("Speech recognition isn't supported in this browser. Please use Chrome on Android or Safari 14.5+ on iOS.");
+    return null;
+  }
+  const r = new SR();
+  r.lang = "en-US";
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  return r;
+}
+
+function cleanWords(s) {
+  return s.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
+}
+
+function wordDiff(target, spoken) {
+  const t = cleanWords(target);
+  const s = cleanWords(spoken);
+  let sIdx = 0;
+  const results = [];
+  for (const word of t) {
+    let found = false;
+    for (let look = sIdx; look < Math.min(sIdx + 4, s.length); look++) {
+      if (s[look] === word) { found = true; sIdx = look + 1; break; }
+    }
+    results.push({ word, hit: found });
+  }
+  const hits = results.filter(r => r.hit).length;
+  const score = t.length ? Math.round((hits / t.length) * 100) : 0;
+  return { results, score, misses: t.length - hits };
+}
+function renderWordDiff(diffResults) {
+  return diffResults.map(r =>
+    `<span class="${r.hit ? 'w-hit' : 'w-miss'}">${r.word}</span>`
+  ).join("");
+}
+
+function startArticulationCheck() {
+  const r = getRecognizer();
+  if (!r) return;
+  const target = articulationBank[currentSound][currentArtIndex];
+  const statusEl = document.getElementById("artStatus");
+  statusEl.innerHTML = '<span class="rec-dot"></span>Listening...';
+  r.start();
+  r.onresult = (e) => {
+    const spoken = e.results[0][0].transcript;
+    const diff = wordDiff(target, spoken);
+    statusEl.textContent = "";
+    const cls = diff.score >= 85 ? "good" : diff.score >= 60 ? "mid" : "bad";
+    document.getElementById("artResult").innerHTML =
+      `<div class="result ${cls}"><div class="score">Clarity: ${diff.score}%</div>
+      <div class="word-diff">${renderWordDiff(diff.results)}</div>
+      <div class="transcript">Heard: "${spoken}"</div></div>`;
+    logSession("Articulation", `${currentSound} — ${diff.score}% clear`);
+    logWeakSound(currentSound, diff.misses);
+  };
+  r.onerror = () => { statusEl.textContent = "Didn't catch that — try again."; };
+  r.onend = () => { if (statusEl.textContent.includes("Listening")) statusEl.textContent = ""; };
+}
+
+function nextPronunciation() {
+  currentPronounce = (currentPronounce + 1) % pronouncePhrases.length;
+  document.getElementById("pronounceText").textContent = pronouncePhrases[currentPronounce];
+  document.getElementById("pronounceResult").innerHTML = "";
+  document.getElementById("pronounceStatus").textContent = "";
+}
+function startPronunciationCheck() {
+  const r = getRecognizer();
+  if (!r) return;
+  const target = pronouncePhrases[currentPronounce];
+  const statusEl = document.getElementById("pronounceStatus");
+  statusEl.innerHTML = '<span class="rec-dot"></span>Listening...';
+  r.start();
+  r.onresult = (e) => {
+    const spoken = e.results[0][0].transcript;
+    const diff = wordDiff(target, spoken);
+    statusEl.textContent = "";
+    const cls = diff.score >= 85 ? "good" : diff.score >= 60 ? "mid" : "bad";
+    document.getElementById("pronounceResult").innerHTML =
+      `<div class="result ${cls}"><div class="score">Match: ${diff.score}%</div>
+      <div class="word-diff">${renderWordDiff(diff.results)}</div>
+      <div class="transcript">You said: "${spoken}"</div></div>`;
+    logSession("Pronunciation", `"${target.slice(0,30)}..." — ${diff.score}% match`);
+  };
+  r.onerror = () => { statusEl.textContent = "Didn't catch that — try again."; };
+  r.onend = () => { if (statusEl.textContent.includes("Listening")) statusEl.textContent = ""; };
+}
+
+function nextVocab() {
+  currentVocab = (currentVocab + 1) % vocabBank.length;
+  const entry = vocabBank[currentVocab];
+  document.getElementById("vocabWord").textContent = entry.word;
+  document.getElementById("vocabMeaning").textContent = entry.meaning;
+  document.getElementById("vocabResult").innerHTML = "";
+  document.getElementById("vocabStatus").textContent = "";
+}
+function startVocabCheck() {
+  const r = getRecognizer();
+  if (!r) return;
+  const entry = vocabBank[currentVocab];
+  const statusEl = document.getElementById("vocabStatus");
+  statusEl.innerHTML = '<span class="rec-dot"></span>Listening for your sentence...';
+  r.start();
+  r.onresult = (e) => {
+    const spoken = e.results[0][0].transcript;
+    const usedWord = spoken.toLowerCase().includes(entry.word.toLowerCase().slice(0, 5));
+    statusEl.textContent = "";
+    const cls = usedWord ? "good" : "bad";
+    document.getElementById("vocabResult").innerHTML =
+      `<div class="result ${cls}"><div class="score">${usedWord ? "Nice — word used!" : "Word not detected"}</div>
+      <div class="transcript">You said: "${spoken}"</div></div>`;
+    logSession("Vocabulary", `"${entry.word}" — ${usedWord ? "used correctly" : "not detected"}`);
+  };
+  r.onerror = () => { statusEl.textContent = "Didn't catch that — try again."; };
+  r.onend = () => { if (statusEl.textContent.includes("Listening")) statusEl.textContent = ""; };
+}
+
+let impromptuInterval = null;
+function nextImpromptu() {
+  currentImpromptu = (currentImpromptu + 1) % impromptuTopics.length;
+  document.getElementById("impromptuTopic").textContent = impromptuTopics[currentImpromptu];
+  document.getElementById("impromptuTimer").textContent = "01:00";
+  document.getElementById("impromptuResult").innerHTML = "";
+  document.getElementById("impromptuStatus").textContent = "";
+}
+function startImpromptu() {
+  const r = getRecognizer();
+  if (!r) return;
+  r.continuous = true;
+  const topic = impromptuTopics[currentImpromptu];
+  const statusEl = document.getElementById("impromptuStatus");
+  statusEl.innerHTML = '<span class="rec-dot"></span>Speak now...';
+  let fullTranscript = "";
+  let seconds = 60;
+  document.getElementById("impromptuTimer").textContent = "01:00";
+  impromptuInterval = setInterval(() => {
+    seconds--;
+    const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+    const s = String(seconds % 60).padStart(2, "0");
+    document.getElementById("impromptuTimer").textContent = `${m}:${s}`;
+    if (seconds <= 0) {
+      clearInterval(impromptuInterval);
+      r.stop();
+    }
+  }, 1000);
+  r.onresult = (e) => {
+    fullTranscript = "";
+    for (let i = 0; i < e.results.length; i++) fullTranscript += e.results[i][0].transcript + " ";
+  };
+  r.onend = () => {
+    clearInterval(impromptuInterval);
+    statusEl.textContent = "";
+    const wordCount = fullTranscript.trim().split(/\s+/).filter(Boolean).length;
+    document.getElementById("impromptuResult").innerHTML =
+      `<div class="result good"><div class="score">${wordCount} words spoken</div>
+      <div class="transcript">${fullTranscript || "(no speech captured)"}</div></div>`;
+    logSession("Impromptu", `"${topic.slice(0,30)}..." — ${wordCount} words`);
+  };
+  r.onerror = () => { statusEl.textContent = "Mic issue — try again."; clearInterval(impromptuInterval); };
+  r.start();
+}
+
+renderSoundChips();
+loadArticulation();
+document.getElementById("pronounceText").textContent = pronouncePhrases[currentPronounce];
+{
+  const entry = vocabBank[currentVocab];
+  document.getElementById("vocabWord").textContent = entry.word;
+  document.getElementById("vocabMeaning").textContent = entry.meaning;
+}
+document.getElementById("impromptuTopic").textContent = impromptuTopics[currentImpromptu];
+renderStats();
+</script>
+</body>
+</html>
