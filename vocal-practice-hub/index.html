@@ -134,6 +134,52 @@
             color: var(--text-muted);
             margin-bottom: 4px;
         }
+
+        .song-slot {
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .song-slot input[type="text"],
+        .song-slot input[type="url"] {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: var(--text-color);
+            padding: 8px;
+            box-sizing: border-box;
+            margin-bottom: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .song-slot textarea {
+            height: 100px;
+        }
+
+        .song-slot label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .song-link {
+            display: inline-block;
+            margin-bottom: 8px;
+            color: var(--accent);
+            font-size: 0.85rem;
+            text-decoration: none;
+        }
+
+        .btn-small {
+            width: auto;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+        }
     </style>
 </head>
 <body>
@@ -163,6 +209,12 @@
         <div class="card-title">🎙️ Self-Audit Recorder</div>
         <button class="btn" id="recordBtn" onclick="toggleRecording()">Record My Voice</button>
         <audio id="audioPlayback" controls style="display:none;"></audio>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🎤 Song Practice (5 slots)</div>
+        <p style="font-size:0.85rem; margin-bottom:15px;">Add a YouTube karaoke link and paste your own lyrics for each song. Everything is saved on your phone.</p>
+        <div id="songList"></div>
     </div>
 
     <div class="card">
@@ -299,8 +351,63 @@
         displayLogs();
     }
 
-    window.onload = displayLogs;
+    // --- SONG PRACTICE LOGIC ---
+    const SONG_COUNT = 5;
+
+    function loadSongs() {
+        const stored = JSON.parse(localStorage.getItem('vocalSongs') || '[]');
+        const songs = [];
+        for (let i = 0; i < SONG_COUNT; i++) {
+            songs.push(stored[i] || { title: '', youtube: '', lyrics: '' });
+        }
+        return songs;
+    }
+
+    function renderSongs() {
+        const songs = loadSongs();
+        const container = document.getElementById('songList');
+        container.innerHTML = '';
+
+        songs.forEach((song, index) => {
+            const slot = document.createElement('div');
+            slot.className = 'song-slot';
+
+            let linkHtml = '';
+            if (song.youtube) {
+                linkHtml = `<a class="song-link" href="${song.youtube}" target="_blank" rel="noopener">▶ Open karaoke video</a><br/>`;
+            }
+
+            slot.innerHTML = `
+                <label>Song ${index + 1} title</label>
+                <input type="text" id="title-${index}" value="${song.title.replace(/"/g, '&quot;')}" placeholder="e.g. Tum Hi Ho">
+                <label>YouTube karaoke link</label>
+                <input type="url" id="youtube-${index}" value="${song.youtube.replace(/"/g, '&quot;')}" placeholder="https://youtube.com/...">
+                ${linkHtml}
+                <label>Lyrics (paste your own)</label>
+                <textarea id="lyrics-${index}" placeholder="Paste lyrics here...">${song.lyrics}</textarea>
+                <button class="btn btn-small" onclick="saveSong(${index})">Save Song ${index + 1}</button>
+            `;
+            container.appendChild(slot);
+        });
+    }
+
+    function saveSong(index) {
+        const songs = loadSongs();
+        songs[index] = {
+            title: document.getElementById(`title-${index}`).value.trim(),
+            youtube: document.getElementById(`youtube-${index}`).value.trim(),
+            lyrics: document.getElementById(`lyrics-${index}`).value
+        };
+        localStorage.setItem('vocalSongs', JSON.stringify(songs));
+        renderSongs();
+    }
+
+    window.onload = function() {
+        displayLogs();
+        renderSongs();
+    };
 </script>
 
 </body>
 </html>
+Add song practice section
