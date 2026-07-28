@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clutter Sweep</title>
+<style>
+  :root{
+    --ink:#1c2b28;
+    --paper:#f6f4ee;
+    --line:#d8d3c4;
+    --moss:#3c6255;
+    --moss-dark:#274238;
+    --amber:#c5762b;
+    --danger:#a4392c;
+    --muted:#7a7565;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  header{
+    padding:20px 16px 14px;
+    border-bottom:2px solid var(--ink);
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  header h1{
+    font-size:1.3rem;
+    margin:0;
+    letter-spacing:-0.02em;
+  }
+  header h1 span{color:var(--moss);}
+  header .tag{
+    font-size:0.75rem;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+  main{max-width:1000px;margin:0 auto;padding:16px;}
+
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px;
+    margin-bottom:16px;
+  }
+  .panel h2{
+    font-size:0.95rem;
+    margin:0 0 10px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--muted);
+  }
+
+  button{
+    font-family:inherit;
+    font-size:0.9rem;
+    border:none;
+    border-radius:7px;
+    padding:10px 16px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .btn-primary{background:var(--moss);color:white;}
+  .btn-primary:hover{background:var(--moss-dark);}
+  .btn-secondary{background:transparent;border:1.5px solid var(--ink);color:var(--ink);}
+  .btn-secondary:hover{background:var(--ink);color:white;}
+  .btn-danger{background:var(--danger);color:white;}
+  .btn-danger:hover{background:#7d2b21;}
+  .btn-danger[disabled],.btn-primary[disabled],.btn-secondary[disabled]{
+    opacity:0.4;cursor:not-allowed;
+  }
+  button.small{padding:6px 12px;font-size:0.8rem;}
+
+  #pickRow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  #status{font-size:0.85rem;color:var(--muted);margin-top:10px;}
+
+  .stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;}
+  .stat{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 14px;
+    min-width:110px;
+  }
+  .stat .num{font-size:1.4rem;font-weight:700;}
+  .stat .label{font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;}
+
+  .toolbar{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:14px;
+    padding-bottom:14px;
+    border-bottom:1px solid var(--line);
+  }
+  .toolbar .spacer{flex:1;}
+  .count-pill{
+    background:var(--amber);
+    color:white;
+    border-radius:100px;
+    padding:4px 12px;
+    font-size:0.8rem;
+    font-weight:700;
+  }
+
+  .group{margin-bottom:22px;}
+  .group-head{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:8px;
+  }
+  .group-head h3{font-size:0.9rem;margin:0;}
+  .group-head .why{
+    font-size:0.75rem;
+    color:var(--muted);
+    background:var(--paper);
+    padding:2px 8px;
+    border-radius:100px;
+    border:1px solid var(--line);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+    gap:10px;
+  }
+  .card{
+    position:relative;
+    border:2px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    background:var(--paper);
+    cursor:pointer;
+    transition:border-color .12s;
+  }
+  .card.selected{border-color:var(--danger);}
+  .card .thumb{
+    width:100%;
+    aspect-ratio:1/1;
+    object-fit:cover;
+    display:block;
+    background:#e4e0d3;
+  }
+  .card .thumb.doc{
+    display:flex;align-items:center;justify-content:center;
+    font-size:0.7rem;color:var(--muted);text-align:center;padding:8px;
+    word-break:break-all;
+  }
+  .card .name{
+    font-size:0.65rem;
+    padding:4px 6px;
+    color:var(--muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .card .check{
+    position:absolute;
+    top:6px;right:6px;
+    width:20px;height:20px;
+    border-radius:5px;
+    background:rgba(255,255,255,0.9);
+    border:2px solid var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    font-size:0.75rem;
+  }
+  .card.selected .check{background:var(--danger);border-color:var(--danger);color:white;}
+  .card .badge{
+    position:absolute;top:6px;left:6px;
+    background:var(--ink);color:white;
+    font-size:0.6rem;padding:2px 6px;border-radius:100px;
+  }
+
+  #empty{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--muted);
+  }
+  #reviewSection{display:none;}
+  #deleteBar{
+    position:sticky;bottom:0;
+    background:var(--card);
+    border-top:2px solid var(--ink);
+    padding:12px 16px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    flex-wrap:wrap;
+    margin:0 -18px -18px;
+    border-radius:0 0 10px 10px;
+  }
+  .note{font-size:0.78rem;color:var(--muted);line-height:1.4;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Clutter<span>Sweep</span></h1>
+  <div class="tag">manual folder scanner · v1</div>
+</header>
+
+<main>
+
+  <div class="panel">
+    <h2>1. Choose what to scan</h2>
+    <div id="pickRow">
+      <button class="btn-primary" id="pickFolderFS" style="display:none;">Select Folder (with delete)</button>
+      <button class="btn-secondary" id="pickFolderInput">Select Folder</button>
+      <button class="btn-secondary" id="pickFiles">Select Files</button>
+      <input type="file" id="folderInput" webkitdirectory multiple style="display:none;">
+      <input type="file" id="filesInput" multiple style="display:none;">
+    </div>
+    <div class="note" id="fsNote" style="margin-top:8px;"></div>
+    <div id="status"></div>
+    <div class="stats" id="stats" style="display:none;"></div>
+  </div>
+
+  <div class="panel" id="reviewSection">
+    <h2>2. Review &amp; select what to remove</h2>
+    <div class="toolbar">
+      <button class="btn-secondary small" id="selectAllBtn">Select All</button>
+      <button class="btn-secondary small" id="selectDupsBtn">Select All Duplicates</button>
+      <button class="btn-secondary small" id="selectBlurryBtn">Select All Blurry</button>
+      <button class="btn-secondary small" id="clearSelBtn">Clear Selection</button>
+      <div class="spacer"></div>
+      <span class="count-pill" id="selCount">0 selected</span>
+    </div>
+
+    <div id="groups"></div>
+
+    <div id="deleteBar">
+      <button class="btn-danger" id="deleteBtn" disabled>Delete Selected</button>
+      <button class="btn-secondary" id="downloadListBtn" disabled>Download List of Names Instead</button>
+      <span class="note" id="deleteNote"></span>
+    </div>
+  </div>
+
+  <div id="empty">Select a folder or files above to start scanning for duplicates, blurry photos, and old documents.</div>
+
+</main>
+
+<script>
+const IMG_EXT = ['jpg','jpeg','png','gif','webp','heic','bmp','tiff'];
+const VID_EXT = ['mp4','mov','avi','mkv','3gp','m4v'];
+const DOC_EXT = ['pdf','doc','docx','xls','xlsx','ppt','pptx','txt','csv'];
+
+let allEntries = []; // {file, handle(optional), name, ext, kind, hash, blurScore, dupGroupId, id}
+let dupGroups = {}; // hash -> [ids]
+let blurryIds = [];
+let dirHandle = null; // File System Access API handle, if used
+let idCounter = 0;
+
+const statusEl = document.getElementById('status');
+const statsEl = document.getElementById('stats');
+const emptyEl = document.getElementById('empty');
+const reviewSection = document.getElementById('reviewSection');
+const groupsEl = document.getElementById('groups');
+const selCountEl = document.getElementById('selCount');
+const deleteBtn = document.getElementById('deleteBtn');
+const downloadListBtn = document.getElementById('downloadListBtn');
+const deleteNote = document.getElementById('deleteNote');
+const fsNote = document.getElementById('fsNote');
+
+let selected = new Set();
+
+// Feature detect File System Access API (Chrome/Edge desktop, Android Chrome)
+const hasFSAccess = 'showDirectoryPicker' in window;
+if (hasFSAccess) {
+  document.getElementById('pickFolderFS').style.display = 'inline-block';
+  document.getElementById('pickFolderInput').style.display = 'none';
+  fsNote.textContent = 'This browser supports direct delete — deletions happen right in your folder after you confirm.';
+} else {
+  fsNote.textContent = 'Your browser can scan files but can\'t delete them directly. After review, download a list of names to delete manually, or open this page in Chrome/Edge for direct delete.';
+}
+
+document.getElementById('pickFolderFS').addEventListener('click', pickFolderFSAccess);
+document.getElementById('pickFolderInput').addEventListener('click', () => document.getElementById('folderInput').click());
+document.getElementById('pickFiles').addEventListener('click', () => document.getElementById('filesInput').click());
+document.getElementById('folderInput').addEventListener('change', (e) => handleFileList(e.target.files));
+document.getElementById('filesInput').addEventListener('change', (e) => handleFileList(e.target.files));
+
+async function pickFolderFSAccess() {
+  try {
+    dirHandle = await window.showDirectoryPicker();
+    const files = [];
+    const handles = new Map();
+    async function walk(handle, path) {
+      for await (const [name, h] of handle.entries()) {
+        if (h.kind === 'file') {
+          const f = await h.getFile();
+          files.push(f);
+          handles.set(f.name + '|' + f.size, h);
+        } else if (h.kind === 'directory') {
+          await walk(h, path + '/' + name);
+        }
+      }
+    }
+    await walk(dirHandle, '');
+    window.__fileHandles = handles;
+    handleFileList(files, true);
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      statusEl.textContent = 'Could not access folder: ' + err.message;
+    }
+  }
+}
+
+function extOf(name) {
+  const parts = name.split('.');
+  return parts.length > 1 ? parts.pop().toLowerCase() : '';
+}
+
+function kindOf(ext) {
+  if (IMG_EXT.includes(ext)) return 'image';
+  if (VID_EXT.includes(ext)) return 'video';
+  if (DOC_EXT.includes(ext)) return 'document';
+  return 'other';
+}
+
+async function handleFileList(fileList, viaFS) {
+  allEntries = [];
+  idCounter = 0;
+  const files = Array.from(fileList);
+  statusEl.textContent = `Scanning ${files.length} items...`;
+  emptyEl.style.display = 'none';
+
+  for (const file of files) {
+    const ext = extOf(file.name);
+    const kind = kindOf(ext);
+    if (kind === 'other') continue;
+    allEntries.push({
+      id: idCounter++,
+      file,
+      name: file.name,
+      size: file.size,
+      ext,
+      kind,
+      hash: null,
+      blurScore: null,
+      thumbUrl: (kind === 'image') ? URL.createObjectURL(file) : null
+    });
+  }
+
+  statusEl.textContent = `Hashing ${allEntries.length} files to find duplicates...`;
+  await hashAllFiles();
+
+  statusEl.textContent = `Checking image sharpness...`;
+  await computeBlurScores();
+
+  buildGroups();
+  renderStats();
+  renderReview();
+  statusEl.textContent = `Done. Scanned ${allEntries.length} photos, videos and documents.`;
+}
+
+async function hashAllFiles() {
+  // Hash in chunks to avoid freezing UI too long; use size+first 64KB+last 64KB as a fast fingerprint,
+  // then confirm true duplicates with a full SHA-256 only within same-size groups.
+  const bySize = {};
+  for (const e of allEntries) {
+    bySize[e.size] = bySize[e.size] || [];
+    bySize[e.size].push(e);
+  }
+  for (const size in bySize) {
+    const group = bySize[size];
+    if (group.length < 2) { group[0].hash = 'unique-' + group[0].id; continue; }
+    for (const e of group) {
+      e.hash = await sha256OfFile(e.file);
+    }
+  }
+}
+
+async function sha256OfFile(file) {
+  const buf = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function computeBlurScores() {
+  const images = allEntries.filter(e => e.kind === 'image' && ['jpg','jpeg','png','webp','bmp'].includes(e.ext));
+  for (const e of images) {
+    try {
+      e.blurScore = await laplacianVariance(e.file);
+    } catch (err) {
+      e.blurScore = null;
+    }
+  }
+}
+
+function laplacianVariance(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const w = 200, h = Math.round(200 * img.height / img.width) || 200;
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      const gray = new Float32Array(w * h);
+      for (let i = 0; i < w * h; i++) {
+        const r = data[i*4], g = data[i*4+1], b = data[i*4+2];
+        gray[i] = 0.299*r + 0.587*g + 0.114*b;
+      }
+      let sum = 0, sumSq = 0, count = 0;
+      for (let y = 1; y < h-1; y++) {
+        for (let x = 1; x < w-1; x++) {
+          const idx = y*w+x;
+          const lap = -4*gray[idx] + gray[idx-1] + gray[idx+1] + gray[idx-w] + gray[idx+w];
+          sum += lap; sumSq += lap*lap; count++;
+        }
+      }
+      const mean = sum / count;
+      const variance = (sumSq / count) - (mean*mean);
+      URL.revokeObjectURL(img.src);
+      resolve(variance);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function buildGroups() {
+  dupGroups = {};
+  for (const e of allEntries) {
+    if (!e.hash.startsWith('unique-')) {
+      dupGroups[e.hash] = dupGroups[e.hash] || [];
+      dupGroups[e.hash].push(e.id);
+    }
+  }
+  // blur threshold: low variance = blurry. Tuned loosely for thumbnails.
+  blurryIds = allEntries.filter(e => e.blurScore !== null && e.blurScore < 60).map(e => e.id);
+}
+
+function renderStats() {
+  const dupCount = Object.values(dupGroups).reduce((a,g) => a + g.length, 0);
+  const totalSize = allEntries.reduce((a,e) => a + e.size, 0);
+  statsEl.style.display = 'flex';
+  statsEl.innerHTML = `
+    <div class="stat"><div class="num">${allEntries.length}</div><div class="label">Items Scanned</div></div>
+    <div class="stat"><div class="num">${dupCount}</div><div class="label">In Duplicate Sets</div></div>
+    <div class="stat"><div class="num">${blurryIds.length}</div><div class="label">Likely Blurry</div></div>
+    <div class="stat"><div class="num">${(totalSize/1e6).toFixed(0)} MB</div><div class="label">Total Size</div></div>
+  `;
+}
+
+function entryById(id) { return allEntries.find(e => e.id === id); }
+
+function renderReview() {
+  reviewSection.style.display = 'block';
+  groupsEl.innerHTML = '';
+  selected.clear();
+  updateSelCount();
+
+  // Duplicates
+  const dupKeys = Object.keys(dupGroups).filter(k => dupGroups[k].length > 1);
+  if (dupKeys.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'group';
+    wrap.innerHTML = `<div class="group-head"><h3>Duplicate sets (${dupKeys.length})</h3><span class="why">exact matches — keeps first, flags the rest by default</span></div>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    dupKeys.forEach(k => {
+      dupGroups[k].forEach((id, idx) => {
+        grid.appendChild(makeCard(entryById(id), idx > 0 ? 'copy' : 'keep'));
+      });
+    });
+    wrap.appendChild(grid);
+    groupsEl.appendChild(wrap);
+  }
+
+  // Blurry
+  if (blurryIds.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'group';
+    wrap.innerHTML = `<div class="group-head"><h3>Likely blurry photos (${blurryIds.length})</h3><span class="why">low sharpness score</span></div>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    blurryIds.forEach(id => grid.appendChild(makeCard(entryById(id), 'blurry')));
+    wrap.appendChild(grid);
+    groupsEl.appendChild(wrap);
+  }
+
+  // Documents (just listed for review, nothing auto-flagged)
+  const docs = allEntries.filter(e => e.kind === 'document');
+  if (docs.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'group';
+    wrap.innerHTML = `<div class="group-head"><h3>Documents (${docs.length})</h3><span class="why">review manually — nothing pre-selected</span></div>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    docs.forEach(e => grid.appendChild(makeCard(e, null)));
+    wrap.appendChild(grid);
+    groupsEl.appendChild(wrap);
+  }
+
+  if (!dupKeys.length && !blurryIds.length && !docs.length) {
+    groupsEl.innerHTML = '<div class="note">No duplicates, blurry photos, or documents found in what you scanned.</div>';
+  }
+}
+
+function makeCard(e, badge) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.id = e.id;
+
+  let thumbHtml;
+  if (e.kind === 'image' && e.thumbUrl) {
+    thumbHtml = `<img class="thumb" src="${e.thumbUrl}" loading="lazy">`;
+  } else {
+    const icon = e.kind === 'video' ? '\u{1F3AC}' : '\u{1F4C4}';
+    thumbHtml = `<div class="thumb doc">${icon}<br>${e.name}</div>`;
+  }
+
+  card.innerHTML = `
+    ${badge === 'copy' ? '<span class="badge">DUPLICATE</span>' : ''}
+    ${badge === 'blurry' ? '<span class="badge">BLURRY</span>' : ''}
+    ${thumbHtml}
+    <div class="name">${e.name}</div>
+    <div class="check"></div>
+  `;
+
+  if (badge === 'copy' || badge === 'blurry') {
+    selected.add(e.id);
+    card.classList.add('selected');
+    card.querySelector('.check').textContent = '\u2713';
+  }
+
+  card.addEventListener('click', () => toggleSelect(e.id, card));
+  return card;
+}
+
+function toggleSelect(id, card) {
+  if (selected.has(id)) {
+    selected.delete(id);
+    card.classList.remove('selected');
+    card.querySelector('.check').textContent = '';
+  } else {
+    selected.add(id);
+    card.classList.add('selected');
+    card.querySelector('.check').textContent = '\u2713';
+  }
+  updateSelCount();
+}
+
+function updateSelCount() {
+  selCountEl.textContent = `${selected.size} selected`;
+  deleteBtn.disabled = selected.size === 0;
+  downloadListBtn.disabled = selected.size === 0;
+  deleteNote.textContent = hasFSAccess
+    ? 'Deleting removes files permanently from the folder you selected.'
+    : 'Your browser will download a text file listing exactly what to delete.';
+}
+
+document.getElementById('selectAllBtn').addEventListener('click', () => {
+  document.querySelectorAll('.card').forEach(card => {
+    const id = Number(card.dataset.id);
+    selected.add(id);
+    card.classList.add('selected');
+    card.querySelector('.check').textContent = '\u2713';
+  });
+  updateSelCount();
+});
+
+document.getElementById('clearSelBtn').addEventListener('click', () => {
+  selected.clear();
+  document.querySelectorAll('.card').forEach(card => {
+    card.classList.remove('selected');
+    card.querySelector('.check').textContent = '';
+  });
+  updateSelCount();
+});
+
+document.getElementById('selectDupsBtn').addEventListener('click', () => {
+  Object.values(dupGroups).forEach(ids => {
+    ids.slice(1).forEach(id => selectCardById(id));
+  });
+  updateSelCount();
+});
+
+document.getElementById('selectBlurryBtn').addEventListener('click', () => {
+  blurryIds.forEach(id => selectCardById(id));
+  updateSelCount();
+});
+
+function selectCardById(id) {
+  selected.add(id);
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  if (card) {
+    card.classList.add('selected');
+    card.querySelector('.check').textContent = '\u2713';
+  }
+}
+
+downloadListBtn.addEventListener('click', () => {
+  const names = Array.from(selected).map(id => entryById(id).name);
+  const blob = new Blob([names.join('\n')], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'clutter-sweep-delete-list.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+deleteBtn.addEventListener('click', async () => {
+  if (!confirm(`Permanently delete ${selected.size} item(s)? This cannot be undone.`)) return;
+
+  if (hasFSAccess && window.__fileHandles) {
+    let deleted = 0, failed = 0;
+    for (const id of selected) {
+      const e = entryById(id);
+      const key = e.name + '|' + e.size;
+      const handle = window.__fileHandles.get(key);
+      try {
+        if (dirHandle && dirHandle.removeEntry) {
+          await dirHandle.removeEntry(e.name);
+          deleted++;
+        } else {
+          failed++;
+        }
+      } catch (err) {
+        failed++;
+      }
+    }
+    statusEl.textContent = `Deleted ${deleted} item(s).${failed ? ' ' + failed + ' could not be deleted (may be in a subfolder — delete those manually).' : ''}`;
+    // Remove deleted cards from view
+    selected.forEach(id => {
+      const card = document.querySelector(`.card[data-id="${id}"]`);
+      if (card) card.remove();
+      allEntries = allEntries.filter(e => e.id !== id);
+    });
+    selected.clear();
+    updateSelCount();
+    renderStats();
+  } else {
+    downloadListBtn.click();
+    alert('Your browser can\'t delete files directly. A list of file names was downloaded — use it to find and delete these manually, or reopen this page in Chrome/Edge for one-click delete.');
+  }
+});
+</script>
+
+</body>
+</html>
