@@ -45,6 +45,17 @@
     letter-spacing:0.08em;
   }
   main{max-width:1000px;margin:0 auto;padding:16px;}
+  .tabs{
+    max-width:1000px;margin:14px auto 0;padding:0 16px;
+    display:flex;gap:8px;
+  }
+  .tab-btn{
+    font-family:inherit;font-size:0.85rem;font-weight:600;
+    background:transparent;border:1.5px solid var(--line);
+    color:var(--muted);padding:8px 16px;border-radius:8px 8px 0 0;
+    cursor:pointer;border-bottom:none;
+  }
+  .tab-btn.active{background:var(--card);color:var(--ink);border-color:var(--ink);}
 
   .panel{
     background:var(--card);
@@ -208,11 +219,48 @@
 
 <header>
   <h1>Clutter<span>Sweep</span></h1>
-  <div class="tag">manual folder scanner · v1</div>
+  <div class="tag">v2</div>
 </header>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tabBtnLocal">Local Folder / Files</button>
+  <button class="tab-btn" id="tabBtnGP">Google Photos</button>
+</div>
 
 <main>
 
+<div id="gpPanel" style="display:none;">
+  <div class="panel">
+    <h2>Google Photos</h2>
+    <div id="gpStep1">
+      <p class="note">Connect your Google account, then pick the photos/videos you want reviewed. Google only lets you pick items yourself (a security limit on their side) — but you can select hundreds at once in their picker.</p>
+      <button class="btn-primary" id="gpConnectBtn">Connect Google Photos</button>
+      <div class="note" id="gpStatus" style="margin-top:10px;"></div>
+    </div>
+    <div id="gpStep2" style="display:none;">
+      <button class="btn-primary" id="gpPickBtn">Open Google Photos Picker</button>
+      <div class="note" id="gpPickStatus" style="margin-top:10px;"></div>
+    </div>
+  </div>
+  <div class="panel" id="gpReviewSection" style="display:none;">
+    <h2>Review &amp; select what to remove</h2>
+    <div class="toolbar">
+      <button class="btn-secondary small" id="gpSelectAllBtn">Select All</button>
+      <button class="btn-secondary small" id="gpSelectDupsBtn">Select All Duplicates</button>
+      <button class="btn-secondary small" id="gpSelectBlurryBtn">Select All Blurry</button>
+      <button class="btn-secondary small" id="gpClearSelBtn">Clear Selection</button>
+      <div class="spacer"></div>
+      <span class="count-pill" id="gpSelCount">0 selected</span>
+    </div>
+    <div id="gpGroups"></div>
+    <div id="deleteBar">
+      <button class="btn-danger" id="gpOpenDeleteBtn" disabled>Open Selected in Google Photos to Delete</button>
+      <span class="note">Google doesn't allow apps to delete photos directly — this opens each selected photo in Google Photos, pre-loaded, so you just tap the trash icon.</span>
+    </div>
+  </div>
+</div>
+
+<div id="localPanel">
   <div class="panel">
     <h2>1. Choose what to scan</h2>
     <div id="pickRow">
@@ -249,8 +297,11 @@
 
   <div id="empty">Select a folder or files above to start scanning for duplicates, blurry photos, and old documents.</div>
 
+</div>
+
 </main>
 
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 const IMG_EXT = ['jpg','jpeg','png','gif','webp','heic','bmp','tiff'];
 const VID_EXT = ['mp4','mov','avi','mkv','3gp','m4v'];
@@ -656,6 +707,275 @@ deleteBtn.addEventListener('click', async () => {
     downloadListBtn.click();
     alert('Your browser can\'t delete files directly. A list of file names was downloaded — use it to find and delete these manually, or reopen this page in Chrome/Edge for one-click delete.');
   }
+});
+
+// ---------- Tab switching ----------
+document.getElementById('tabBtnLocal').addEventListener('click', () => setTab('local'));
+document.getElementById('tabBtnGP').addEventListener('click', () => setTab('gp'));
+function setTab(which) {
+  document.getElementById('localPanel').style.display = which === 'local' ? 'block' : 'none';
+  document.getElementById('empty').style.display = which === 'local' && allEntries.length === 0 ? 'block' : 'none';
+  document.getElementById('gpPanel').style.display = which === 'gp' ? 'block' : 'none';
+  document.getElementById('tabBtnLocal').classList.toggle('active', which === 'local');
+  document.getElementById('tabBtnGP').classList.toggle('active', which === 'gp');
+}
+
+// ---------- Google Photos integration ----------
+const GP_CLIENT_ID = '471693826209-je025n810vq8iml6l5q8c9v5n578ifj9.apps.googleusercontent.com';
+const GP_SCOPE = 'https://www.googleapis.com/auth/photospicker.mediaitems.readonly';
+let gpAccessToken = null;
+let gpTokenClient = null;
+let gpAllEntries = [];
+let gpDupGroups = {};
+let gpBlurryIds = [];
+let gpSelected = new Set();
+let gpIdCounter = 0;
+
+function gpInitTokenClient() {
+  if (gpTokenClient || !window.google || !google.accounts) return;
+  gpTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GP_CLIENT_ID,
+    scope: GP_SCOPE,
+    callback: (resp) => {
+      if (resp.error) {
+        document.getElementById('gpStatus').textContent = 'Connection failed: ' + resp.error;
+        return;
+      }
+      gpAccessToken = resp.access_token;
+      document.getElementById('gpStatus').textContent = 'Connected to Google Photos.';
+      document.getElementById('gpStep2').style.display = 'block';
+    }
+  });
+}
+
+document.getElementById('gpConnectBtn').addEventListener('click', () => {
+  gpInitTokenClient();
+  if (gpTokenClient) {
+    gpTokenClient.requestAccessToken();
+  } else {
+    document.getElementById('gpStatus').textContent = 'Still loading Google sign-in — try again in a second.';
+  }
+});
+
+document.getElementById('gpPickBtn').addEventListener('click', gpStartPickerFlow);
+
+async function gpStartPickerFlow() {
+  const pickStatus = document.getElementById('gpPickStatus');
+  pickStatus.textContent = 'Creating picker session...';
+  try {
+    const sessionResp = await fetch('https://photospicker.googleapis.com/v1/sessions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + gpAccessToken, 'Content-Type': 'application/json' }
+    });
+    const session = await sessionResp.json();
+    if (!session.id) { pickStatus.textContent = 'Could not start picker: ' + JSON.stringify(session); return; }
+
+    window.open(session.pickerUri, '_blank');
+    pickStatus.textContent = 'A Google Photos tab opened — select your photos/videos there, then come back here. Waiting for your selection...';
+
+    const pollInterval = setInterval(async () => {
+      const pollResp = await fetch(`https://photospicker.googleapis.com/v1/sessions/${session.id}`, {
+        headers: { 'Authorization': 'Bearer ' + gpAccessToken }
+      });
+      const pollData = await pollResp.json();
+      if (pollData.mediaItemsSet) {
+        clearInterval(pollInterval);
+        pickStatus.textContent = 'Selection received. Downloading previews and scanning...';
+        await gpFetchMediaItems(session.id);
+      }
+    }, 3000);
+  } catch (err) {
+    pickStatus.textContent = 'Error: ' + err.message;
+  }
+}
+
+async function gpFetchMediaItems(sessionId) {
+  gpAllEntries = [];
+  gpIdCounter = 0;
+  let pageToken = '';
+  let items = [];
+  do {
+    const url = `https://photospicker.googleapis.com/v1/mediaItems?sessionId=${sessionId}&pageSize=100${pageToken ? '&pageToken=' + pageToken : ''}`;
+    const resp = await fetch(url, { headers: { 'Authorization': 'Bearer ' + gpAccessToken } });
+    const data = await resp.json();
+    items = items.concat(data.mediaItems || []);
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+
+  document.getElementById('gpPickStatus').textContent = `Downloading ${items.length} previews...`;
+
+  for (const item of items) {
+    const mf = item.mediaFile;
+    if (!mf) continue;
+    const isVideo = (mf.mimeType || '').startsWith('video');
+    const thumbUrl = mf.baseUrl + (isVideo ? '=w300-h300' : '=w400-h400');
+    let blob = null;
+    try {
+      const r = await fetch(thumbUrl, { headers: { 'Authorization': 'Bearer ' + gpAccessToken } });
+      blob = await r.blob();
+    } catch (e) { continue; }
+    gpAllEntries.push({
+      id: gpIdCounter++,
+      name: mf.filename || item.id,
+      kind: isVideo ? 'video' : 'image',
+      hash: null,
+      blurScore: null,
+      thumbBlob: blob,
+      thumbUrl: URL.createObjectURL(blob),
+      productUrl: item.productUrl || null
+    });
+  }
+
+  // hash for duplicates (by blob content)
+  for (const e of gpAllEntries) {
+    e.hash = await sha256OfFile(e.thumbBlob);
+  }
+  gpDupGroups = {};
+  const seen = {};
+  for (const e of gpAllEntries) {
+    seen[e.hash] = seen[e.hash] || [];
+    seen[e.hash].push(e.id);
+  }
+  for (const h in seen) if (seen[h].length > 1) gpDupGroups[h] = seen[h];
+
+  // blur check for images
+  gpBlurryIds = [];
+  for (const e of gpAllEntries) {
+    if (e.kind === 'image') {
+      try {
+        e.blurScore = await laplacianVariance(e.thumbBlob);
+        if (e.blurScore < 60) gpBlurryIds.push(e.id);
+      } catch (err) {}
+    }
+  }
+
+  document.getElementById('gpPickStatus').textContent = `Scanned ${gpAllEntries.length} items.`;
+  gpRenderReview();
+}
+
+function gpEntryById(id) { return gpAllEntries.find(e => e.id === id); }
+
+function gpRenderReview() {
+  document.getElementById('gpReviewSection').style.display = 'block';
+  const groupsEl = document.getElementById('gpGroups');
+  groupsEl.innerHTML = '';
+  gpSelected.clear();
+  gpUpdateSelCount();
+
+  const dupKeys = Object.keys(gpDupGroups);
+  if (dupKeys.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'group';
+    wrap.innerHTML = `<div class="group-head"><h3>Duplicate sets (${dupKeys.length})</h3><span class="why">exact matches — keeps first, flags the rest</span></div>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    dupKeys.forEach(k => {
+      gpDupGroups[k].forEach((id, idx) => grid.appendChild(gpMakeCard(gpEntryById(id), idx > 0 ? 'copy' : 'keep')));
+    });
+    wrap.appendChild(grid);
+    groupsEl.appendChild(wrap);
+  }
+
+  if (gpBlurryIds.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'group';
+    wrap.innerHTML = `<div class="group-head"><h3>Likely blurry photos (${gpBlurryIds.length})</h3><span class="why">low sharpness score</span></div>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    gpBlurryIds.forEach(id => grid.appendChild(gpMakeCard(gpEntryById(id), 'blurry')));
+    wrap.appendChild(grid);
+    groupsEl.appendChild(wrap);
+  }
+
+  const rest = gpAllEntries.filter(e => !dupKeys.some(k => gpDupGroups[k].includes(e.id)) && !gpBlurryIds.includes(e.id));
+  if (rest.length) {
+    const wrap = document.createElement('div');
+    wrap.className = 'group';
+    wrap.innerHTML = `<div class="group-head"><h3>Everything else (${rest.length})</h3><span class="why">review manually — nothing pre-selected</span></div>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    rest.forEach(e => grid.appendChild(gpMakeCard(e, null)));
+    wrap.appendChild(grid);
+    groupsEl.appendChild(wrap);
+  }
+}
+
+function gpMakeCard(e, badge) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.id = e.id;
+  card.innerHTML = `
+    ${badge === 'copy' ? '<span class="badge">DUPLICATE</span>' : ''}
+    ${badge === 'blurry' ? '<span class="badge">BLURRY</span>' : ''}
+    <img class="thumb" src="${e.thumbUrl}" loading="lazy">
+    <div class="name">${e.name}</div>
+    <div class="check"></div>
+  `;
+  if (badge === 'copy' || badge === 'blurry') {
+    gpSelected.add(e.id);
+    card.classList.add('selected');
+    card.querySelector('.check').textContent = '\u2713';
+  }
+  card.addEventListener('click', () => gpToggleSelect(e.id, card));
+  return card;
+}
+
+function gpToggleSelect(id, card) {
+  if (gpSelected.has(id)) {
+    gpSelected.delete(id);
+    card.classList.remove('selected');
+    card.querySelector('.check').textContent = '';
+  } else {
+    gpSelected.add(id);
+    card.classList.add('selected');
+    card.querySelector('.check').textContent = '\u2713';
+  }
+  gpUpdateSelCount();
+}
+
+function gpUpdateSelCount() {
+  document.getElementById('gpSelCount').textContent = `${gpSelected.size} selected`;
+  document.getElementById('gpOpenDeleteBtn').disabled = gpSelected.size === 0;
+}
+
+document.getElementById('gpSelectAllBtn').addEventListener('click', () => {
+  document.querySelectorAll('#gpGroups .card').forEach(card => {
+    const id = Number(card.dataset.id);
+    gpSelected.add(id);
+    card.classList.add('selected');
+    card.querySelector('.check').textContent = '\u2713';
+  });
+  gpUpdateSelCount();
+});
+document.getElementById('gpClearSelBtn').addEventListener('click', () => {
+  gpSelected.clear();
+  document.querySelectorAll('#gpGroups .card').forEach(card => {
+    card.classList.remove('selected');
+    card.querySelector('.check').textContent = '';
+  });
+  gpUpdateSelCount();
+});
+document.getElementById('gpSelectDupsBtn').addEventListener('click', () => {
+  Object.values(gpDupGroups).forEach(ids => ids.slice(1).forEach(id => gpSelectCardById(id)));
+  gpUpdateSelCount();
+});
+document.getElementById('gpSelectBlurryBtn').addEventListener('click', () => {
+  gpBlurryIds.forEach(id => gpSelectCardById(id));
+  gpUpdateSelCount();
+});
+function gpSelectCardById(id) {
+  gpSelected.add(id);
+  const card = document.querySelector(`#gpGroups .card[data-id="${id}"]`);
+  if (card) { card.classList.add('selected'); card.querySelector('.check').textContent = '\u2713'; }
+}
+
+document.getElementById('gpOpenDeleteBtn').addEventListener('click', () => {
+  const ids = Array.from(gpSelected);
+  if (!confirm(`This will open ${ids.length} tab(s) in Google Photos, one per item, so you can tap delete on each. Continue?`)) return;
+  ids.forEach(id => {
+    const e = gpEntryById(id);
+    if (e.productUrl) window.open(e.productUrl, '_blank');
+  });
 });
 </script>
 
