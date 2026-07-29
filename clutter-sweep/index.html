@@ -277,10 +277,18 @@ let selected = new Set();
 
 // Feature detect File System Access API (Chrome/Edge desktop, Android Chrome)
 const hasFSAccess = 'showDirectoryPicker' in window;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const folderInputEl = document.getElementById('folderInput');
+
 if (hasFSAccess) {
   document.getElementById('pickFolderFS').style.display = 'inline-block';
   document.getElementById('pickFolderInput').style.display = 'none';
   fsNote.textContent = 'This browser supports direct delete — deletions happen right in your folder after you confirm.';
+} else if (isIOS) {
+  // iOS Safari does not support webkitdirectory folder picking at all — hide it, lead with file picker.
+  document.getElementById('pickFolderInput').style.display = 'none';
+  document.getElementById('pickFiles').textContent = 'Select Photos, Videos or Files';
+  fsNote.textContent = 'On iPhone, use "Select Photos, Videos or Files" — tap it, then multi-select from your Photos app or Files app (this is where saved WhatsApp media lives too). iOS can\'t delete files directly from a webpage, so after review you\'ll get a downloadable list of exactly what to delete — you then delete those in the Photos/Files app (a couple of taps, not one-by-one hunting).';
 } else {
   fsNote.textContent = 'Your browser can scan files but can\'t delete them directly. After review, download a list of names to delete manually, or open this page in Chrome/Edge for direct delete.';
 }
