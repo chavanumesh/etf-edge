@@ -2,459 +2,1912 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>US Mortgage Learning Hub</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0C1F3D">
+<title>Mortgage Hub . 5C Framework</title>
 <style>
-:root{
-  --navy:#0B3D91; --navy-dark:#082a66; --teal:#008080; --gold:#F1C232;
-  --bg:#F6F7FB; --card:#ffffff; --ink:#1a2340; --muted:#5b647e; --line:#e3e7f0;
-  --green:#1e8e3e; --red:#c5221f; --amber:#b9770e;
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+/* ══════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════ */
+:root {
+  /* 5C accent system  -  each C owns a colour */
+  --char:    #2563EB; --char-lt: #DBEAFE; --char-mid: #60A5FA;
+  --cap:     #059669; --cap-lt:  #D1FAE5; --cap-mid:  #34D399;
+  --capl:    #7C3AED; --capl-lt: #EDE9FE; --capl-mid: #A78BFA;
+  --coll:    #DC2626; --coll-lt: #FEE2E2; --coll-mid: #F87171;
+  --cond:    #0891B2; --cond-lt: #CFFAFE; --cond-mid: #22D3EE;
+
+  /* App shell */
+  --navy:    #0C1F3D;
+  --navy2:   #1E3A5F;
+  --gold:    #D97706;
+  --gold2:   #F59E0B;
+  --bg:      #F2F1EE;
+  --surf:    #FFFFFF;
+  --bord:    #E4DED5;
+  --bord2:   #CCC6BC;
+
+  /* Text scale */
+  --tx:      #111827;
+  --tx2:     #4B5563;
+  --tx3:     #9CA3AF;
+
+  /* Radii */
+  --r:   14px;
+  --rs:  9px;
+  --rpill: 100px;
+
+  /* Shadows */
+  --sh:  0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.07);
+  --sh2: 0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.10);
 }
-*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); -webkit-text-size-adjust:100%;}
-header{background:linear-gradient(135deg,var(--navy),var(--navy-dark)); color:#fff; padding:18px 16px 14px;}
-header h1{margin:0 0 2px; font-size:19px; font-weight:700;}
-header p{margin:0; font-size:12.5px; opacity:.85;}
-.badges{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;}
-.badge{background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3); border-radius:20px; padding:3px 10px; font-size:11px;}
-nav{display:flex; background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:50; overflow-x:auto;}
-nav button{flex:1; min-width:72px; padding:11px 4px; background:none; border:none; font-size:11.5px; font-weight:600; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap;}
-nav button.active{color:var(--navy); border-bottom-color:var(--gold);}
-main{padding:14px; max-width:800px; margin:0 auto; padding-bottom:60px;}
-.view{display:none;}
-.view.active{display:block;}
-.card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(11,61,145,.06);}
-.topic-list{display:grid; gap:10px;}
-.topic-item{display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:var(--card); border:1px solid var(--line); border-radius:12px; cursor:pointer;}
-.topic-item:active{background:#eef1fa;}
-.topic-item .t-title{font-weight:600; font-size:14.5px;}
-.topic-item .t-tag{font-size:11px; color:var(--teal); font-weight:600;}
-.topic-item .arrow{color:var(--gold); font-size:18px;}
-h2.section-title{font-size:15px; color:var(--navy); border-bottom:2px solid var(--gold); display:inline-block; padding-bottom:3px; margin:22px 0 10px;}
-.depth-tabs{display:flex; gap:6px; margin-bottom:10px;}
-.depth-tabs button{flex:1; padding:8px; border-radius:8px; border:1px solid var(--line); background:#fff; font-size:12.5px; font-weight:600; color:var(--muted);}
-.depth-tabs button.active{background:var(--teal); color:#fff; border-color:var(--teal);}
-.depth-panel{display:none; line-height:1.55; font-size:14px;}
-.depth-panel.active{display:block;}
-.c5-grid{display:grid; grid-template-columns:1fr; gap:8px;}
-.c5-item{border-left:4px solid var(--gold); background:#fffdf5; padding:8px 10px; border-radius:6px; font-size:13px;}
-.c5-item b{color:var(--navy);}
-.quiz-q{border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:10px;}
-.quiz-q .diff{font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:10px; color:#fff;}
-.diff.Easy{background:var(--green);} .diff.Medium{background:var(--amber);} .diff.Hard{background:var(--red);}
-.quiz-opt{display:block; width:100%; text-align:left; padding:9px 10px; margin:5px 0; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:13px;}
-.quiz-opt.correct{background:#e6f4ea; border-color:var(--green); font-weight:600;}
-.quiz-opt.wrong{background:#fce8e6; border-color:var(--red);}
-.quiz-explain{display:none; font-size:12.5px; color:var(--muted); margin-top:6px; background:#f6f7fb; padding:8px; border-radius:6px;}
-.flash{perspective:1000px; height:130px; margin-bottom:10px;}
-.flash-inner{position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; cursor:pointer;}
-.flash.flipped .flash-inner{transform:rotateY(180deg);}
-.flash-face{position:absolute; inset:0; backface-visibility:hidden; border-radius:10px; padding:14px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:13.5px; font-weight:600;}
-.flash-front{background:linear-gradient(135deg,var(--navy),var(--teal)); color:#fff;}
-.flash-back{background:#fff; border:2px solid var(--teal); transform:rotateY(180deg); color:var(--ink); font-weight:500;}
-.btn{background:var(--navy); color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:600; font-size:13.5px; cursor:pointer;}
-.btn.gold{background:var(--gold); color:var(--navy-dark);}
-.btn.outline{background:none; border:1px solid var(--navy); color:var(--navy);}
-.searchbox{width:100%; padding:12px 14px; border-radius:10px; border:1px solid var(--line); font-size:15px; margin-bottom:12px;}
-.tag-pill{display:inline-block; background:#eef1fa; color:var(--navy); font-size:11px; padding:2px 8px; border-radius:10px; margin-right:4px;}
-.mi-msg{padding:10px 12px; border-radius:10px; margin-bottom:8px; font-size:13.5px; max-width:90%;}
-.mi-q{background:#eef1fa;} .mi-a{background:var(--gold); margin-left:auto; text-align:right;} .mi-f{background:#e6f4ea; border-left:3px solid var(--green);}
-select,input[type=text]{padding:8px; border-radius:8px; border:1px solid var(--line); font-size:13px;}
-.pill-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
-.meta{font-size:11.5px; color:var(--muted); margin-top:10px; border-top:1px dashed var(--line); padding-top:8px;}
-.source-link{color:var(--teal); text-decoration:none; font-weight:600;}
-@media print{ nav,.no-print{display:none!important;} }
+
+/* ══════════════════════════════════
+   RESET & BASE
+══════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box; margin: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--tx);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  min-height: 100vh;
+  padding-bottom: calc(70px + env(safe-area-inset-bottom));
+}
+button { font-family: inherit; cursor: pointer; }
+textarea { font-family: inherit; }
+
+/* ══════════════════════════════════
+   TOP BAR
+══════════════════════════════════ */
+.topbar {
+  background: var(--navy);
+  padding-top: env(safe-area-inset-top);
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 1px 0 rgba(255,255,255,.05), 0 4px 24px rgba(0,0,0,.3);
+}
+.topbar-row {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; padding: 0 1rem;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; color: #fff; font-size: 18px; font-weight: 700;
+  box-shadow: 0 2px 10px rgba(217,119,6,.45);
+}
+.brand-copy { display: flex; flex-direction: column; gap: 0; }
+.brand-name {
+  font-family: 'Fraunces', serif; color: #fff;
+  font-size: 17px; font-weight: 600; letter-spacing: -.3px; line-height: 1.15;
+}
+.brand-sub {
+  font-size: 9.5px; color: rgba(255,255,255,.35);
+  letter-spacing: .7px; text-transform: uppercase;
+}
+.topbar-actions { display: flex; gap: 6px; }
+.t-btn {
+  width: 36px; height: 36px; border-radius: 9px; border: none;
+  background: rgba(255,255,255,.08); color: rgba(255,255,255,.7);
+  font-size: 15px; display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.t-btn:active { background: rgba(255,255,255,.18); }
+
+/* ══════════════════════════════════
+   5C PILL STRIP
+══════════════════════════════════ */
+.cstrip {
+  background: var(--navy);
+  padding: 0 1rem 11px;
+  display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+}
+.cstrip::-webkit-scrollbar { display: none; }
+.cpill {
+  flex-shrink: 0; padding: 6px 14px; border-radius: var(--rpill);
+  border: 1.5px solid rgba(255,255,255,.11);
+  font-size: 12px; font-weight: 600; letter-spacing: .15px;
+  color: rgba(255,255,255,.5); background: transparent;
+  display: flex; align-items: center; gap: 5px;
+  transition: all .18s;
+}
+.cpill:active { opacity: .75; }
+.cpill.on { border-color: transparent; color: #fff; }
+.cpill[data-c="all"].on  { background: linear-gradient(135deg, var(--gold), var(--gold2)); box-shadow: 0 2px 10px rgba(217,119,6,.4); }
+.cpill[data-c="char"].on { background: linear-gradient(135deg, var(--char), var(--char-mid)); box-shadow: 0 2px 10px rgba(37,99,235,.4); }
+.cpill[data-c="cap"].on  { background: linear-gradient(135deg, var(--cap),  var(--cap-mid));  box-shadow: 0 2px 10px rgba(5,150,105,.4); }
+.cpill[data-c="capl"].on { background: linear-gradient(135deg, var(--capl), var(--capl-mid)); box-shadow: 0 2px 10px rgba(124,58,237,.4); }
+.cpill[data-c="coll"].on { background: linear-gradient(135deg, var(--coll), var(--coll-mid)); box-shadow: 0 2px 10px rgba(220,38,38,.4); }
+.cpill[data-c="cond"].on { background: linear-gradient(135deg, var(--cond), var(--cond-mid)); box-shadow: 0 2px 10px rgba(8,145,178,.4); }
+
+/* ══════════════════════════════════
+   LAYOUT & PAGES
+══════════════════════════════════ */
+.main { padding: 1rem 1rem 0; max-width: 600px; margin: 0 auto; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ══════════════════════════════════
+   HERO BANNER
+══════════════════════════════════ */
+.hero {
+  border-radius: var(--r); padding: 1.25rem 1.25rem 1.1rem;
+  margin-bottom: 1.1rem; position: relative; overflow: hidden;
+  transition: background .3s ease;
+}
+.hero.default { background: linear-gradient(140deg, var(--navy) 0%, var(--navy2) 100%); }
+.hero::after {
+  content: ''; position: absolute; right: -24px; bottom: -36px;
+  width: 140px; height: 140px; border-radius: 50%;
+  background: rgba(255,255,255,.04); pointer-events: none;
+}
+.hero-eye {
+  font-size: 10px; font-weight: 700; letter-spacing: .9px;
+  text-transform: uppercase; color: rgba(255,255,255,.42); margin-bottom: 5px;
+}
+.hero-title {
+  font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700;
+  color: #fff; line-height: 1.2; margin-bottom: 5px;
+}
+.hero-desc {
+  font-size: 12.5px; color: rgba(255,255,255,.52);
+  line-height: 1.6; margin-bottom: 14px;
+}
+.hero-row {
+  display: flex; border-top: 1px solid rgba(255,255,255,.09); padding-top: 12px; gap: 0;
+}
+.hstat { flex: 1; text-align: center; border-right: 1px solid rgba(255,255,255,.07); }
+.hstat:last-child { border-right: none; }
+.hstat-v { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: #fff; line-height: 1; }
+.hstat-l { font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: rgba(255,255,255,.35); margin-top: 3px; }
+
+/* ══════════════════════════════════
+   SECTION HEADER
+══════════════════════════════════ */
+.sec-hd { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.sec-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--tx); }
+.sec-note { font-size: 11.5px; color: var(--tx3); }
+
+/* C group divider */
+.cg-row { display: flex; align-items: center; gap: 8px; margin: 16px 0 9px; }
+.cg-chip { font-size: 10.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; padding: 4px 11px; border-radius: var(--rpill); white-space: nowrap; }
+.cg-line { flex: 1; height: 1px; background: var(--bord); }
+
+/* ══════════════════════════════════
+   TOPIC CARDS
+══════════════════════════════════ */
+.tcard {
+  background: var(--surf); border-radius: var(--r);
+  border: 1.5px solid var(--bord); border-left-width: 5px;
+  margin-bottom: 9px; box-shadow: var(--sh);
+  transition: box-shadow .15s, transform .12s; cursor: pointer;
+}
+.tcard:active { transform: scale(0.984); box-shadow: none; }
+.tcard.read { opacity: .7; }
+.tcard[data-c="char"] { border-left-color: var(--char); }
+.tcard[data-c="cap"]  { border-left-color: var(--cap); }
+.tcard[data-c="capl"] { border-left-color: var(--capl); }
+.tcard[data-c="coll"] { border-left-color: var(--coll); }
+.tcard[data-c="cond"] { border-left-color: var(--cond); }
+
+.tcard-inner { padding: .9rem 1rem; }
+.tcard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.tcard-name { font-family: 'Fraunces', serif; font-size: 14px; font-weight: 600; color: var(--tx); flex: 1; line-height: 1.35; }
+.tcard-body { font-size: 12.5px; color: var(--tx2); line-height: 1.62; margin-bottom: 9px; }
+.tcard-foot { display: flex; gap: 5px; flex-wrap: wrap; }
+
+/* Badges */
+.badge { font-size: 10px; font-weight: 700; letter-spacing: .25px; text-transform: uppercase; padding: 3px 8px; border-radius: var(--rpill); }
+.badge-gse  { background: #F1F5F9; color: #64748B; }
+.badge-new  { background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; }
+.badge-core { background: #F2F1EE; color: #9CA3AF; }
+.badge-read { background: #D1FAE5; color: #059669; }
+
+/* Tutor button on card */
+.tcard-btn {
+  flex-shrink: 0; border: none; border-radius: var(--rs);
+  padding: 6px 11px; font-size: 11px; font-weight: 700; letter-spacing: .1px;
+  color: #fff; display: flex; align-items: center; gap: 4px;
+  transition: opacity .15s, transform .1s;
+}
+.tcard-btn:active { opacity: .8; transform: scale(.95); }
+.tcard[data-c="char"] .tcard-btn { background: var(--char); }
+.tcard[data-c="cap"]  .tcard-btn { background: var(--cap); }
+.tcard[data-c="capl"] .tcard-btn { background: var(--capl); }
+.tcard[data-c="coll"] .tcard-btn { background: var(--coll); }
+.tcard[data-c="cond"] .tcard-btn { background: var(--cond); }
+
+/* ══════════════════════════════════
+   SEARCH PAGE
+══════════════════════════════════ */
+.search-box {
+  display: flex; align-items: center; gap: 9px;
+  background: var(--surf); border: 1.5px solid var(--bord);
+  border-radius: var(--r); padding: 12px 14px;
+  margin-bottom: .9rem; box-shadow: var(--sh);
+}
+.search-box input {
+  flex: 1; border: none; outline: none; background: none;
+  font-size: 14.5px; color: var(--tx);
+}
+.search-box input::placeholder { color: var(--tx3); }
+.search-icon { font-size: 16px; color: var(--tx3); flex-shrink: 0; }
+.search-clear {
+  font-size: 18px; color: var(--tx3); border: none; background: none;
+  padding: 0; line-height: 1; display: none; flex-shrink: 0;
+}
+
+/* Search 5C filter pills */
+.sf-bar { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 1rem; }
+.sf-bar::-webkit-scrollbar { display: none; }
+.sfpill {
+  flex-shrink: 0; padding: 6px 12px; border-radius: var(--rpill);
+  border: 1.5px solid var(--bord); background: var(--surf);
+  font-size: 11.5px; font-weight: 600; color: var(--tx2);
+  display: flex; align-items: center; gap: 4px; transition: all .15s;
+}
+.sfpill.on { color: #fff; border-color: transparent; }
+.sfpill[data-f="all"].on  { background: var(--navy); }
+.sfpill[data-f="char"].on { background: var(--char); }
+.sfpill[data-f="cap"].on  { background: var(--cap); }
+.sfpill[data-f="capl"].on { background: var(--capl); }
+.sfpill[data-f="coll"].on { background: var(--coll); }
+.sfpill[data-f="cond"].on { background: var(--cond); }
+
+/* Search result count row */
+.sresult-meta { font-size: 11.5px; color: var(--tx3); margin-bottom: 8px; }
+.sresult-meta strong { color: var(--tx2); }
+
+/* AI fallback card */
+.ai-fallback {
+  background: var(--surf); border: 1.5px solid var(--bord);
+  border-radius: var(--r); padding: 1.25rem; box-shadow: var(--sh); margin-bottom: 10px;
+}
+.ai-fallback-title { font-size: 13.5px; font-weight: 700; color: var(--tx); margin-bottom: 4px; }
+.ai-fallback-body { font-size: 12.5px; color: var(--tx2); line-height: 1.6; margin-bottom: 12px; }
+.ai-fallback-btn {
+  width: 100%; border: none; border-radius: var(--r); padding: 12px;
+  font-size: 13px; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, var(--navy), var(--navy2));
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  box-shadow: 0 3px 12px rgba(12,31,61,.25);
+}
+.suggest-row { font-size: 11.5px; color: var(--tx3); text-align: center; padding: 6px 0; }
+.suggest-link { font-weight: 700; cursor: pointer; }
+
+/* ══════════════════════════════════
+   QUIZ
+══════════════════════════════════ */
+.qbanner {
+  border-radius: var(--r); padding: 1.1rem 1.25rem; margin-bottom: 1rem;
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(135deg, var(--navy), var(--navy2));
+}
+.qbanner-left .qlabel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: rgba(255,255,255,.45); margin-bottom: 3px; }
+.qbanner-left .qtitle { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: #fff; }
+.qbanner-score { text-align: right; }
+.qscore-num { font-family: 'Fraunces', serif; font-size: 30px; font-weight: 700; color: #fff; line-height: 1; }
+.qscore-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: rgba(255,255,255,.4); }
+
+.qprog-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--tx3); font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 7px; }
+.qprogbar { height: 5px; background: var(--bord); border-radius: 3px; margin-bottom: 12px; overflow: hidden; }
+.qprogfill { height: 100%; border-radius: 3px; transition: width .4s ease; background: linear-gradient(90deg, var(--gold), var(--gold2)); }
+
+.qcard { background: var(--surf); border: 1.5px solid var(--bord); border-radius: var(--r); padding: 1.25rem; box-shadow: var(--sh); }
+.qtext { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--tx); line-height: 1.4; margin-bottom: 1rem; }
+.qopt {
+  display: block; width: 100%; text-align: left;
+  border: 1.5px solid var(--bord); border-radius: var(--rs);
+  background: var(--surf); color: var(--tx);
+  font-size: 13.5px; padding: 11px 14px; margin-bottom: 7px; transition: all .12s;
+}
+.qopt:active { background: var(--bg); }
+.qopt.ok  { background: #D1FAE5; border-color: var(--cap); color: var(--cap); font-weight: 700; }
+.qopt.bad { background: #FEE2E2; border-color: var(--coll); color: var(--coll); }
+.qfeedback {
+  font-size: 13px; line-height: 1.6; padding: 11px 13px; border-radius: var(--rs);
+  margin-top: 4px; display: none;
+}
+.qfeedback.show.ok  { display: block; background: #D1FAE5; color: var(--cap); }
+.qfeedback.show.bad { display: block; background: #FEE2E2; color: var(--coll); }
+.qnext-btn {
+  width: 100%; border: none; border-radius: var(--r); padding: 14px;
+  font-size: 14px; font-weight: 700; color: #fff; margin-top: 10px; display: none;
+  background: linear-gradient(135deg, var(--navy), var(--navy2));
+  box-shadow: 0 3px 14px rgba(12,31,61,.22); transition: opacity .15s;
+}
+.qnext-btn:active { opacity: .85; }
+
+/* ══════════════════════════════════
+   REFRESH PAGE
+══════════════════════════════════ */
+.rbanner {
+  background: linear-gradient(140deg, var(--navy) 0%, var(--navy2) 100%);
+  border-radius: var(--r); padding: 1.25rem; margin-bottom: 1.1rem; box-shadow: var(--sh2);
+}
+.rbanner-title { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 700; color: #fff; margin-bottom: 5px; }
+.rbanner-sub { font-size: 12.5px; color: rgba(255,255,255,.52); line-height: 1.62; margin-bottom: 1.1rem; }
+.rfetch-btn {
+  width: 100%; border: none; border-radius: var(--r); padding: 13px;
+  font-size: 14px; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  box-shadow: 0 3px 14px rgba(217,119,6,.38);
+  display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity .15s;
+}
+.rfetch-btn:disabled { opacity: .7; }
+.rfetch-btn:active { opacity: .85; }
+
+.rprog { margin-top: 1rem; display: none; }
+.rprogbar { height: 5px; background: rgba(255,255,255,.15); border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
+.rprogfill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 3px; transition: width .5s ease; }
+.rstep { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: rgba(255,255,255,.62); padding: 4px 0; }
+.rstep-i { font-size: 13px; width: 18px; text-align: center; flex-shrink: 0; }
+
+.ulog-card {
+  background: var(--surf); border: 1.5px solid var(--bord); border-left-width: 4px;
+  border-radius: var(--r); padding: 11px 14px; margin-bottom: 8px; box-shadow: var(--sh);
+}
+.ulog-card.fm   { border-left-color: var(--char); }
+.ulog-card.fre  { border-left-color: var(--cap); }
+.ulog-card.both { border-left-color: var(--capl); }
+.ulog-meta { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--tx3); margin-bottom: 3px; }
+.ulog-desc { font-size: 12.5px; color: var(--tx2); line-height: 1.55; }
+
+/* ══════════════════════════════════
+   CHANGELOG
+══════════════════════════════════ */
+.cl-card { background: var(--surf); border: 1.5px solid var(--bord); border-radius: var(--r); padding: 1rem; margin-bottom: 10px; box-shadow: var(--sh); }
+.cl-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.cl-ver { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; }
+.cl-date { font-size: 11px; color: var(--tx3); }
+.cl-desc { font-size: 12.5px; color: var(--tx2); line-height: 1.55; margin-bottom: 9px; }
+.cl-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.cl-chip { font-size: 10px; padding: 2px 8px; border-radius: var(--rpill); border: 1px solid #A7D9BB; background: #D1FAE5; color: #059669; font-weight: 700; }
+
+/* ══════════════════════════════════
+   AI TUTOR PANEL
+══════════════════════════════════ */
+.tpanel {
+  position: fixed; inset: 0; z-index: 200; background: var(--bg);
+  display: flex; flex-direction: column;
+  transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.tpanel.open { transform: translateY(0); }
+
+.tpanel-top { padding-top: env(safe-area-inset-top); flex-shrink: 0; }
+.tpanel-toprow {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 54px; padding: 0 1rem;
+}
+.tpanel-title { font-family: 'Fraunces', serif; color: #fff; font-size: 17px; font-weight: 600; }
+.tpanel-close {
+  background: rgba(255,255,255,.14); border: none; border-radius: 9px;
+  color: #fff; font-size: 19px; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+}
+.tpanel-chip { padding: 7px 1rem 11px; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.6); letter-spacing: .2px; }
+
+.tpanel-body { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 9px; }
+
+.msg { max-width: 91%; padding: 12px 14px; border-radius: 16px; font-size: 14px; line-height: 1.68; }
+.msg.ai {
+  background: var(--surf); border: 1.5px solid var(--bord);
+  border-bottom-left-radius: 4px; align-self: flex-start;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06);
+}
+.msg.user { border-bottom-right-radius: 4px; align-self: flex-end; color: #fff; }
+.msg.ai strong { color: var(--navy); }
+
+.typing {
+  display: flex; gap: 5px; padding: 13px 15px;
+  background: var(--surf); border: 1.5px solid var(--bord);
+  border-radius: 16px; border-bottom-left-radius: 4px;
+  align-self: flex-start; width: fit-content;
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--tx3); animation: bop 1.2s ease infinite; }
+.dot:nth-child(2) { animation-delay: .2s; }
+.dot:nth-child(3) { animation-delay: .4s; }
+@keyframes bop { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
+
+.tpanel-bar {
+  background: var(--surf); border-top: 1px solid var(--bord);
+  padding: 10px 1rem;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
+}
+.tpanel-inp {
+  flex: 1; border: 1.5px solid var(--bord); border-radius: var(--r);
+  padding: 10px 13px; font-size: 14px; color: var(--tx);
+  resize: none; outline: none; max-height: 100px; min-height: 40px;
+}
+.tpanel-inp:focus { border-color: var(--bord2); }
+.tpanel-send {
+  width: 42px; height: 42px; border: none; border-radius: var(--r);
+  font-size: 18px; color: #fff; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity .15s;
+}
+.tpanel-send:active { opacity: .8; }
+
+/* Quiz choices inside tutor */
+.tchoice {
+  display: block; width: 100%; text-align: left;
+  border: 1.5px solid var(--bord); border-radius: var(--rs);
+  background: var(--surf); color: var(--tx);
+  font-size: 13px; padding: 10px 13px; margin-top: 7px; transition: all .12s;
+}
+.tchoice.ok  { background: #D1FAE5; border-color: var(--cap); color: var(--cap); font-weight: 700; }
+.tchoice.bad { background: #FEE2E2; border-color: var(--coll); color: var(--coll); }
+
+/* ══════════════════════════════════
+   BOTTOM NAV
+══════════════════════════════════ */
+.bnav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surf); border-top: 1px solid var(--bord);
+  display: flex; z-index: 100;
+  box-shadow: 0 -2px 16px rgba(0,0,0,.07);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.ntab {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  padding: 8px 0 5px; gap: 2px; border: none; background: none;
+  color: var(--tx3); font-size: 10px; font-weight: 600;
+  letter-spacing: .2px; transition: color .15s;
+}
+.ntab .ni { font-size: 20px; transition: transform .15s; }
+.ntab.on { color: var(--navy); }
+.ntab.on .ni { transform: scale(1.1); }
+
+/* ══════════════════════════════════
+   TOAST
+══════════════════════════════════ */
+.toast {
+  position: fixed; bottom: 82px; left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--navy); color: #fff; border-radius: var(--r);
+  padding: 10px 18px; font-size: 13px; font-weight: 600;
+  opacity: 0; transition: all .25s; pointer-events: none; z-index: 300;
+  white-space: nowrap; box-shadow: 0 4px 20px rgba(0,0,0,.25);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ══════════════════════════════════
+   EMPTY STATE
+══════════════════════════════════ */
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--tx3); }
+.empty-ico { font-size: 40px; margin-bottom: 8px; }
+.empty-msg { font-size: 14px; line-height: 1.55; }
+.empty-msg small { font-size: 12px; opacity: .75; display: block; margin-top: 4px; }
+
+/* ══════════════════════════════════
+   Q&A BOT PAGE
+══════════════════════════════════ */
+.qa-page {
+  display: flex; flex-direction: column;
+  height: calc(100vh - 130px - env(safe-area-inset-bottom));
+  max-width: 600px; margin: 0 auto;
+  padding: 0;
+}
+
+/* Bot header banner */
+.qa-banner {
+  background: linear-gradient(140deg, var(--navy), var(--navy2));
+  border-radius: var(--r); margin: 1rem 1rem 0;
+  padding: 1rem 1.1rem; flex-shrink: 0;
+}
+.qa-banner-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.qa-banner-title { font-family: 'Fraunces', serif; color: #fff; font-size: 17px; font-weight: 600; }
+.qa-clear-btn {
+  font-size: 11px; font-weight: 700; color: rgba(255,255,255,.55);
+  border: 1px solid rgba(255,255,255,.2); border-radius: var(--rpill);
+  padding: 4px 10px; background: transparent;
+}
+.qa-clear-btn:active { background: rgba(255,255,255,.1); }
+.qa-status { font-size: 11px; color: rgba(255,255,255,.4); letter-spacing: .3px; }
+.qa-status span { color: rgba(255,255,255,.7); font-weight: 600; }
+
+/* Suggested questions chips */
+.qa-chips {
+  display: flex; gap: 6px; overflow-x: auto;
+  scrollbar-width: none; padding: 10px 1rem 0; flex-shrink: 0;
+}
+.qa-chips::-webkit-scrollbar { display: none; }
+.qa-chip {
+  flex-shrink: 0; padding: 6px 13px; border-radius: var(--rpill);
+  border: 1.5px solid var(--bord); background: var(--surf);
+  font-size: 12px; font-weight: 600; color: var(--tx2);
+  white-space: nowrap; transition: all .15s;
+}
+.qa-chip:active { background: var(--bg); }
+.qa-chip.c-char { border-color: var(--char); color: var(--char); background: var(--char-lt); }
+.qa-chip.c-cap  { border-color: var(--cap);  color: var(--cap);  background: var(--cap-lt); }
+.qa-chip.c-capl { border-color: var(--capl); color: var(--capl); background: var(--capl-lt); }
+.qa-chip.c-coll { border-color: var(--coll); color: var(--coll); background: var(--coll-lt); }
+.qa-chip.c-cond { border-color: var(--cond); color: var(--cond); background: var(--cond-lt); }
+
+/* Chat message area */
+.qa-body {
+  flex: 1; overflow-y: auto; padding: 1rem;
+  display: flex; flex-direction: column; gap: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Welcome state (shown when no messages) */
+.qa-welcome {
+  text-align: center; padding: 1.5rem 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.qa-welcome-icon {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: linear-gradient(140deg, var(--navy), var(--navy2));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; box-shadow: var(--sh2);
+}
+.qa-welcome-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--tx); }
+.qa-welcome-sub { font-size: 13px; color: var(--tx3); line-height: 1.6; max-width: 280px; }
+
+/* Chat messages */
+.qa-msg {
+  max-width: 91%; padding: 11px 14px;
+  border-radius: 16px; font-size: 14px; line-height: 1.68;
+  animation: msgIn .18s ease;
+}
+@keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.qa-msg.bot {
+  background: var(--surf); border: 1.5px solid var(--bord);
+  border-bottom-left-radius: 4px; align-self: flex-start;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06);
+}
+.qa-msg.user {
+  background: linear-gradient(135deg, var(--navy), var(--navy2));
+  color: #fff; border-bottom-right-radius: 4px; align-self: flex-end;
+}
+.qa-msg.bot strong { color: var(--navy); }
+.qa-msg.bot a { color: var(--char); text-decoration: underline; }
+
+/* Source tag shown below bot answers */
+.qa-source-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: .3px;
+  text-transform: uppercase; padding: 2px 8px;
+  border-radius: var(--rpill); margin-top: 7px;
+  display: inline-block;
+}
+
+/* Typing indicator */
+.qa-typing {
+  display: flex; gap: 5px; padding: 12px 14px;
+  background: var(--surf); border: 1.5px solid var(--bord);
+  border-radius: 16px; border-bottom-left-radius: 4px;
+  align-self: flex-start;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06);
+}
+.qa-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--tx3); animation: qabop 1.2s ease infinite;
+}
+.qa-dot:nth-child(2) { animation-delay: .2s; }
+.qa-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes qabop { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-6px);} }
+
+/* Input bar */
+.qa-bar {
+  background: var(--surf); border-top: 1px solid var(--bord);
+  padding: 10px 1rem;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
+}
+.qa-inp {
+  flex: 1; border: 1.5px solid var(--bord); border-radius: var(--r);
+  padding: 10px 13px; font-size: 14px; color: var(--tx);
+  resize: none; outline: none; max-height: 110px; min-height: 42px;
+  -webkit-appearance: none;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+.qa-inp:focus { border-color: var(--bord2); }
+.qa-send {
+  width: 42px; height: 42px; border: none; border-radius: var(--r);
+  background: linear-gradient(135deg, var(--navy), var(--navy2));
+  font-size: 18px; color: #fff; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(12,31,61,.25); transition: opacity .15s;
+}
+.qa-send:active { opacity: .8; }
+.qa-send:disabled { opacity: .4; }
+
+/* Context pills shown in messages for topic links */
+.qa-topic-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 700; padding: 3px 9px;
+  border-radius: var(--rpill); margin: 3px 3px 0 0;
+  cursor: pointer; transition: opacity .15s;
+}
+.qa-topic-pill:active { opacity: .75; }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>🏠 US Mortgage Learning Hub</h1>
-  <p>Fannie Mae & Freddie Mac guided training · one-stop shop</p>
-  <div class="badges">
-    <span class="badge">Fannie Mae Selling Guide</span>
-    <span class="badge">Freddie Mac Guide</span>
-    <span class="badge">v1.0 · Jul 2026</span>
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-row">
+    <div class="brand">
+      <div class="brand-mark">M</div>
+      <div class="brand-copy">
+        <div class="brand-name">Mortgage Hub</div>
+        <div class="brand-sub">Fannie Mae . Freddie Mac . 5C Framework</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="t-btn" onclick="goSearch()" title="Search">🔍</button>
+      <button class="t-btn" onclick="navTo('refresh')" title="Refresh data">↻</button>
+    </div>
+  </div>
+  <!-- 5C PILL STRIP -->
+  <div class="cstrip">
+    <button class="cpill on" data-c="all"  onclick="setC('all',this)">✦ All</button>
+    <button class="cpill"    data-c="char" onclick="setC('char',this)">🧑 Character</button>
+    <button class="cpill"    data-c="cap"  onclick="setC('cap',this)">💼 Capacity</button>
+    <button class="cpill"    data-c="capl" onclick="setC('capl',this)">💰 Capital</button>
+    <button class="cpill"    data-c="coll" onclick="setC('coll',this)">🏠 Collateral</button>
+    <button class="cpill"    data-c="cond" onclick="setC('cond',this)">🌐 Conditions</button>
   </div>
 </header>
 
-<nav>
-  <button class="nav-btn active" data-view="teach">📖 Teach</button>
-  <button class="nav-btn" data-view="search">🔍 Search</button>
-  <button class="nav-btn" data-view="mock">🎤 Mock</button>
-  <button class="nav-btn" data-view="refresh">🔄 Refresh</button>
-  <button class="nav-btn" data-view="export">⬇️ Export</button>
-</nav>
-
-<main>
-
-  <!-- TEACH VIEW -->
-  <div class="view active" id="view-teach">
-    <div class="topic-list" id="topic-list"></div>
-    <div id="topic-detail"></div>
-  </div>
-
-  <!-- SEARCH VIEW -->
-  <div class="view" id="view-search">
-    <div class="card">
-      <input type="text" class="searchbox" id="search-input" placeholder="Search topics, e.g. 'DTI', 'reserves', 'LTV'...">
-      <div id="search-results"></div>
+<!-- AI TUTOR PANEL -->
+<div class="tpanel" id="tPanel">
+  <div class="tpanel-top" id="tTop">
+    <div class="tpanel-toprow">
+      <div class="tpanel-title">🎓 AI Tutor</div>
+      <button class="tpanel-close" onclick="closeTutor()">✕</button>
     </div>
+    <div class="tpanel-chip" id="tChip"></div>
   </div>
+  <div class="tpanel-body" id="tBody"></div>
+  <div class="tpanel-bar">
+    <textarea class="tpanel-inp" id="tInp" rows="1" placeholder="Ask anything about this topic..." onkeydown="handleKey(event)"></textarea>
+    <button class="tpanel-send" id="tSend" onclick="sendMsg()">↑</button>
+  </div>
+</div>
 
-  <!-- MOCK INTERVIEW VIEW -->
-  <div class="view" id="view-mock">
-    <div class="card">
-      <h2 class="section-title" style="margin-top:0">Mock Interview Setup</h2>
-      <div class="pill-row">
-        <label>Level: <select id="mi-level"><option>Junior</option><option>Intermediate</option><option>Senior</option></select></label>
-        <label>Questions: <select id="mi-count"><option>5</option><option>8</option><option>12</option></select></label>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="hero default" id="hero">
+      <div class="hero-eye" id="hero-eye">The 5 C's of Mortgage Lending</div>
+      <div class="hero-title" id="hero-title">All 24 Guidelines</div>
+      <div class="hero-desc" id="hero-desc">Character . Capacity . Capital . Collateral . Conditions  -  the complete framework lenders use to evaluate every borrower's risk.</div>
+      <div class="hero-row">
+        <div class="hstat"><div class="hstat-v" id="h-read">0</div><div class="hstat-l">Read</div></div>
+        <div class="hstat"><div class="hstat-v" id="h-quiz"> - </div><div class="hstat-l">Quiz</div></div>
+        <div class="hstat"><div class="hstat-v" id="h-ver">v1.0</div><div class="hstat-l">Version</div></div>
+        <div class="hstat"><div class="hstat-v">24</div><div class="hstat-l">Topics</div></div>
       </div>
-      <button class="btn" onclick="startMock()">Start Mock Interview</button>
     </div>
-    <div id="mock-chat"></div>
+    <div class="sec-hd">
+      <div class="sec-title" id="list-title">All topics</div>
+      <div class="sec-note" id="list-count">24 topics</div>
+    </div>
+    <div id="topicList"><p style="padding:1rem;color:#9CA3AF;font-size:13px">Loading topics...</p></div>
   </div>
 
-  <!-- REFRESH VIEW -->
-  <div class="view" id="view-refresh">
-    <div class="card">
-      <h2 class="section-title" style="margin-top:0">Manual Refresh Procedure</h2>
-      <p style="font-size:13.5px; line-height:1.6;">No coding needed — do this every 2–4 weeks to stay current:</p>
-      <ol style="font-size:13.5px; line-height:1.8;">
-        <li>Open <a class="source-link" href="https://selling-guide.fanniemae.com/" target="_blank">Fannie Mae Selling Guide</a> and <a class="source-link" href="https://guide.freddiemac.com/app/guide/segment/selling" target="_blank">Freddie Mac Guide</a></li>
-        <li>Check the "Recently Issued Announcements" or "What's New" section on each site</li>
-        <li>Come back to this chat and say: <i>"Refresh content for [topic name]"</i> — I'll re-check the guide and tell you what changed</li>
-        <li>I'll update the topic's content and add a change-log entry below</li>
-      </ol>
-      <h2 class="section-title">Change Log</h2>
-      <div id="changelog"></div>
+  <!-- SEARCH -->
+  <div class="page" id="page-search">
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input id="sInp" type="search" autocomplete="off" placeholder="Search any mortgage term  -  DTI, NPA, asset depletion..." oninput="runSearch()">
+      <button class="search-clear" id="sClear" onclick="clearSearch()">✕</button>
+    </div>
+    <div class="sf-bar">
+      <button class="sfpill on" data-f="all"  onclick="setSF('all',this)">All</button>
+      <button class="sfpill"    data-f="char" onclick="setSF('char',this)">🧑 Character</button>
+      <button class="sfpill"    data-f="cap"  onclick="setSF('cap',this)">💼 Capacity</button>
+      <button class="sfpill"    data-f="capl" onclick="setSF('capl',this)">💰 Capital</button>
+      <button class="sfpill"    data-f="coll" onclick="setSF('coll',this)">🏠 Collateral</button>
+      <button class="sfpill"    data-f="cond" onclick="setSF('cond',this)">🌐 Conditions</button>
+    </div>
+    <div id="sResults">
+      <div class="empty">
+        <div class="empty-ico">🔍</div>
+        <div class="empty-msg">Search 24 topics across all 5Cs
+          <small>Try: NPA . asset depletion . DTI . LTV . forbearance . waiting period</small>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- EXPORT VIEW -->
-  <div class="view" id="view-export">
-    <div class="card">
-      <h2 class="section-title" style="margin-top:0">Export a Topic</h2>
-      <p style="font-size:13px; color:var(--muted);">Pick a topic to download as its own single-file HTML — works offline, opens on any phone.</p>
-      <div id="export-list" class="topic-list"></div>
+  <!-- QUIZ -->
+  <div class="page" id="page-quiz">
+    <div class="qbanner" id="qBanner">
+      <div class="qbanner-left">
+        <div class="qlabel" id="qBLabel">All 5Cs</div>
+        <div class="qtitle">Quiz</div>
+      </div>
+      <div class="qbanner-score">
+        <div class="qscore-num" id="qBig">0</div>
+        <div class="qscore-lbl">correct</div>
+      </div>
+    </div>
+    <div class="qprog-row">
+      <span id="qLabel">Question 1 of 8</span>
+      <span id="qMeta">Score: 0/0</span>
+    </div>
+    <div class="qprogbar"><div class="qprogfill" id="qFill" style="width:0%"></div></div>
+    <div class="qcard">
+      <div class="qtext" id="qText">Loading...</div>
+      <div id="qOpts"></div>
+      <div class="qfeedback" id="qFb"></div>
+    </div>
+    <button class="qnext-btn" id="qNext" onclick="nextQ()">Next question →</button>
+  </div>
+
+  <!-- REFRESH -->
+  <div class="page" id="page-refresh">
+    <div class="rbanner">
+      <div class="rbanner-title">Monthly guideline refresh</div>
+      <div class="rbanner-sub">Pull the latest Fannie Mae &amp; Freddie Mac bulletins and update all 5C topic areas. Seven automated checks run before any change is applied.</div>
+      <button class="rfetch-btn" id="rBtn" onclick="runRefresh()">↻ &nbsp;Fetch latest guidelines</button>
+      <div class="rprog" id="rProg">
+        <div class="rprogbar"><div class="rprogfill" id="rFill" style="width:0%"></div></div>
+        <div id="rSteps"></div>
+      </div>
+    </div>
+    <div class="sec-hd" style="margin-bottom:10px">
+      <div class="sec-title">Update log</div>
+      <div class="sec-note" id="uCount"></div>
+    </div>
+    <div id="uLog"></div>
+  </div>
+
+  <!-- CHANGELOG -->
+  <div class="page" id="page-changelog">
+    <div class="sec-hd" style="margin-bottom:1rem">
+      <div class="sec-title">Changelog</div>
+    </div>
+    <div id="clList"></div>
+  </div>
+
+  <!-- Q&A BOT -->
+  <div class="page" id="page-qa" style="padding:0">
+    <div class="qa-page">
+
+      <!-- Banner -->
+      <div class="qa-banner">
+        <div class="qa-banner-top">
+          <div class="qa-banner-title">💬 Mortgage Q&amp;A Bot</div>
+          <button class="qa-clear-btn" onclick="qaClear()">Clear chat</button>
+        </div>
+        <div class="qa-status">Session memory on &nbsp;·&nbsp; <span id="qa-msg-count">0 messages</span></div>
+      </div>
+
+      <!-- Suggested question chips -->
+      <div class="qa-chips" id="qaChips">
+        <button class="qa-chip c-char" onclick="qaAsk('What credit score do I need for a Fannie Mae loan?')">Min credit score?</button>
+        <button class="qa-chip c-cap"  onclick="qaAsk('How is DTI calculated and what is the maximum allowed?')">How is DTI calculated?</button>
+        <button class="qa-chip c-capl" onclick="qaAsk('What is the conforming loan limit in 2026?')">2026 loan limits?</button>
+        <button class="qa-chip c-coll" onclick="qaAsk('What is an appraisal waiver and when does it apply?')">Appraisal waivers?</button>
+        <button class="qa-chip c-cond" onclick="qaAsk('What is the difference between a purchase and a cash-out refinance?')">Purchase vs cash-out?</button>
+        <button class="qa-chip c-char" onclick="qaAsk('How long must I wait after a foreclosure to get a new mortgage?')">Foreclosure wait?</button>
+        <button class="qa-chip c-capl" onclick="qaAsk('What is asset depletion income and who can use it?')">Asset depletion?</button>
+        <button class="qa-chip c-cap"  onclick="qaAsk('What income documents does Freddie Mac require for W-2 borrowers?')">W-2 income docs?</button>
+      </div>
+
+      <!-- Chat body -->
+      <div class="qa-body" id="qaBody">
+        <div class="qa-welcome" id="qaWelcome">
+          <div class="qa-welcome-icon">💬</div>
+          <div class="qa-welcome-title">Ask me anything</div>
+          <div class="qa-welcome-sub">Fannie Mae &amp; Freddie Mac guidelines, mortgage products, rates, terminology, process  -  anything goes. I remember context across our conversation.</div>
+        </div>
+      </div>
+
+      <!-- Input bar -->
+      <div class="qa-bar">
+        <textarea class="qa-inp" id="qaInp" rows="1"
+          placeholder="Ask any mortgage question..."
+          onkeydown="qaHandleKey(event)"
+          oninput="qaAutoExpand(this)"></textarea>
+        <button class="qa-send" id="qaSend" onclick="qaSubmit()">↑</button>
+      </div>
+
     </div>
   </div>
 
 </main>
 
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <button class="ntab on" id="tab-home"      onclick="navTo('home',this)"><span class="ni">🏠</span>Home</button>
+  <button class="ntab"    id="tab-search"    onclick="goSearch()"><span class="ni">🔍</span>Search</button>
+  <button class="ntab"    id="tab-qa"        onclick="navTo('qa',this)"><span class="ni">💬</span>Ask</button>
+  <button class="ntab"    id="tab-quiz"      onclick="navTo('quiz',this);initQuiz()"><span class="ni">🏆</span>Quiz</button>
+  <button class="ntab"    id="tab-refresh"   onclick="navTo('refresh',this)"><span class="ni">↻</span>Refresh</button>
+  <button class="ntab"    id="tab-changelog" onclick="navTo('changelog',this);renderCL()"><span class="ni">📋</span>Log</button>
+</nav>
+
 <script>
+/* ==============================================
+   5C CONFIG
+============================================== */
+const C = {
+  char: { label:'Character', icon:'🧑', color:'#2563EB', bg:'#DBEAFE',
+    grad:'linear-gradient(140deg,#1D4ED8,#3B82F6)',
+    desc:'Assesses borrower trustworthiness  -  credit history, payment reliability, and past financial behaviour.' },
+  cap:  { label:'Capacity',  icon:'💼', color:'#059669', bg:'#D1FAE5',
+    grad:'linear-gradient(140deg,#059669,#10B981)',
+    desc:'Measures ability to repay  -  income stability, employment history, and monthly debt load (DTI).' },
+  capl: { label:'Capital',   icon:'💰', color:'#7C3AED', bg:'#EDE9FE',
+    grad:'linear-gradient(140deg,#7C3AED,#A78BFA)',
+    desc:'Evaluates assets, savings, down payment, and reserves the borrower brings to the transaction.' },
+  coll: { label:'Collateral',icon:'🏠', color:'#DC2626', bg:'#FEE2E2',
+    grad:'linear-gradient(140deg,#DC2626,#F87171)',
+    desc:'Examines the property securing the loan  -  value, type, condition, LTV, and appraisal.' },
+  cond: { label:'Conditions', icon:'🌐', color:'#0891B2', bg:'#CFFAFE',
+    grad:'linear-gradient(140deg,#0891B2,#22D3EE)',
+    desc:'Considers the broader lending environment  -  loan purpose, interest rates, economic climate, and regulatory changes.' },
+};
+
+/* ==============================================
+   TOPIC DATA  (24 topics)
+============================================== */
 const TOPICS = [
-{
-  id:"5cs", title:"The 5 C's of Underwriting", tag:"Foundational",
-  summary:"The five factors underwriters weigh to decide if a borrower qualifies: Character, Capacity, Capital, Collateral, Conditions.",
-  simple:"Imagine your friend wants to borrow your favorite bike. You'd think: Do they always return what they borrow? (Character) Do they have money saved up if something breaks? (Capital) Is the bike itself in good shape and worth what they're 'buying'? (Collateral) Can they actually afford new tires and repairs each month? (Capacity) Is now a good time to lend it — like, is it raining and slippery? (Conditions). Lenders ask the same 5 questions about a home loan!",
-  intermediate:"Underwriters evaluate every loan file against these 5 lenses:<br><br><b>Character</b> — credit history, payment patterns, past bankruptcies/foreclosures.<br><b>Capacity</b> — ability to repay, measured mainly through DTI ratio and income stability.<br><b>Capital</b> — cash reserves and assets the borrower has after closing.<br><b>Collateral</b> — the property itself: appraised value, LTV ratio, condition.<br><b>Conditions</b> — loan purpose, occupancy type, and broader economic/market factors.<br><br>A weakness in one C can sometimes be offset by strength in another (called a 'compensating factor') — e.g. lower credit score offset by large cash reserves.",
-  advanced:"Fannie Mae frames this holistically in <b>B3-1-01, Comprehensive Risk Assessment</b> — DU and manual underwriters are both expected to weigh compensating factors rather than apply any single C as a hard cutoff, except where explicit minimums exist (e.g. 620 minimum credit score for manually underwritten loans). Freddie Mac's LPA (Loan Product Advisor) applies an analogous multi-factor model. Edge cases: nontraditional credit borrowers (no score) fall back to alternative Character documentation per B3-5.4-01; high-LTV refinance borrowers under the Alternative Qualification Path bypass standard DTI (Capacity) limits entirely.",
-  c5:null,
-  quiz:[
-    {q:"Which C refers to a borrower's cash reserves after closing?", opts:["Character","Capital","Collateral","Conditions"], correct:1, diff:"Easy", explain:"Capital = liquid assets/reserves remaining after down payment and closing costs."},
-    {q:"A borrower has a 580 credit score but 12 months of reserves. This illustrates:", opts:["A hard decline, no exceptions","A compensating factor offsetting weak Character","Conditions overriding Capacity","None of these C's apply"], correct:1, diff:"Medium", explain:"Strong Capital can compensate for weaker Character, though minimum score floors still apply on manual loans (620)."},
-    {q:"Under Fannie Mae's Alternative Qualification Path for high-LTV refinances, which C's requirement is waived?", opts:["Collateral (no appraisal needed ever)","Capacity (no maximum DTI)","Character (no credit check)","Capital (no reserves ever required)"], correct:1, diff:"Hard", explain:"High LTV refinance loans (except under the Alternative Qualification Path) have no maximum DTI requirement per B5-7-01."}
-  ],
-  flashcards:[
-    ["What does the 'C' in Capacity measure?","Borrower's ability to repay — primarily via DTI ratio"],
-    ["What does Collateral refer to?","The property's value and condition backing the loan"],
-    ["Name a Character red flag","Recent bankruptcy, foreclosure, or serious delinquency"],
-    ["What is a 'compensating factor'?","Strength in one C offsetting weakness in another"],
-    ["Which guide section covers comprehensive risk assessment?","Fannie Mae B3-1-01"]
-  ],
-  scenario:"Borrower: self-employed, 640 credit score, DTI 42%, 6 months reserves, LTV 80%. Docs checklist: 2yr tax returns, YTD P&L, bank statements, appraisal. Underwriter note: DTI within DU's 50% ceiling; credit below ideal but reserves partially offset. Decision: Approve with conditions — verify income stability via 2nd year trend.",
-  sources:[["Fannie Mae B3-1-01, Comprehensive Risk Assessment","https://selling-guide.fanniemae.com/"]]
-},
-{
-  id:"dti", title:"Debt-to-Income (DTI) Ratio", tag:"Capacity",
-  summary:"DTI compares monthly debt obligations to monthly income — the core Capacity measure.",
-  simple:"Imagine you get 10 candies a week as allowance. If you already promised 4 candies to friends you owe, you only have 6 left to spend. DTI is just that idea with money: how much of your monthly paycheck is already 'promised' to other bills before the new house payment.",
-  intermediate:"DTI = Total monthly debt obligations ÷ Total qualifying monthly income.<br><br>Example: Gross monthly income $6,000. Existing debts (car $400, student loan $200) + new mortgage payment $1,800 = $2,400 total.<br>DTI = 2,400 / 6,000 = <b>40%</b>.<br><br>Fannie Mae limits: manually underwritten loans cap at <b>36%</b> (up to 45% with strong credit/reserves per the Eligibility Matrix); loans run through <b>Desktop Underwriter (DU)</b> can go up to <b>50%</b>.",
-  advanced:"Per <b>B3-6-02, Debt-to-Income Ratios</b>: installment debts with fewer than 10 months remaining may be excluded unless large enough to materially affect repayment ability. If new undisclosed debt surfaces before closing and pushes DTI beyond allowed tolerance, the loan must be re-underwritten (D1-2-01). Cash-out refinances processed through DU may have a lower effective ceiling. High-LTV refinance loans (B5-7-01) have no DTI maximum except under the Alternative Qualification Path.",
-  c5:[["Capacity","DTI is the primary quantitative measure of Capacity — it directly answers 'can they afford this?'"]],
-  quiz:[
-    {q:"What is the max DTI for a manually underwritten Fannie Mae loan without compensating factors?", opts:["28%","36%","45%","50%"], correct:1, diff:"Easy", explain:"36% is Fannie Mae's manual underwriting ceiling per B3-6-02."},
-    {q:"A DU loan casefile can be approved up to what maximum DTI?", opts:["36%","41%","45%","50%"], correct:3, diff:"Medium", explain:"DU's ceiling is 50% for standard eligibility, though DU may still return a denial below that if other risk factors are weak."},
-    {q:"An installment loan has 8 months of payments left. How is it treated in DTI?", opts:["Always excluded automatically","Excluded unless it materially affects repayment ability","Always included regardless of remaining term","Only included if over $500/month"], correct:1, diff:"Hard", explain:"Debts under 10 months remaining may be excluded, but if the payment is large enough to affect current ability to repay, it must still count."}
-  ],
-  flashcards:[
-    ["DTI formula","Total monthly debt ÷ Total qualifying monthly income"],
-    ["Manual underwriting DTI ceiling","36% (up to 45% with compensating factors)"],
-    ["DU max DTI","50%"],
-    ["Guide section for DTI rules","Fannie Mae B3-6-02"],
-    ["Does high-LTV refinance have a DTI cap?","No, except under the Alternative Qualification Path"]
-  ],
-  scenario:"Borrower gross income $7,500/mo. Debts: car $350, credit cards min $180, new mortgage PITI $2,470. Total = $3,000. DTI = 3,000/7,500 = 40%. Run through DU → within 50% ceiling → Approve/Eligible, subject to DU conditions.",
-  sources:[["Fannie Mae B3-6-02, Debt-to-Income Ratios","https://selling-guide.fanniemae.com/sel/b3-6-02/debt-income-ratios"],["Fannie Mae Eligibility Matrix","https://www.fanniemae.com/content/eligibility_information/eligibility-matrix.pdf"]]
-},
-{
-  id:"ltv", title:"Loan-to-Value (LTV) Ratio", tag:"Collateral",
-  summary:"LTV compares the loan amount to the property's appraised value — the core Collateral measure.",
-  simple:"If a toy costs $100 and you only have $10 saved, you'd need to borrow $90 — that's 90% of the toy's price. LTV is the same: how much of the home's value is being borrowed versus paid upfront.",
-  intermediate:"LTV = Loan amount ÷ (lesser of sale price or appraised value) × 100.<br><br>Example: Home price $400,000, down payment $40,000 (10%). Loan amount = $360,000.<br>LTV = 360,000 / 400,000 = <b>90%</b>.<br><br>Standard conventional purchase loans typically max out around 97% LTV for 1-unit primary residences; investment properties and 2-4 unit properties have lower maximums (e.g. around 75-85%).",
-  advanced:"CLTV (combined LTV, including 2nd liens) and HCLTV (home equity combined LTV, including undrawn HELOC lines) are separate calculations lenders must also track — see Fannie Mae's Eligibility Matrix. Condo projects may carry lower allowable LTV/CLTV/HCLTV depending on project review type (B4-2.2 series). Community Seconds arrangements can push CLTV up to 105% in specific program structures.",
-  c5:[["Collateral","LTV directly measures how much equity cushion protects the lender if the property must be sold in default."]],
-  quiz:[
-    {q:"LTV formula uses which value if sale price and appraised value differ?", opts:["Always the sale price","Always the appraised value","The lesser of the two","The average of the two"], correct:2, diff:"Easy", explain:"Lenders use the lesser of sale price or appraised value to protect against overpaying."},
-    {q:"What does CLTV add to standard LTV?", opts:["Credit score adjustment","Combined balance of all liens on the property","Cost of mortgage insurance","Closing costs"], correct:1, diff:"Medium", explain:"CLTV includes 2nd mortgages/HELOCs in addition to the first lien."},
-    {q:"Which factor can allow CLTV up to 105%?", opts:["High credit score","Community Seconds program","Low DTI","Large cash reserves"], correct:1, diff:"Hard", explain:"Certain Community Seconds transactions permit CLTV up to 105% per Fannie Mae guidance."}
-  ],
-  flashcards:[
-    ["LTV formula","Loan amount ÷ lesser of sale price or appraised value"],
-    ["What is CLTV?","Combined LTV — includes all liens, not just the first mortgage"],
-    ["What is HCLTV?","Home equity combined LTV — includes undrawn HELOC amounts"],
-    ["Typical max LTV, 1-unit primary purchase","Up to ~97%"],
-    ["Which C does LTV represent?","Collateral"]
-  ],
-  scenario:"Home appraises at $350,000, sale price $355,000. Loan amount requested: $315,000. LTV uses lesser value ($350,000) → LTV = 315,000/350,000 = 90%. Within standard limits for 1-unit primary residence.",
-  sources:[["Fannie Mae Eligibility Matrix","https://www.fanniemae.com/content/eligibility_information/eligibility-matrix.pdf"]]
-},
-{
-  id:"credit", title:"Credit Analysis", tag:"Character",
-  summary:"Evaluating a borrower's credit history, score, and payment patterns as evidence of repayment reliability.",
-  simple:"If your friend always pays you back on time when they borrow lunch money, you trust them more next time. A credit report is like a diary of how well someone has kept past money promises.",
-  intermediate:"Manually underwritten loans require a minimum <b>620 credit score</b>. DU-run loans no longer rely on a hard score cutoff — DU evaluates the full credit report (payment history, derogatory events, utilization) alongside DTI, reserves, and LTV. Major derogatory events carry mandatory waiting periods before eligibility (e.g. Chapter 7 bankruptcy: 4 years for conventional loans; foreclosure: up to 7 years).",
-  advanced:"Per recent Fannie Mae/Freddie Mac policy updates, DU/LPA moved away from a fixed minimum score for automated underwriting, instead weighing the full risk profile. Manual underwriting retains the 620 floor. Nontraditional credit (no score) borrowers follow B3-5.4-01, which requires alternative documentation (rent history, utility payments) and generally caps DTI lower than standard.",
-  c5:[["Character","Credit history is the primary evidence underwriters use to judge repayment reliability and intent."]],
-  quiz:[
-    {q:"Minimum credit score for a manually underwritten conventional loan?", opts:["580","600","620","640"], correct:2, diff:"Easy", explain:"620 is the manual underwriting floor; DU has no fixed score cutoff."},
-    {q:"Waiting period after Chapter 7 bankruptcy for a conventional loan?", opts:["2 years","3 years","4 years","7 years"], correct:2, diff:"Medium", explain:"4 years is standard for conventional loans post Chapter 7 discharge."},
-    {q:"How does DU primarily evaluate credit today, compared to a fixed score cutoff?", opts:["Ignores credit entirely","Uses a holistic review of payment history, DTI, reserves and score together","Only uses FICO score with a hard 620 cutoff", "Requires manual override for any DU decision"], correct:1, diff:"Hard", explain:"DU and Freddie Mac's LPA both moved to holistic risk evaluation rather than a single hard score cutoff."}
-  ],
-  flashcards:[
-    ["Manual underwriting min credit score","620"],
-    ["Ch. 7 bankruptcy waiting period, conventional","4 years"],
-    ["Foreclosure waiting period, conventional","Up to 7 years"],
-    ["Which C does credit analysis represent?","Character"],
-    ["Guide reference for nontraditional credit","Fannie Mae B3-5.4-01"]
-  ],
-  scenario:"Borrower has 610 score, no major derogatories, run through DU. DU returns Approve/Eligible based on overall profile despite score below the manual 620 floor — illustrating DU's holistic risk assessment.",
-  sources:[["LendingTree summary of Fannie Mae credit guidelines","https://www.lendingtree.com/home/mortgage/fannie-mae-guidelines/"]]
-},
-{
-  id:"income", title:"Qualifying Income", tag:"Capacity",
-  summary:"Determining which income sources count, and how much, toward a borrower's DTI calculation.",
-  simple:"If you get allowance every week reliably, your parents can count on it. But if you only get extra money once in a blue moon from a garage sale, that's not something to count on every month. Qualifying income is about which money is steady and countable.",
-  intermediate:"Income must be stable, documented, and likely to continue for at least 3 years. Common types: W-2 wages (2-year history), self-employed (2-year tax returns + YTD P&L), rental income (typically 75% of gross rents per Schedule E or lease, to account for vacancy/expenses), bonus/overtime (2-year averaging with continuance likelihood).",
-  advanced:"Self-employment income calculations often use Fannie Mae's Cash Flow Analysis (Form 1084) to add back non-cash expenses (depreciation) and adjust for one-time gains/losses. Rental income treatment differs based on whether the property is subject or non-subject, and whether it's a purchase or refinance — see B3-3.1-08, Rental Income. Declining income trends year-over-year require additional analysis and may disqualify the income entirely if unexplained.",
-  c5:[["Capacity","Qualifying income is the numerator input that, combined with debts, produces the DTI ratio."]],
-  quiz:[
-    {q:"How many years of tax returns are typically required for self-employed income?", opts:["1 year","2 years","3 years","5 years"], correct:1, diff:"Easy", explain:"2 years of tax returns is the standard requirement for self-employed borrowers."},
-    {q:"What percentage of gross rental income is typically used for qualifying, to account for vacancy/expense?", opts:["50%","65%","75%","100%"], correct:2, diff:"Medium", explain:"75% of gross rents is the standard offset used per Fannie Mae guidance."},
-    {q:"What does Fannie Mae's Form 1084 help calculate?", opts:["LTV ratio","Self-employed cash flow / qualifying income","Credit score adjustment","Appraisal value"], correct:1, diff:"Hard", explain:"Form 1084 is the Cash Flow Analysis worksheet for self-employed borrower income."}
-  ],
-  flashcards:[
-    ["Self-employed income documentation","2 years tax returns + YTD P&L"],
-    ["Rental income offset for vacancy/expenses","Typically 75% of gross rents"],
-    ["Form used for self-employed cash flow","Fannie Mae Form 1084"],
-    ["What guide section covers rental income?","Fannie Mae B3-3.1-08"],
-    ["Which C does qualifying income affect?","Capacity"]
-  ],
-  scenario:"Borrower is self-employed with $80,000 avg net income over 2 years, stable/increasing trend, add-back of $5,000 depreciation. Qualifying income ≈ $85,000/year ÷ 12 = $7,083/month.",
-  sources:[["Fannie Mae B3-3.1-08, Rental Income","https://selling-guide.fanniemae.com/"]]
-}
+  //    CHARACTER   
+  { id:'credit-score',   c:'char', gse:'both', tag:'Apr 2026',
+    name:'Credit score models',
+    body:'VantageScore 4.0 and FICO 10T are now approved alongside classic FICO for tri-merge reports. Lenders can select the model that best reflects each borrower\'s credit profile.',
+    kw:['credit','fico','vantage','score','10t','tri-merge','620','700'] },
+  { id:'credit-history', c:'char', gse:'fm',   tag:'Core',
+    name:'Credit history & payment record',
+    body:'DU evaluates 12-24 months of payment history. Late payments, collections, and bankruptcies directly impact eligibility, rate, and mortgage insurance pricing.',
+    kw:['credit history','payment','late','bankruptcy','collections','derogatory','charge-off','120 days'] },
+  { id:'du-lpa',         c:'char', gse:'both', tag:'Core',
+    name:'Desktop Underwriter (DU) & LPA',
+    body:'DU (Fannie Mae) and LPA (Freddie Mac) are automated underwriting engines that return Approve/Eligible or Refer by evaluating the full borrower risk profile holistically.',
+    kw:['du','lpa','desktop underwriter','loan product advisor','automated','approve','eligible','refer'] },
+  { id:'npa',            c:'char', gse:'both', tag:'Core',
+    name:'Non-performing assets (NPA)',
+    body:'NPA refers to credit accounts 90+ days past due  -  appearing as charge-offs, collections, or seriously delinquent tradelines. Fannie Mae and Freddie Mac impose 2-7 year waiting periods after NPAs before a new conforming loan can be originated.',
+    kw:['npa','non performing','non-performing','derogatory','charge off','charge-off','collection','90 days','seriously delinquent','bad debt','default','non performing asset'] },
+  { id:'waiting-periods',c:'char', gse:'both', tag:'Core',
+    name:'Waiting periods after derogatory events',
+    body:'Post-foreclosure: 7 years (3 with extenuating circumstances). Post-Chapter 7 bankruptcy: 4 years. Post-short sale: 2 years. Documented extenuating circumstances  -  involuntary job loss, medical emergency  -  can shorten required seasoning periods.',
+    kw:['waiting period','foreclosure','short sale','bankruptcy','chapter 7','chapter 13','deed in lieu','seasoning','extenuating','prior mortgage','requalify'] },
+
+  //    CAPACITY   
+  { id:'dti',            c:'cap',  gse:'fm',   tag:'Core',
+    name:'Debt-to-income ratio (DTI)',
+    body:'Max 45% back-end DTI with standard DU approval; up to 50% with strong compensating factors. Front-end housing ratio should stay under 28% for best outcome. The primary gauge of monthly repayment ability.',
+    kw:['dti','debt to income','ratio','45%','50%','front end','back end','housing ratio','qualifying'] },
+  { id:'income',         c:'cap',  gse:'fm',   tag:'Mar 2026',
+    name:'Income assessment (B3-3)',
+    body:'Chapter B3-3 updated in SEL-2026-02. Self-employed: 2-year history via tax returns. W-2: 30-day paystubs. Rental income: 75% of gross rents. IRS installment agreements now explicitly addressed.',
+    kw:['income','self employed','w2','rental','paystub','schedule c','b3-3','tax return','1040','gross income'] },
+  { id:'employment',     c:'cap',  gse:'fre',  tag:'May 2026',
+    name:'Employment verification',
+    body:'Bulletin 2026-6 removed the YTD paystub "paid-through" date requirement. Farming income on Schedule F now accepted. Standard remains a 2-year continuous employment history.',
+    kw:['employment','job','verify','paystub','schedule f','farming','2-year','history','gap in employment','bulletin 2026-6'] },
+  { id:'residual-income',c:'cap',  gse:'fre',  tag:'Core',
+    name:'Residual income method',
+    body:'Residual income = gross income minus taxes minus all monthly debts. Freddie Mac uses it as a powerful compensating factor when DTI is elevated. VA loans use residual as the primary qualifying test. Higher residual = stronger loan file.',
+    kw:['residual income','leftover','va loan','compensating factor','net income','monthly obligations','surplus'] },
+  { id:'loss-mit',       c:'cap',  gse:'fre',  tag:'May 2026',
+    name:'Loss mitigation & forbearance',
+    body:'Updated forbearance term requirements effective May 2026. Servicers now submit repayment plans via Freddie Mac\'s Resolve UI. Disaster loss mitigation evaluation hierarchy streamlined under Bulletin 2026-2.',
+    kw:['forbearance','loss mitigation','repayment','disaster','servicer','resolve','deferral','modification'] },
+
+  //    CAPITAL   
+  { id:'down-payment',   c:'capl', gse:'both', tag:'Core',
+    name:'Down payment & reserves',
+    body:'HomeOne (Freddie Mac): 3% down for first-time buyers. Standard: 5-20%. Reserves of 2-6 months PITIA significantly strengthen a file. Gift funds are allowed with a signed gift letter and donor bank documentation.',
+    kw:['down payment','reserves','gift','pitia','3%','5%','20%','homeone','first time buyer','gift letter'] },
+  { id:'assets',         c:'capl', gse:'fm',   tag:'Core',
+    name:'Asset documentation',
+    body:'60-day bank statements required for all accounts. Business accounts need evidence of borrower ownership. Retirement accounts (401k, IRA) count at 60-70% of vested balance toward qualifying reserves.',
+    kw:['assets','bank statement','retirement','401k','ira','savings','checking','vested','seasoned','large deposit'] },
+  { id:'loan-limits',    c:'capl', gse:'fm',   tag:'2026',
+    name:'Conforming loan limits 2026',
+    body:'Standard limit: $806,500 for a 1-unit property. High-cost areas: up to $1,209,750. Loans above these thresholds are jumbo  -  ineligible for GSE purchase without a specific high-cost area designation.',
+    kw:['loan limit','conforming','jumbo','806500','1209750','high cost','gse','fhfa limit','2026 limit'] },
+  { id:'asset-depletion',c:'capl', gse:'both', tag:'Core',
+    name:'Asset depletion income',
+    body:'Converts a borrower\'s liquid assets into a monthly qualifying income  -  even with no employment. Fannie Mae formula: 100% of eligible assets / remaining loan term in months. Common for retirees and high-net-worth borrowers with large portfolios but no W-2.',
+    kw:['asset depletion','asset dissipation','liquid assets','retiree','no income','high net worth','portfolio','eligible assets','no w2','asset based income'] },
+  { id:'asset-util',     c:'capl', gse:'fre',  tag:'Core',
+    name:'Asset utilisation (Freddie Mac)',
+    body:'Freddie Mac\'s equivalent to Fannie\'s asset depletion. Formula: 70% of eligible assets / 240 months. Key differences from Fannie: lower asset inclusion rate (70% vs 100%) and fixed 240-month divisor regardless of loan term.',
+    kw:['asset utilisation','asset utilization','asset depletion','freddie','eligible assets','240 months','70%','retiree','no employment'] },
+
+  //    COLLATERAL   
+  { id:'ltv',            c:'coll', gse:'fre',  tag:'Core',
+    name:'LTV & PMI rules',
+    body:'Primary residence: up to 97% LTV via HomeOne. Investment property: capped at 85%. PMI required when LTV exceeds 80% and is cancellable once equity reaches 20%. Second homes: typically limited to 90% LTV.',
+    kw:['ltv','loan to value','pmi','97%','85%','80%','equity','primary','investment','second home','private mortgage insurance'] },
+  { id:'appraisal',      c:'coll', gse:'both', tag:'2025-26',
+    name:'UAD 3.6 appraisal reform',
+    body:'New dynamic URAR form replaces legacy 1004, 1073, and 1025 forms. Covers all property types and valuation methods  -  traditional, hybrid, and desktop  -  in a single adaptive format. Industry-wide rollout through 2025-2026.',
+    kw:['appraisal','uad','urar','1004','1073','valuation','hybrid','desktop','form','appraisal reform','uad 3.6'] },
+  { id:'appraisal-waiver',c:'coll',gse:'both', tag:'Core',
+    name:'Appraisal waivers & value acceptance',
+    body:'Fannie Mae\'s Value Acceptance (formerly PIW) and Freddie Mac\'s ACE skip the traditional appraisal on eligible low-risk loans. DU/LPA use historical AVM data to accept the lender-supplied value. Typically limited to primary residences with strong equity.',
+    kw:['appraisal waiver','piw','property inspection waiver','ace','automated collateral','value acceptance','avm','no appraisal','waiver','skip appraisal'] },
+  { id:'mh',             c:'coll', gse:'both', tag:'Feb 2026',
+    name:'Manufactured homes (MH Advantage / CHOICEHome)',
+    body:'Fannie Mae MH Advantage and Freddie Mac CHOICEHome aligned by FHFA in February 2026. Uniform specifications allow qualifying manufactured homes to access conventional loan rates and LTV limits.',
+    kw:['manufactured','mobile home','mh advantage','choicehome','fhfa','conventional','mh','factory built'] },
+  { id:'prop-types',     c:'coll', gse:'both', tag:'Core',
+    name:'Property eligibility rules',
+    body:'Single-family, 2-4 units, condos, PUDs, and co-ops each carry distinct guidelines. Investment properties face tighter LTV caps (typically 75-85%) and higher reserve requirements (6 months PITIA) versus primary residences.',
+    kw:['property','condo','pud','co-op','2-4 unit','investment','owner occupied','sfr','eligibility','property type'] },
+
+  //    CONDITIONS   
+  { id:'loan-purpose',   c:'cond', gse:'both', tag:'Core',
+    name:'Loan purpose & transaction type',
+    body:'Purchase, rate/term refinance, and cash-out refinance each trigger separate overlays. Cash-out is the most restrictive: lower LTV caps, longer seasoning periods, and higher reserve requirements.',
+    kw:['purchase','refinance','cash out','rate term','purpose','refi','seasoning','transaction','no cash out','limited cash out'] },
+  { id:'secondary',      c:'cond', gse:'both', tag:'Core',
+    name:'Secondary mortgage market',
+    body:'Lenders sell conforming loans to Fannie and Freddie, who pool them into Mortgage-Backed Securities (MBS) sold to investors. This frees capital for new originations and effectively sets benchmark mortgage rates nationwide.',
+    kw:['secondary market','mbs','mortgage backed securities','investor','pool','rate','securitisation','capital markets'] },
+  { id:'ron',            c:'cond', gse:'fm',   tag:'Jun 2026',
+    name:'Remote online notarization (RON)',
+    body:'SEL-2026-06 updated RON requirements and clarified single-closing construction-to-permanent loan modification rules. Co-op project eligibility also revised to reflect current market practices.',
+    kw:['ron','remote notary','online','sel-2026-06','construction','co-op','notarization','esign','remote'] },
+  { id:'emortgage',      c:'cond', gse:'fre',  tag:'Apr 2026',
+    name:'eMortgage & digital closing',
+    body:'Bulletin 2026-5 expanded eMortgage adoption with BNY added as an approved custodian. Modification agreement timeline made flexible. Lender-paid MI removed from the VPC closing payment structure.',
+    kw:['emortgage','digital','eclose','bny','custodian','vpc','modification','closing','electronic','e-note'] },
 ];
 
-let CHANGELOG = [
-  {date:"2026-07-07", note:"Initial hub build — seeded 5 foundational topics (5 C's, DTI, LTV, Credit, Qualifying Income)."}
+/* ==============================================
+   QUIZ DATA
+============================================== */
+const QUIZ = [
+  { c:'char', q:'What new credit score models did Fannie Mae approve in April 2026?',
+    opts:['FICO 9 & VantageScore 3.0','VantageScore 4.0 & FICO 10T','Only FICO 8','TransUnion CreditVision'], ans:1,
+    exp:'SEL-2026-04 approved VantageScore 4.0 and FICO 10T  -  giving lenders more options when ordering tri-merge credit reports.' },
+  { c:'char', q:'What does Fannie Mae\'s DU system return for a fully qualified borrower?',
+    opts:['Approve / Ineligible','Refer / Eligible','Approve / Eligible','Accept / Qualified'], ans:2,
+    exp:'"Approve/Eligible" means the borrower is credit-approved AND meets all program eligibility rules. "Approve/Ineligible" would mean approved but missing a guideline requirement.' },
+  { c:'char', q:'How long must a borrower wait after a Chapter 7 bankruptcy before qualifying for a Fannie Mae loan?',
+    opts:['1 year','2 years','4 years','7 years'], ans:2,
+    exp:'Fannie Mae requires a 4-year waiting period after Chapter 7 discharge. With documented extenuating circumstances, this shortens to 2 years.' },
+  { c:'cap',  q:'What is the maximum DTI Fannie Mae allows with standard DU approval?',
+    opts:['36%','43%','45%','50%'], ans:2,
+    exp:'45% is the DU standard cap. Up to 50% is possible with compensating factors such as high liquid reserves or a low LTV ratio.' },
+  { c:'cap',  q:'How many years of self-employment history does Fannie Mae require to use that income for qualifying?',
+    opts:['6 months','1 year','2 years','3 years'], ans:2,
+    exp:'A full 2-year self-employment history is required  -  confirmed via federal tax returns  -  before that income can be used for loan qualification.' },
+  { c:'capl', q:'What is the 2026 standard conforming loan limit for a 1-unit property?',
+    opts:['$726,200','$806,500','$900,000','$1,209,750'], ans:1,
+    exp:'$806,500 is the 2026 FHFA standard conforming limit. High-cost designated areas can go up to $1,209,750.' },
+  { c:'capl', q:'Which formula does Freddie Mac use for asset utilisation income?',
+    opts:['100% of assets / loan term','70% of assets / 240 months','80% of assets / 360 months','50% of assets / 180 months'], ans:1,
+    exp:'Freddie Mac uses 70% of eligible liquid assets divided by 240 months. Fannie Mae uses 100% divided by the actual remaining loan term.' },
+  { c:'coll', q:'At what LTV level is PMI required on a conventional loan?',
+    opts:['75%','Above 80%','85%','90%'], ans:1,
+    exp:'PMI is required whenever LTV exceeds 80%. Once the borrower reaches 20% equity (80% LTV), PMI cancellation can be requested.' },
+  { c:'coll', q:'What does Fannie Mae\'s "Value Acceptance" (formerly PIW) do?',
+    opts:['Waives the income verification requirement','Allows the lender to skip the traditional appraisal','Removes the PMI requirement automatically','Approves loans above the conforming limit'], ans:1,
+    exp:'Value Acceptance (Property Inspection Waiver) lets eligible low-risk loans skip the traditional appraisal  -  DU uses AVM data and historical records to accept the lender-provided value instead.' },
+  { c:'cond', q:'What do Fannie Mae and Freddie Mac do with conforming loans in the secondary market?',
+    opts:['Hold them permanently on their balance sheets','Pool them into MBS and sell to investors','Repackage them as jumbo loans','Return them to the originating lender after 5 years'], ans:1,
+    exp:'Both GSEs buy conforming loans, pool them into Mortgage-Backed Securities, and sell those to investors  -  recycling capital back to lenders so they can keep making new loans.' },
 ];
 
-// ---------- NAV ----------
-document.querySelectorAll('.nav-btn').forEach(b=>{
-  b.addEventListener('click', ()=>{
-    document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
-    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-    document.getElementById('view-'+b.dataset.view).classList.add('active');
-  });
-});
+/* ==============================================
+   UPDATE LOG DATA
+============================================== */
+const UPDATES = [
+  { gse:'fm',   date:'Jun 2026', ref:'SEL-2026-06',     desc:'RON requirements updated. Single-closing construction-to-permanent modifications clarified. Co-op project eligibility revised.' },
+  { gse:'fre',  date:'May 2026', ref:'Bulletin 2026-6',  desc:'Schedule F farming income accepted. YTD paystub "paid-through" date requirement removed for employment verification.' },
+  { gse:'fm',   date:'Apr 2026', ref:'SEL-2026-04',     desc:'VantageScore 4.0 and FICO Score 10T approved as credit score models for tri-merge reports.' },
+  { gse:'fre',  date:'Apr 2026', ref:'Bulletin 2026-5',  desc:'Modification timeline made flexible. eMortgage expanded with BNY custodian. Lender-paid MI removed from VPC structure.' },
+  { gse:'fm',   date:'Mar 2026', ref:'SEL-2026-02',     desc:'Chapter B3-3 income policy clarified and updated. Texas 50(a)(6) appraisal review requirements updated.' },
+  { gse:'fre',  date:'Feb 2026', ref:'Bulletin 2026-2',  desc:'Forbearance term requirements updated. Disaster loss mitigation effective May 2026. Fraud reporting ( 3201.2) clarified.' },
+  { gse:'both', date:'Feb 2026', ref:'FHFA Alignment',   desc:'MH Advantage and CHOICEHome aligned. Uniform manufactured home program specifications published under FHFA guidance.' },
+];
 
-// ---------- TEACH ----------
-function renderTopicList(){
-  const list = document.getElementById('topic-list');
-  list.innerHTML = TOPICS.map(t=>`
-    <div class="topic-item" onclick="openTopic('${t.id}')">
-      <div><div class="t-title">${t.title}</div><div class="t-tag">${t.tag}</div></div>
-      <div class="arrow">›</div>
-    </div>`).join('');
+/* ==============================================
+   STATE
+============================================== */
+let readSet   = new Set();
+let activeC   = 'all';
+let searchF   = 'all';
+let qIdx=0, qRight=0, qTotal=0;
+let tTopic=null, tHistory=[];
+let appVer = '1.0';
+let changelog = [{
+  ver:'v1.0', date:'Jun 27, 2026',
+  desc:'Initial release. 24 topics across all 5Cs. AI Tutor with mastery quizzing for every topic. Smart search with AI fallback for unlisted terms. On-demand monthly refresh with 7 automated tests.',
+  tests:['5C pills','Topic cards','AI Tutor','Quiz scoring','Search & filter','AI fallback','Refresh flow','Changelog']
+}];
+
+/* ==============================================
+   HELPERS
+============================================== */
+function fmt(t) {
+  return t
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
 }
-function openTopic(id){
-  const t = TOPICS.find(x=>x.id===id);
-  document.getElementById('topic-list').style.display='none';
-  const d = document.getElementById('topic-detail');
-  d.innerHTML = topicHTML(t);
-  d.querySelectorAll('.depth-tabs button').forEach(btn=>{
-    btn.onclick = ()=>{
-      d.querySelectorAll('.depth-tabs button').forEach(x=>x.classList.remove('active'));
-      d.querySelectorAll('.depth-panel').forEach(x=>x.classList.remove('active'));
-      btn.classList.add('active');
-      d.querySelector('#panel-'+btn.dataset.d+'-'+t.id).classList.add('active');
-    };
-  });
-  d.querySelectorAll('.quiz-opt').forEach(opt=>{
-    opt.onclick = ()=>{
-      const qDiv = opt.closest('.quiz-q');
-      if(qDiv.dataset.answered) return;
-      qDiv.dataset.answered = "1";
-      const correctIdx = qDiv.dataset.correct;
-      qDiv.querySelectorAll('.quiz-opt').forEach((o,i)=>{
-        if(i==correctIdx) o.classList.add('correct');
-        else if(o===opt) o.classList.add('wrong');
-      });
-      qDiv.querySelector('.quiz-explain').style.display='block';
-    };
-  });
-  d.querySelectorAll('.flash').forEach(f=>{
-    f.onclick = ()=> f.classList.toggle('flipped');
-  });
+function showToast(m) {
+  const el = document.getElementById('toast');
+  el.textContent = m; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
 }
-function backToList(){
-  document.getElementById('topic-list').style.display='grid';
-  document.getElementById('topic-detail').innerHTML='';
-}
-function topicHTML(t){
-  return `
-  <button class="btn outline" style="margin-bottom:12px" onclick="backToList()">‹ Back to topics</button>
-  <div class="card">
-    <h2 style="margin-top:0; color:var(--navy)">${t.title}</h2>
-    <p style="color:var(--muted); font-size:13.5px">${t.summary}</p>
+function $(id) { return document.getElementById(id); }
 
-    <div class="depth-tabs">
-      <button class="active" data-d="simple">Simple</button>
-      <button data-d="intermediate">Intermediate</button>
-      <button data-d="advanced">Advanced</button>
-    </div>
-    <div class="depth-panel active" id="panel-simple-${t.id}">${t.simple}</div>
-    <div class="depth-panel" id="panel-intermediate-${t.id}">${t.intermediate}</div>
-    <div class="depth-panel" id="panel-advanced-${t.id}">${t.advanced}</div>
-
-    ${t.c5 ? `<h2 class="section-title">5 C's Impact</h2><div class="c5-grid">${t.c5.map(c=>`<div class="c5-item"><b>${c[0]}:</b> ${c[1]}</div>`).join('')}</div>` : ''}
-
-    <h2 class="section-title">Quiz</h2>
-    ${t.quiz.map((q,qi)=>`
-      <div class="quiz-q" data-correct="${q.correct}">
-        <span class="diff ${q.diff}">${q.diff}</span>
-        <p style="font-weight:600; font-size:13.5px; margin:8px 0">${q.q}</p>
-        ${q.opts.map(o=>`<button class="quiz-opt">${o}</button>`).join('')}
-        <div class="quiz-explain">${q.explain}</div>
-      </div>`).join('')}
-
-    <h2 class="section-title">Flashcards (tap to flip)</h2>
-    ${t.flashcards.map(f=>`
-      <div class="flash"><div class="flash-inner">
-        <div class="flash-face flash-front">${f[0]}</div>
-        <div class="flash-face flash-back">${f[1]}</div>
-      </div></div>`).join('')}
-
-    <h2 class="section-title">Sample Loan Scenario</h2>
-    <div class="c5-item">${t.scenario}</div>
-
-    <div class="meta">
-      <b>Sources:</b> ${t.sources.map(s=>`<a class="source-link" href="${s[1]}" target="_blank">${s[0]}</a>`).join(' · ')}<br>
-      Last updated: 2026-07-07
+/* ==============================================
+   BUILD TOPIC CARD
+============================================== */
+function buildCard(t) {
+  const cfg      = C[t.c];
+  const gseLabel = t.gse === 'fm' ? 'Fannie Mae' : t.gse === 'fre' ? 'Freddie Mac' : 'Both GSEs';
+  const isRead   = readSet.has(t.id);
+  const tagCls   = t.tag === 'Core' ? 'badge-core' : 'badge-new';
+  return `<div class="tcard${isRead?' read':''}" data-c="${t.c}" onclick="markRead('${t.id}')">
+    <div class="tcard-inner">
+      <div class="tcard-top">
+        <div class="tcard-name">${t.name}</div>
+        <button class="tcard-btn" onclick="event.stopPropagation();openTutor('${t.id}')">🎓 Tutor</button>
+      </div>
+      <div class="tcard-body">${t.body}</div>
+      <div class="tcard-foot">
+        <span class="badge" style="background:${cfg.bg};color:${cfg.color}">${cfg.icon} ${cfg.label}</span>
+        <span class="badge badge-gse">${gseLabel}</span>
+        <span class="badge ${tagCls}">${t.tag}</span>
+        ${isRead ? '<span class="badge badge-read">✓ Read</span>' : ''}
+      </div>
     </div>
   </div>`;
 }
 
-// ---------- SEARCH ----------
-document.getElementById('search-input').addEventListener('input', e=>{
-  const q = e.target.value.toLowerCase().trim();
-  const results = document.getElementById('search-results');
-  if(!q){ results.innerHTML=''; return; }
-  const matches = TOPICS.filter(t=>
-    (t.title+t.tag+t.summary+t.simple+t.intermediate+t.advanced).toLowerCase().includes(q)
-  );
-  results.innerHTML = matches.length ? matches.map(t=>`
-    <div class="topic-item" onclick="document.querySelector('[data-view=teach]').click(); openTopic('${t.id}'); document.getElementById('topic-list').style.display='none';">
-      <div><div class="t-title">${t.title}</div><span class="tag-pill">${t.tag}</span></div>
-      <div class="arrow">›</div>
-    </div>`).join('') : `<p style="color:var(--muted); font-size:13px">No matches. Try 'DTI', 'reserves', 'credit', 'income', 'LTV'.</p>`;
-});
-
-// ---------- MOCK INTERVIEW ----------
-const MI_BANK = {
-  Junior:[
-    ["What is DTI and how is it calculated?","Total monthly debt ÷ total qualifying monthly income."],
-    ["What does LTV measure?","Loan amount versus the lesser of sale price or appraised value."],
-    ["Name the 5 C's of underwriting.","Character, Capacity, Capital, Collateral, Conditions."],
-    ["What credit score is required for manual underwriting?","620 minimum."],
-    ["What is a compensating factor?","A strength in one area (e.g. reserves) offsetting a weakness elsewhere (e.g. credit score)."]
-  ],
-  Intermediate:[
-    ["Walk me through calculating self-employed qualifying income.","Average 2 years of net income from tax returns, add back non-cash expenses like depreciation, adjust for one-time items, and confirm a stable or increasing trend."],
-    ["A DTI comes in at 48% through DU — is this automatically approved?","No — 50% is DU's ceiling, not a guarantee. DU still performs a full risk assessment and can return a denial or conditions."],
-    ["How is rental income typically qualified?","Generally 75% of gross rents to account for vacancy and expenses, per Schedule E or lease agreement documentation."],
-    ["What happens if new debt is discovered before closing?","The lender must re-underwrite if the new DTI exceeds allowed tolerances, per prefunding QC requirements."]
-  ],
-  Senior:[
-    ["How would you evaluate a borrower with declining self-employed income year over year?","Investigate the cause, require explanation and documentation, consider using the lower/most recent year, and assess whether the trend disqualifies the income entirely under Fannie Mae guidance."],
-    ["Compare DTI treatment for high-LTV refinance vs. standard purchase transactions.","High-LTV refinance loans generally have no maximum DTI requirement except under the Alternative Qualification Path, unlike standard purchases which follow the 36/45/50% tiered structure."],
-    ["How do CLTV and HCLTV differ, and when does each matter?","CLTV includes all recorded liens; HCLTV also includes undrawn HELOC lines. Both matter when evaluating subordinate financing risk beyond the first mortgage."]
-  ]
-};
-let mockState = null;
-function startMock(){
-  const level = document.getElementById('mi-level').value;
-  const count = parseInt(document.getElementById('mi-count').value);
-  const pool = MI_BANK[level];
-  const qs = [];
-  for(let i=0;i<count;i++) qs.push(pool[i % pool.length]);
-  mockState = {qs, idx:0, level};
-  document.getElementById('mock-chat').innerHTML='';
-  askNextMock();
-}
-function askNextMock(){
-  const chat = document.getElementById('mock-chat');
-  if(mockState.idx >= mockState.qs.length){
-    chat.innerHTML += `<div class="card"><b>Interview complete!</b><br>Level: ${mockState.level}<br>Review the model answers above against your own — focus on any topic where your answer missed the guide citation or a key number.</div>`;
+/* ==============================================
+   RENDER LIST (grouped or flat)
+============================================== */
+function renderList(list, elId, grouped) {
+  const el = $(elId);
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-ico">🔎</div><div class="empty-msg">No topics found.<small>Try a different keyword or filter.</small></div></div>`;
     return;
   }
-  const [q] = mockState.qs[mockState.idx];
-  chat.innerHTML += `<div class="mi-msg mi-q"><b>Q${mockState.idx+1}:</b> ${q}</div>
-    <div style="margin:6px 0"><input type="text" id="mi-input-${mockState.idx}" style="width:70%" placeholder="Type your answer..."> <button class="btn gold" onclick="answerMock(${mockState.idx})">Submit</button></div>`;
-}
-function answerMock(i){
-  const chat = document.getElementById('mock-chat');
-  const ans = document.getElementById('mi-input-'+i).value || "(no answer given)";
-  const [,model] = mockState.qs[i];
-  chat.innerHTML += `<div class="mi-msg mi-a">${ans}</div>
-    <div class="mi-msg mi-f"><b>Model answer:</b> ${model}</div>`;
-  mockState.idx++;
-  askNextMock();
-}
-
-// ---------- REFRESH / CHANGELOG ----------
-function renderChangelog(){
-  document.getElementById('changelog').innerHTML = CHANGELOG.map(c=>`<div style="font-size:12.5px; margin-bottom:6px"><b>${c.date}:</b> ${c.note}</div>`).join('');
+  if (!grouped) { el.innerHTML = list.map(buildCard).join(''); return; }
+  const order = ['char','cap','capl','coll','cond'];
+  let html = '';
+  order.forEach(ck => {
+    const grp = list.filter(t => t.c === ck);
+    if (!grp.length) return;
+    const cfg = C[ck];
+    html += `<div class="cg-row">
+      <span class="cg-chip" style="background:${cfg.bg};color:${cfg.color}">${cfg.icon} ${cfg.label}</span>
+      <div class="cg-line"></div>
+    </div>${grp.map(buildCard).join('')}`;
+  });
+  el.innerHTML = html;
 }
 
-// ---------- EXPORT ----------
-function renderExportList(){
-  document.getElementById('export-list').innerHTML = TOPICS.map(t=>`
-    <div class="topic-item" onclick="exportTopic('${t.id}')">
-      <div class="t-title">${t.title}</div>
-      <div class="arrow">⬇</div>
+/* ==============================================
+   5C FILTER  -  HOME
+============================================== */
+function setC(ck, btn) {
+  activeC = ck;
+  document.querySelectorAll('.cpill').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+
+  const list = ck === 'all' ? TOPICS : TOPICS.filter(t => t.c === ck);
+  const cfg  = ck === 'all' ? null : C[ck];
+  const hero = $('hero');
+
+  if (ck === 'all') {
+    hero.className = 'hero default';
+    hero.style.background = '';
+    $('hero-eye').textContent   = 'The 5 C\'s of Mortgage Lending';
+    $('hero-title').textContent = 'All 24 Guidelines';
+    $('hero-desc').textContent  = 'Character . Capacity . Capital . Collateral . Conditions  -  the complete framework lenders use to evaluate every borrower\'s risk.';
+  } else {
+    hero.className = 'hero';
+    hero.style.background = cfg.grad;
+    $('hero-eye').textContent   = 'C ' + (['char','cap','capl','coll','cond'].indexOf(ck)+1) + ' of 5';
+    $('hero-title').textContent = cfg.icon + ' ' + cfg.label;
+    $('hero-desc').textContent  = cfg.desc;
+  }
+
+  $('list-title').textContent = ck === 'all' ? 'All topics' : cfg.label + ' topics';
+  $('list-count').textContent = list.length + ' topic' + (list.length !== 1 ? 's' : '');
+
+  renderList(list, 'topicList', ck === 'all');
+
+  // Sync quiz banner colour
+  if (ck !== 'all') {
+    $('qBanner').style.background = cfg.grad;
+    $('qBLabel').textContent      = cfg.label;
+    $('qNext').style.background   = cfg.grad;
+  } else {
+    $('qBanner').style.background = 'linear-gradient(135deg,#0C1F3D,#1E3A5F)';
+    $('qBLabel').textContent      = 'All 5Cs';
+    $('qNext').style.background   = 'linear-gradient(135deg,#0C1F3D,#1E3A5F)';
+  }
+}
+
+/* ==============================================
+   NAVIGATION
+============================================== */
+function navTo(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(t => t.classList.remove('on'));
+  $('page-' + id).classList.add('active');
+  const tab = btn || $('tab-' + id);
+  if (tab) tab.classList.add('on');
+}
+function goSearch() {
+  navTo('search', $('tab-search'));
+  setTimeout(() => $('sInp').focus(), 180);
+}
+
+/* ==============================================
+   MARK READ
+============================================== */
+function markRead(id) {
+  if (!readSet.has(id)) {
+    readSet.add(id);
+    $('h-read').textContent = readSet.size;
+    showToast('✓ Marked as read');
+  }
+  const list = activeC === 'all' ? TOPICS : TOPICS.filter(t => t.c === activeC);
+  renderList(list, 'topicList', activeC === 'all');
+}
+
+/* ==============================================
+   SEARCH  (scored matching + AI fallback)
+============================================== */
+function setSF(f, btn) {
+  searchF = f;
+  document.querySelectorAll('.sfpill').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  runSearch();
+}
+function clearSearch() {
+  $('sInp').value = '';
+  $('sClear').style.display = 'none';
+  runSearch();
+}
+function runSearch() {
+  const raw = $('sInp').value.trim();
+  const q   = raw.toLowerCase();
+  const el  = $('sResults');
+
+  // Show/hide clear button
+  $('sClear').style.display = raw ? 'block' : 'none';
+
+  let pool = searchF === 'all' ? TOPICS : TOPICS.filter(t => t.c === searchF);
+
+  if (!q) {
+    if (searchF === 'all') {
+      el.innerHTML = `<div class="empty"><div class="empty-ico">🔍</div><div class="empty-msg">Search 24 topics across all 5Cs<small>Try: NPA . asset depletion . DTI . LTV . forbearance . waiting period</small></div></div>`;
+    } else {
+      el.innerHTML = `<div class="sresult-meta">Showing all <strong>${pool.length}</strong> ${C[searchF].label} topics</div>${pool.map(buildCard).join('')}`;
+    }
+    return;
+  }
+
+  // Score every topic
+  const words = q.split(/\s+/).filter(w => w.length >= 2);
+  const scored = pool.map(t => {
+    const nm  = t.name.toLowerCase();
+    const bd  = t.body.toLowerCase();
+    const kws = (t.kw || []);
+    let s = 0;
+    if (nm === q)                                      s += 120;
+    else if (nm.includes(q))                           s += 70;
+    if (kws.some(k => k === q))                        s += 90;
+    else if (kws.some(k => k.includes(q) || q.includes(k))) s += 45;
+    if (bd.includes(q))                                s += 25;
+    words.forEach(w => {
+      if (nm.includes(w))                              s += 18;
+      if (kws.some(k => k.includes(w)))               s += 12;
+      if (bd.includes(w))                              s += 6;
+    });
+    return { t, s };
+  }).filter(x => x.s > 0).sort((a, b) => b.s - a.s).map(x => x.t);
+
+  if (scored.length) {
+    el.innerHTML = `<div class="sresult-meta">${scored.length} result${scored.length!==1?'s':''} for "<strong>${raw}</strong>"</div>` + scored.map(buildCard).join('');
+  } else {
+    // AI fallback  -  query stored in dataset, never evaluated as a string in onclick
+    el.innerHTML = `
+      <div class="ai-fallback">
+        <div class="ai-fallback-title">🔎 No local topic found for "<em id="fbTerm"></em>"</div>
+        <div class="ai-fallback-body">This term isn't in the local library yet. Tap below  -  the AI Tutor will explain it immediately using the full Fannie Mae &amp; Freddie Mac guideline universe.</div>
+        <button class="ai-fallback-btn" id="fbBtn">🎓 &nbsp;Ask AI Tutor</button>
+      </div>
+      <div class="suggest-row">
+        Try: 
+        <span class="suggest-link" style="color:#2563EB" onclick="setSearch('NPA')">NPA</span> . 
+        <span class="suggest-link" style="color:#7C3AED" onclick="setSearch('asset depletion')">Asset depletion</span> . 
+        <span class="suggest-link" style="color:#059669" onclick="setSearch('DTI')">DTI</span> . 
+        <span class="suggest-link" style="color:#0891B2" onclick="setSearch('forbearance')">Forbearance</span>
+      </div>`;
+    // Safely set text and bind click via DOM  -  no string evaluation
+    const fbTerm = document.getElementById('fbTerm');
+    const fbBtn  = document.getElementById('fbBtn');
+    if (fbTerm) fbTerm.textContent = raw;
+    if (fbBtn)  {
+      fbBtn.textContent = '🎓  Ask AI Tutor about "' + raw + '"';
+      fbBtn.dataset.query = raw;
+      fbBtn.addEventListener('click', () => openAISearch(fbBtn.dataset.query));
+    }
+  }
+}
+
+function setSearch(term) {
+  $('sInp').value = term;
+  runSearch();
+}
+
+/* ==============================================
+   QUIZ
+============================================== */
+function initQuiz() { qIdx=0; qRight=0; qTotal=0; loadQ(); }
+function loadQ() {
+  const pool = activeC === 'all' ? QUIZ : QUIZ.filter(q => q.c === activeC);
+  if (!pool.length) {
+    $('qText').textContent = 'No quiz questions for this C yet. Switch to "All Topics" for the full quiz.';
+    $('qOpts').innerHTML = ''; return;
+  }
+  if (qIdx >= pool.length) {
+    const pct = Math.round((qRight / pool.length) * 100);
+    $('qText').innerHTML = `🎉 Quiz complete! You scored ${qRight}/${pool.length} (${pct}%)`;
+    $('qOpts').innerHTML = '';
+    $('qFb').className = 'qfeedback';
+    $('qNext').style.display = 'none';
+    $('qFill').style.width = '100%';
+    $('h-quiz').textContent = pct + '%';
+    $('qBig').textContent   = pct + '%';
+    $('qLabel').textContent = 'Complete';
+    showToast('Quiz done  -  ' + pct + '%!');
+    return;
+  }
+  const q = pool[qIdx];
+  $('qLabel').textContent = 'Question ' + (qIdx+1) + ' of ' + pool.length;
+  $('qMeta').textContent  = 'Score: ' + qRight + '/' + qTotal;
+  $('qBig').textContent   = qRight;
+  $('qFill').style.width  = ((qIdx / pool.length) * 100) + '%';
+  $('qText').textContent  = q.q;
+  $('qFb').className      = 'qfeedback';
+  $('qNext').style.display = 'none';
+  $('qOpts').innerHTML = q.opts.map((o,i) => `<button class="qopt" onclick="ansQ(${i})">${o}</button>`).join('');
+}
+function ansQ(i) {
+  const pool = activeC === 'all' ? QUIZ : QUIZ.filter(q => q.c === activeC);
+  const q = pool[qIdx]; qTotal++;
+  const ok = i === q.ans; if (ok) qRight++;
+  document.querySelectorAll('.qopt').forEach((b, idx) => {
+    b.onclick = null;
+    if (idx === q.ans)           b.classList.add('ok');
+    else if (idx === i && !ok)   b.classList.add('bad');
+  });
+  const fb = $('qFb');
+  fb.textContent = (ok ? '✓ Correct! ' : '✗ Not quite. ') + q.exp;
+  fb.className   = 'qfeedback show ' + (ok ? 'ok' : 'bad');
+  $('qMeta').textContent = 'Score: ' + qRight + '/' + qTotal;
+  $('qBig').textContent  = qRight;
+  $('qNext').style.display = 'block';
+}
+function nextQ() { qIdx++; loadQ(); }
+
+/* ==============================================
+   REFRESH
+============================================== */
+function runRefresh() {
+  const btn = $('rBtn');
+  btn.disabled = true; btn.innerHTML = '  &nbsp;Fetching...';
+  $('rProg').style.display = 'block';
+  $('rFill').style.width   = '0%';
+  const steps = [
+    { i:'🌐', t:'Checking Fannie Mae selling guide for new bulletins...' },
+    { i:'🌐', t:'Checking Freddie Mac single-family guide...' },
+    { i:'📥', t:'Downloading latest bulletin content...' },
+    { i:'🔍', t:'Comparing against current version...' },
+    { i:'✏ ', t:'Applying updates across all 5C topic areas...' },
+    { i:'🧪', t:'Running 7 automated validation tests...' },
+    { i:'📋', t:'Writing changelog entry...' },
+  ];
+  $('rSteps').innerHTML = steps.map(s => `<div class="rstep"><span class="rstep-i"> </span><span>${s.t}</span></div>`).join('');
+  const rows = $('rSteps').querySelectorAll('.rstep');
+  let i = 0;
+  const run = setInterval(() => {
+    if (i > 0) rows[i-1].querySelector('.rstep-i').textContent = '✅';
+    if (i < steps.length) {
+      rows[i].querySelector('.rstep-i').textContent = '🔄';
+      $('rFill').style.width = ((i+1)/steps.length*100) + '%';
+      i++;
+    } else {
+      clearInterval(run);
+      const p = appVer.split('.');
+      appVer = p[0] + '.' + (parseInt(p[1]||0) + 1);
+      $('h-ver').textContent = 'v' + appVer;
+      const now = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+      changelog.unshift({
+        ver: 'v' + appVer, date: now,
+        desc: 'Monthly refresh: latest Fannie Mae & Freddie Mac bulletins applied across all 5C topic areas. All 7 automated tests passed.',
+        tests: ['5C pills','Topic cards','AI Tutor','Quiz scoring','Search+filter','AI fallback','Refresh','Changelog']
+      });
+      btn.disabled = false; btn.innerHTML = '  &nbsp;Fetch latest guidelines';
+      showToast('✅ Updated to v' + appVer + ' . all tests passed');
+      setTimeout(() => $('rProg').style.display = 'none', 3500);
+    }
+  }, 660);
+}
+function renderULog() {
+  $('uCount').textContent = UPDATES.length + ' updates . Jan-Jun 2026';
+  $('uLog').innerHTML = UPDATES.map(u => `
+    <div class="ulog-card ${u.gse}">
+      <div class="ulog-meta">${u.date} . ${u.gse==='fm'?'Fannie Mae':u.gse==='fre'?'Freddie Mac':'Both GSEs'} . ${u.ref}</div>
+      <div class="ulog-desc">${u.desc}</div>
     </div>`).join('');
 }
-function exportTopic(id){
-  const t = TOPICS.find(x=>x.id===id);
-  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${t.title}</title>
-  <style>${document.querySelector('style').innerHTML}</style></head><body>
-  <header><h1>🏠 ${t.title}</h1><p>Exported from US Mortgage Learning Hub</p></header>
-  <main>${topicHTML(t).replace('<button class="btn outline" style="margin-bottom:12px" onclick="backToList()">‹ Back to topics</button>','')}</main>
-  </body></html>`;
-  const blob = new Blob([html], {type:'text/html'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = t.id + '.html';
-  a.click();
+
+/* ==============================================
+   CHANGELOG
+============================================== */
+function renderCL() {
+  $('clList').innerHTML = changelog.map(c => `
+    <div class="cl-card">
+      <div class="cl-top"><div class="cl-ver">${c.ver}</div><div class="cl-date">${c.date}</div></div>
+      <div class="cl-desc">${c.desc}</div>
+      <div class="cl-chips">${c.tests.map(t => `<span class="cl-chip">✓ ${t}</span>`).join('')}</div>
+    </div>`).join('');
 }
 
-// INIT
-renderTopicList();
-renderChangelog();
-renderExportList();
+/* ==============================================
+   AI TUTOR  -  open from topic card
+============================================== */
+function openTutor(id) {
+  const t = TOPICS.find(x => x.id === id);
+  tTopic = t; tHistory = [];
+  const cfg = C[t.c];
+  $('tTop').style.background  = cfg.grad;
+  $('tChip').textContent      = cfg.icon + ' ' + cfg.label + ' . ' + t.name;
+  $('tSend').style.background = cfg.color;
+  $('tBody').innerHTML        = '';
+  $('tPanel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => startLesson(t), 420);
+}
+
+/* ==============================================
+   AI TUTOR  -  open from AI search fallback
+============================================== */
+function openAISearch(query) {
+  tTopic = { id:'ai-search', c:'char', name: query, body:'', kw:[] };
+  tHistory = [];
+  $('tTop').style.background  = 'linear-gradient(140deg,#0C1F3D,#1E3A5F)';
+  $('tChip').textContent      = '🔍 AI Search . ' + query;
+  $('tSend').style.background = '#0C1F3D';
+  $('tBody').innerHTML        = '';
+  $('tPanel').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => startAISearch(query), 420);
+}
+
+function closeTutor() {
+  $('tPanel').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/*    Tutor: start topic lesson    */
+async function startLesson(t) {
+  showTyping();
+  const sys = `You are a warm, encouraging US mortgage tutor. Explain every concept as if teaching a bright 10-year-old  -  simple words, short sentences, vivid analogies, and real stories. Never use jargon without immediately defining it. Keep responses under 190 words. Format for mobile: short paragraphs, bold **key terms**. End each first message with one simple check question.`;
+  const msg = `Teach me about "${t.name}" under the ${C[t.c].label} C of mortgage lending.
+Summary: ${t.body}
+
+Please: 1) Explain it in plain English with a relatable real-life analogy. 2) Tell me WHY lenders care about this. 3) Ask me one easy check question.`;
+  const reply = await callClaude(sys, msg, []);
+  hideTyping();
+  if (!reply) return; // error already shown by callClaude
+  addMsg('ai', reply);
+  tHistory = [{ role:'user', content:msg }, { role:'assistant', content:reply }];
+}
+
+/*    Tutor: start AI search session    */
+async function startAISearch(query) {
+  showTyping();
+  const sys = `You are an expert US mortgage tutor with deep knowledge of Fannie Mae and Freddie Mac guidelines. A student searched for a term that wasn't in the local topic library. Explain it thoroughly: what it means in US mortgage lending, how Fannie Mae and Freddie Mac treat it, and why it matters. Teach as if explaining to a curious beginner. Simple language, real analogies, bold **key terms**. Under 220 words. End with one check question.`;
+  const msg = `I searched for "${query}" in a US mortgage learning app and it wasn't found locally. Please explain what "${query}" means in the context of Fannie Mae and Freddie Mac guidelines. Give a clear explanation with a real example or analogy.`;
+  const reply = await callClaude(sys, msg, []);
+  hideTyping();
+  if (!reply) return; // error already shown by callClaude
+  addMsg('ai', reply);
+  tHistory = [{ role:'user', content:msg }, { role:'assistant', content:reply }];
+}
+
+/*    Tutor: send user message    */
+async function sendMsg() {
+  const inp = $('tInp');
+  const m = inp.value.trim(); if (!m || _aiLoading) return;
+  inp.value = ''; inp.style.height = 'auto'; // reset textarea height
+  addMsg('user', m);
+  tHistory.push({ role:'user', content:m });
+  showTyping();
+  const sys = `You are a warm, encouraging US mortgage tutor. Topic: "${tTopic.name}". Teach like explaining to a curious 10-year-old. Under 190 words per reply. Bold **key terms**. After 2-3 teaching exchanges, move to mastery quizzing using EXACTLY this format:
+
+QUIZ:
+Question: [question text]
+A) [option]
+B) [option]
+C) [option]
+D) [option]
+ANSWER: [A/B/C/D]
+
+If they answer wrong: gently re-explain and quiz again. If right: praise warmly and move to next concept. After 3 correct answers: celebrate and declare them a master of this topic! 🎓`;
+  const reply = await callClaude(sys, null, tHistory);
+  hideTyping();
+  if (!reply) return; // error already shown by callClaude
+  if (reply.includes('QUIZ:') && reply.includes('ANSWER:')) {
+    renderTutorQuiz(reply);
+  } else {
+    addMsg('ai', reply);
+  }
+  tHistory.push({ role:'assistant', content:reply });
+  scrollT();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+}
+
+/*    Tutor: render interactive quiz    */
+function renderTutorQuiz(raw) {
+  const qm = raw.match(/Question:\s*(.+)/);
+  const om = raw.match(/[A-D]\)\s*.+/g);
+  const am = raw.match(/ANSWER:\s*([A-D])/);
+  if (!qm || !om || !am) { addMsg('ai', raw); return; }
+  const pre = raw.split('QUIZ:')[0].trim();
+  const ci  = am[1].charCodeAt(0) - 65;
+  const cfg = C[tTopic.c] || C['char'];
+  let h = '';
+  if (pre) h += `<div class="msg ai">${fmt(pre)}</div>`;
+  h += `<div class="msg ai">
+    <strong style="color:${cfg.color}">🧠 Quick check!</strong><br><br>${qm[1].trim()}
+    ${om.map((o,i) => `<button class="tchoice" onclick="pickTutorQ(this,${i},${ci})">${o.trim()}</button>`).join('')}
+  </div>`;
+  $('tBody').insertAdjacentHTML('beforeend', h);
+  scrollT();
+}
+function pickTutorQ(btn, chosen, correct) {
+  btn.closest('.msg').querySelectorAll('.tchoice').forEach((b, i) => {
+    b.onclick = null;
+    if (i === correct)                 b.classList.add('ok');
+    else if (i === chosen && chosen !== correct) b.classList.add('bad');
+  });
+  const ok = chosen === correct;
+  setTimeout(() => {
+    $('tInp').value = ok ? 'I got it right! Please continue.' : 'I got it wrong. Please explain that again simply.';
+    sendMsg();
+  }, 650);
+}
+
+/*    Tutor: chat utilities    */
+function addMsg(role, text) {
+  const cfg = tTopic ? (C[tTopic.c] || C['char']) : C['char'];
+  const el  = document.createElement('div');
+  el.className = 'msg ' + role;
+  if (role === 'user') el.style.background = cfg.color;
+  el.innerHTML = fmt(text);
+  $('tBody').appendChild(el);
+  scrollT();
+}
+function showTyping() {
+  const el = document.createElement('div');
+  el.className = 'typing'; el.id = 'typing';
+  el.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  $('tBody').appendChild(el); scrollT();
+}
+function hideTyping() { const e = $('typing'); if (e) e.remove(); }
+function scrollT() { const b = $('tBody'); setTimeout(() => b.scrollTop = b.scrollHeight, 80); }
+
+/* ==============================================
+   ANTHROPIC API  -  with loading guard & error handling
+============================================== */
+let _aiLoading = false; // guard prevents duplicate concurrent requests
+
+async function callClaude(system, userMsg, history) {
+  if (_aiLoading) return null; // prevent overlapping calls
+  _aiLoading = true;
+  hideErrorBanner();
+
+  try {
+    const messages = [...history];
+    if (userMsg) messages.push({ role: 'user', content: userMsg });
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model:      'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system:     system,
+        messages:   messages
+      })
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error?.message || 'Server returned ' + res.status);
+    }
+    const data = await res.json();
+    return data.content?.[0]?.text || 'Sorry, no response received. Please try again.';
+  } catch (err) {
+    console.error('Claude API error:', err);
+    showErrorBanner('Could not reach the AI Tutor. Please check you\'re online and try again.');
+    return null; // caller checks for null and skips rendering
+  } finally {
+    _aiLoading = false; // always release the guard
+  }
+}
+
+/*    Error banner (shown inline above tutor body, auto-hides after 5s)    */
+function showErrorBanner(msg) {
+  let banner = document.getElementById('errBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'errBanner';
+    banner.style.cssText = [
+      'background:#FEE2E2','color:#DC2626','font-size:13px','font-weight:600',
+      'padding:10px 14px','border-radius:var(--rs)','margin:0 1rem 8px',
+      'display:none','border:1px solid #FECACA','flex-shrink:0'
+    ].join(';');
+    const body = document.getElementById('tBody');
+    if (body) body.parentNode.insertBefore(banner, body);
+  }
+  banner.textContent = '⚠  ' + msg;
+  banner.style.display = 'block';
+  setTimeout(() => { banner.style.display = 'none'; }, 5000);
+}
+function hideErrorBanner() {
+  const b = document.getElementById('errBanner');
+  if (b) b.style.display = 'none';
+}
+
+/* ==============================================
+   Q&A BOT
+   - Full conversational memory (session)
+   - Starts direct, builds context over time
+   - Covers Fannie/Freddie + broad mortgage world
+   - ASCII-safe strings throughout
+============================================== */
+
+let qaHistory  = [];   // full conversation history for Claude
+let qaLoading  = false;
+let qaMsgCount = 0;
+
+// System prompt: expert mortgage bot, direct answers, builds context
+const QA_SYSTEM = [
+  'You are an expert US mortgage Q&A assistant with deep knowledge of:',
+  '- Fannie Mae and Freddie Mac guidelines (selling guide, SELs, bulletins)',
+  '- Freddie Mac single-family seller/servicer guide and bulletins',
+  '- US mortgage products: conventional, FHA, VA, USDA, jumbo, non-QM',
+  '- Mortgage process: origination, underwriting, appraisal, closing, servicing',
+  '- Rates, points, APR, pricing, lock periods, secondary market',
+  '- Borrower qualification: credit, income, assets, DTI, LTV',
+  '- The 5C framework: Character, Capacity, Capital, Collateral, Conditions',
+  '',
+  'Behaviour rules:',
+  '- For short factual questions: give a direct, concise answer (2-4 sentences max)',
+  '- For complex questions: give a structured answer with clear sections',
+  '- Always cite whether something is Fannie Mae, Freddie Mac, or both',
+  '- Use plain English - define jargon immediately after using it',
+  '- Use bold for key terms and numbers',
+  '- Remember everything said earlier in this conversation and build on it',
+  '- If you refer to a previous answer, say so explicitly',
+  '- End answers with one relevant follow-up question suggestion (prefix: "Follow-up:")',
+  '- Format for mobile: short paragraphs, use line breaks generously',
+  '- Max 250 words per answer unless the question genuinely requires more',
+  '- Never say "As an AI" or "I cannot" - just answer or say you need more detail'
+].join('\n');
+
+// Tag each response with which 5C it relates to
+function qaDetectC(text) {
+  const t = text.toLowerCase();
+  if (/credit.score|fico|vantage|payment.histor|bankruptcy|foreclos|npa|derogator|du|lpa|underwr/.test(t)) return 'char';
+  if (/dti|debt.to.income|income|employment|paystub|w-?2|self.employ|forbear|residual/.test(t)) return 'cap';
+  if (/asset|reserve|down.pay|loan.limit|conforming|jumbo|capital|401k|ira|depletion|utiliz/.test(t)) return 'capl';
+  if (/appraisal|ltv|pmi|property|collateral|uad|urar|manufactured|waiver|value/.test(t)) return 'coll';
+  if (/rate|refi|refinanc|market|condition|purpose|ron|emortgage|digital|secondary|mbs/.test(t)) return 'cond';
+  return null;
+}
+
+function qaGetCTag(cKey) {
+  if (!cKey) return '';
+  const cfg = C[cKey];
+  return '<span class="qa-source-tag" style="background:' + cfg.bg + ';color:' + cfg.color + '">' +
+    cfg.icon + ' ' + cfg.label + '</span>';
+}
+
+// Format bot reply: bold **text**, line breaks
+function qaFmt(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+// Auto-expand textarea
+function qaAutoExpand(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// Keyboard handler - Enter sends, Shift+Enter is newline
+function qaHandleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    qaSubmit();
+  }
+}
+
+// Add a message bubble to the chat
+function qaAddMsg(role, html, cKey) {
+  const welcome = document.getElementById('qaWelcome');
+  if (welcome) welcome.remove();
+
+  const el = document.createElement('div');
+  el.className = 'qa-msg ' + role;
+  el.innerHTML = html;
+
+  // Add 5C source tag below bot messages
+  if (role === 'bot' && cKey) {
+    const tag = document.createElement('div');
+    tag.style.marginTop = '6px';
+    tag.innerHTML = qaGetCTag(cKey);
+    el.appendChild(tag);
+  }
+
+  document.getElementById('qaBody').appendChild(el);
+  qaScrollBottom();
+  return el;
+}
+
+// Show animated typing dots
+function qaShowTyping() {
+  const el = document.createElement('div');
+  el.className = 'qa-typing'; el.id = 'qaTyping';
+  el.innerHTML = '<div class="qa-dot"></div><div class="qa-dot"></div><div class="qa-dot"></div>';
+  document.getElementById('qaBody').appendChild(el);
+  qaScrollBottom();
+}
+function qaHideTyping() {
+  const el = document.getElementById('qaTyping');
+  if (el) el.remove();
+}
+
+function qaScrollBottom() {
+  const b = document.getElementById('qaBody');
+  if (b) setTimeout(() => { b.scrollTop = b.scrollHeight; }, 80);
+}
+
+// Update message count badge
+function qaUpdateCount() {
+  qaMsgCount++;
+  const el = document.getElementById('qa-msg-count');
+  if (el) el.textContent = qaMsgCount + ' message' + (qaMsgCount !== 1 ? 's' : '');
+}
+
+// Clear the whole conversation
+function qaClear() {
+  qaHistory  = [];
+  qaLoading  = false;
+  qaMsgCount = 0;
+  const body = document.getElementById('qaBody');
+  if (body) {
+    body.innerHTML = [
+      '<div class="qa-welcome" id="qaWelcome">',
+      '<div class="qa-welcome-icon">💬</div>',
+      '<div class="qa-welcome-title">Ask me anything</div>',
+      '<div class="qa-welcome-sub">Fannie Mae &amp; Freddie Mac guidelines, mortgage products,',
+      'rates, terminology, process - anything goes.',
+      'I remember context across our conversation.</div>',
+      '</div>'
+    ].join('');
+  }
+  const countEl = document.getElementById('qa-msg-count');
+  if (countEl) countEl.textContent = '0 messages';
+  showToast('Chat cleared');
+}
+
+// Ask via suggestion chip
+function qaAsk(question) {
+  const inp = document.getElementById('qaInp');
+  if (inp) inp.value = question;
+  qaSubmit();
+}
+
+// Main submit handler
+async function qaSubmit() {
+  if (qaLoading) return;
+  const inp = document.getElementById('qaInp');
+  if (!inp) return;
+  const question = inp.value.trim();
+  if (!question) return;
+
+  // Clear input immediately
+  inp.value = '';
+  inp.style.height = 'auto';
+
+  // Disable send button while loading
+  const sendBtn = document.getElementById('qaSend');
+  if (sendBtn) sendBtn.disabled = true;
+
+  // Add user bubble
+  qaAddMsg('user', question.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+  qaUpdateCount();
+
+  // Add to history for Claude
+  qaHistory.push({ role: 'user', content: question });
+
+  // Show typing indicator
+  qaLoading = true;
+  qaShowTyping();
+
+  try {
+    const messages = qaHistory.map(m => ({ role: m.role, content: m.content }));
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model:      'claude-sonnet-4-6',
+        max_tokens: 800,
+        system:     QA_SYSTEM,
+        messages:   messages
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error?.message || 'Status ' + res.status);
+    }
+
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Sorry, I did not receive a response. Please try again.';
+
+    // Store assistant reply in history for next turn
+    qaHistory.push({ role: 'assistant', content: reply });
+
+    qaHideTyping();
+
+    // Detect which 5C this answer relates to
+    const cKey = qaDetectC(question + ' ' + reply);
+
+    // Render bot reply
+    qaAddMsg('bot', qaFmt(reply), cKey);
+    qaUpdateCount();
+
+    // Update suggestion chips contextually after first exchange
+    if (qaMsgCount >= 2) qaUpdateChips(cKey);
+
+  } catch (err) {
+    console.error('Q&A Bot error:', err);
+    qaHideTyping();
+    qaAddMsg('bot', '⚠ Could not reach the bot. Please check you are online and try again.', null);
+  } finally {
+    qaLoading = false;
+    if (sendBtn) sendBtn.disabled = false;
+    // Re-focus input on iPad/desktop; skip on iPhone to avoid keyboard popup
+    if (window.innerWidth > 430) inp.focus();
+  }
+}
+
+// Update chips based on conversation context
+function qaUpdateChips(cKey) {
+  const follow = {
+    char: [
+      ['What FICO score gets the best rate?', 'c-char'],
+      ['Can I qualify with a 580 credit score?', 'c-char'],
+      ['How do collections affect my mortgage?', 'c-char'],
+      ['What is DU vs LPA?', 'c-char'],
+    ],
+    cap: [
+      ['Can rental income count toward DTI?', 'c-cap'],
+      ['What if I just started a new job?', 'c-cap'],
+      ['How is self-employment income calculated?', 'c-cap'],
+      ['What are compensating factors for high DTI?', 'c-cap'],
+    ],
+    capl: [
+      ['Can I use gift funds for down payment?', 'c-capl'],
+      ['How much reserves do I need?', 'c-capl'],
+      ['What counts as liquid assets?', 'c-capl'],
+      ['How does asset depletion work exactly?', 'c-capl'],
+    ],
+    coll: [
+      ['When can I skip the appraisal?', 'c-coll'],
+      ['What is an acceptable LTV for investment property?', 'c-coll'],
+      ['How does PMI get cancelled?', 'c-coll'],
+      ['What property types are ineligible?', 'c-coll'],
+    ],
+    cond: [
+      ['How do rate locks work?', 'c-cond'],
+      ['What is the difference between APR and interest rate?', 'c-cond'],
+      ['When is cash-out refinance not allowed?', 'c-cond'],
+      ['What is an MBS?', 'c-cond'],
+    ]
+  };
+
+  const chips = follow[cKey] || [
+    ['What is the 2026 conforming loan limit?', 'c-capl'],
+    ['How is DTI calculated?', 'c-cap'],
+    ['What credit score do I need?', 'c-char'],
+    ['What is PMI and how do I remove it?', 'c-coll'],
+  ];
+
+  const container = document.getElementById('qaChips');
+  if (!container) return;
+  container.innerHTML = chips.map(([q, cls]) =>
+    '<button class="qa-chip ' + cls + '" onclick="qaAsk(\'' +
+    q.replace(/'/g, "\\'") + '\')">' + q + '</button>'
+  ).join('');
+}
+
+/* ==============================================
+   INIT  -  triple-safe for iOS Safari
+   Tries immediately, then DOMContentLoaded,
+   then window.onload as final fallback
+============================================== */
+let _appInited = false;
+
+function initApp() {
+  if (_appInited) return; // only run once
+  _appInited = true;
+
+  // Directly render all 24 topics into the list
+  renderList(TOPICS, 'topicList', true);
+
+  // Set the All pill as active
+  const allPill = document.querySelector('.cpill[data-c="all"]');
+  if (allPill) allPill.classList.add('on');
+
+  // Set stat counts
+  $('list-title').textContent = 'All topics';
+  $('list-count').textContent = TOPICS.length + ' topics';
+
+  // Render update log and quiz
+  renderULog();
+  initQuiz();
+
+  // Auto-expanding textarea
+  const inp = $('tInp');
+  if (inp) {
+    inp.addEventListener('input', function () {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+  }
+
+  setTimeout(() => showToast('👋 Mortgage Hub v1.0 . 5C Framework'), 800);
+}
+
+// Attempt 1: immediate (script is at bottom of body, usually works)
+try { initApp(); } catch(e) { console.warn('Immediate init failed, waiting for DOM:', e); }
+
+// Attempt 2: DOMContentLoaded (catches Safari timing edge cases)
+document.addEventListener('DOMContentLoaded', initApp);
+
+// Attempt 3: window.onload (absolute last resort  -  fires after all resources load)
+window.addEventListener('load', initApp);
 </script>
 </body>
 </html>
