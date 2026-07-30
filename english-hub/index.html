@@ -15,66 +15,83 @@
 <style>
   :root{
     --font-scale:1;
-    --bg:#fdfaf3; --card:#ffffff; --text:#2b2b2b; --primary:#2563eb; --primary-dark:#1d4ed8;
-    --good:#15803d; --bad:#b91c1c; --border:#d8d2c2;
+    --bg:#fff8e9; --card:#ffffff; --text:#2c2440;
+    --primary:#e88b1f; --primary-dark:#c76e0d;
+    --leaf:#2f9e5c; --leaf-dark:#1f7a44;
+    --sky:#2f8fc9; --sky-dark:#1f6f9e;
+    --plum:#6b4b8a;
+    --good:#1f7a44; --bad:#c8483a; --border:#f0d9a8;
+    --card-shadow: 0 4px 14px rgba(180,110,20,0.12);
   }
   *{box-sizing:border-box;}
   body{
-    margin:0; font-family:Georgia, 'Times New Roman', serif;
-    background:var(--bg); color:var(--text);
+    margin:0; font-family:'Trebuchet MS', Verdana, sans-serif;
+    background: linear-gradient(180deg, #fff8e9 0%, #fdf1d8 100%);
+    color:var(--text);
     font-size:calc(18px * var(--font-scale));
-    line-height:1.5;
+    line-height:1.55;
   }
   .wrap{max-width:700px; margin:0 auto; padding:20px 16px 60px;}
-  h1{font-size:calc(1.6em); text-align:center; color:var(--primary-dark); margin-bottom:4px;}
-  .subtitle{text-align:center; color:#666; margin-top:0; margin-bottom:20px; font-size:0.9em;}
+  h1{
+    font-size:calc(1.8em); text-align:center; margin-bottom:2px;
+    background: linear-gradient(90deg, var(--primary), var(--plum));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-weight:800; letter-spacing:0.3px;
+  }
+  .subtitle{text-align:center; color:#7a6a55; margin-top:0; margin-bottom:20px; font-size:0.95em;}
   .card{
-    background:var(--card); border:1px solid var(--border); border-radius:14px;
-    padding:22px; margin-bottom:18px; box-shadow:0 2px 6px rgba(0,0,0,0.05);
+    background:var(--card); border:2px solid var(--border); border-radius:18px;
+    padding:22px; margin-bottom:18px; box-shadow:var(--card-shadow);
   }
   .btn{
-    display:inline-block; background:var(--primary); color:#fff; border:none;
-    padding:14px 22px; border-radius:10px; font-size:calc(1em); cursor:pointer;
-    margin:6px 6px 6px 0; font-family:inherit; min-width:120px;
+    display:inline-block; background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color:#fff; border:none;
+    padding:14px 22px; border-radius:12px; font-size:calc(1em); cursor:pointer;
+    margin:6px 6px 6px 0; font-family:inherit; min-width:120px; font-weight:700;
+    box-shadow:0 3px 0 var(--primary-dark);
   }
-  .btn:hover{background:var(--primary-dark);}
-  .btn.secondary{background:#6b7280;}
-  .btn.big{width:100%; font-size:1.1em; padding:16px;}
-  .btn.correct{background:var(--good);}
-  .btn.wrong{background:var(--bad);}
+  .btn:active{transform:translateY(2px); box-shadow:0 1px 0 var(--primary-dark);}
+  .btn:hover{filter:brightness(1.05);}
+  .btn.secondary{background:linear-gradient(135deg, #8a95a5, #6b7686); box-shadow:0 3px 0 #5a6474;}
+  .btn.big{width:100%; font-size:1.15em; padding:16px;}
+  .btn.correct{background:linear-gradient(135deg, var(--leaf), var(--leaf-dark)); box-shadow:0 3px 0 var(--leaf-dark);}
+  .btn.wrong{background:linear-gradient(135deg, var(--bad), #a13a2e); box-shadow:0 3px 0 #a13a2e;}
   .choice-btn{
-    display:block; width:100%; text-align:left; background:#f3f1e9; color:var(--text);
-    border:2px solid var(--border); padding:14px; border-radius:10px; margin:8px 0;
-    font-size:1em; cursor:pointer; font-family:inherit;
+    display:block; width:100%; text-align:left; background:#fff7ec; color:var(--text);
+    border:2px solid var(--border); padding:14px; border-radius:12px; margin:8px 0;
+    font-size:1em; cursor:pointer; font-family:inherit; font-weight:600;
   }
-  .choice-btn:hover{border-color:var(--primary);}
-  .choice-btn.selected{border-color:var(--primary); background:#e0e9ff;}
-  .choice-btn.correct{background:#dcfce7; border-color:var(--good);}
-  .choice-btn.wrong{background:#fee2e2; border-color:var(--bad);}
+  .choice-btn:hover{border-color:var(--sky); background:#eef8ff;}
+  .choice-btn.selected{border-color:var(--sky); background:#eef8ff;}
+  .choice-btn.correct{background:#e3f7ea; border-color:var(--good);}
+  .choice-btn.wrong{background:#fce9e6; border-color:var(--bad);}
   input[type=text], textarea, select{
     width:100%; padding:12px; font-size:1em; border:2px solid var(--border);
-    border-radius:10px; font-family:inherit; margin:6px 0 14px;
+    border-radius:12px; font-family:inherit; margin:6px 0 14px; background:#fffdf7;
   }
-  label{font-weight:bold; display:block; margin-top:14px;}
-  .progress{height:10px; background:#e5e0d0; border-radius:6px; overflow:hidden; margin:10px 0;}
-  .progress-fill{height:100%; background:var(--primary); transition:width .3s;}
-  .badge{display:inline-block; background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:8px; font-size:0.85em; margin-right:6px;}
-  .feedback{padding:14px; border-radius:10px; margin-top:12px;}
-  .feedback.ok{background:#dcfce7; color:#14532d;}
-  .feedback.no{background:#fee2e2; color:#7f1d1d;}
+  input[type=text]:focus, textarea:focus, select:focus{outline:3px solid var(--sky); border-color:var(--sky);}
+  label{font-weight:700; display:block; margin-top:14px; color:var(--plum);}
+  .progress{height:12px; background:#f3e4bd; border-radius:8px; overflow:hidden; margin:10px 0;}
+  .progress-fill{height:100%; background: linear-gradient(90deg, var(--leaf), var(--sky)); transition:width .3s;}
+  .badge{display:inline-block; background:linear-gradient(135deg,#ffe3ad,#ffd27a); color:#8a5a10; padding:5px 12px; border-radius:10px; font-size:0.85em; margin-right:6px; font-weight:700;}
+  .feedback{padding:14px; border-radius:12px; margin-top:12px; font-weight:600;}
+  .feedback.ok{background:#e3f7ea; color:#1f5c34; border:2px solid var(--good);}
+  .feedback.no{background:#fdece9; color:#8a3226; border:2px solid #e18a7a;}
   .controls-row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-  .speak-btn{background:#f59e0b;}
-  .speak-btn:hover{background:#d97706;}
+  .speak-btn{background:linear-gradient(135deg, var(--sky), var(--sky-dark)); box-shadow:0 3px 0 var(--sky-dark);}
+  .speak-btn:hover{filter:brightness(1.05);}
   .top-controls{display:flex; justify-content:flex-end; gap:8px; margin-bottom:10px;}
   .icon-btn{
-    background:#eee; border:1px solid var(--border); border-radius:8px; padding:8px 12px;
-    cursor:pointer; font-size:0.9em;
+    background:#fff2d6; border:2px solid var(--border); border-radius:10px; padding:8px 12px;
+    cursor:pointer; font-size:0.9em; font-weight:700; color:var(--plum);
   }
   .hidden{display:none !important;}
-  .score-line{font-size:1.1em; font-weight:bold; margin:10px 0;}
-  footer{text-align:center; color:#999; font-size:0.8em; margin-top:30px;}
+  .score-line{font-size:1.2em; font-weight:800; margin:10px 0; color:var(--leaf-dark);}
+  footer{text-align:center; color:#a1876a; font-size:0.85em; margin-top:30px;}
   .high-contrast{--bg:#000; --card:#111; --text:#fff; --border:#555; --primary:#3b82f6;}
   .high-contrast .choice-btn{background:#1f1f1f; color:#fff;}
+  h2{color:var(--plum);}
+  h3{color:var(--primary-dark);}
 </style>
 </head>
 <body>
@@ -129,17 +146,17 @@
     <div class="progress"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
     <p id="progressText" style="font-size:0.9em; color:#666;"></p>
 
-    <div id="todayPractice" style="background:#eef4ff; border:2px solid var(--primary); border-radius:12px; padding:16px; margin:16px 0;">
-      <p style="margin:0 0 8px; font-weight:bold; color:var(--primary-dark);">📅 Today's New Topic For You</p>
-      <p id="todayTopicName" style="font-size:1.1em; margin:0 0 10px;"></p>
+    <div id="todayPractice" style="background:linear-gradient(135deg,#e3f7ea,#eaf6ff); border:2px solid var(--leaf); border-radius:16px; padding:16px; margin:16px 0;">
+      <p style="margin:0 0 8px; font-weight:800; color:var(--leaf-dark);">🌻 Today's New Topic For You</p>
+      <p id="todayTopicName" style="font-size:1.1em; margin:0 0 10px; font-weight:600;"></p>
       <button class="btn big" id="startTodayBtn">Start Today's Practice →</button>
     </div>
 
     <h3>All topics (practice anytime)</h3>
     <div id="topicList"></div>
 
-    <div class="card" style="margin-top:18px; background:#fff8ec;">
-      <h3 style="margin-top:0;">💬 Practice Any Topic or Situation</h3>
+    <div class="card" style="margin-top:18px; background:linear-gradient(135deg,#fff2d6,#ffe9c2); border-color:var(--primary);">
+      <h3 style="margin-top:0; color:var(--primary-dark);">💬 Practice Any Topic or Situation</h3>
       <p style="font-size:0.9em; color:#666; margin-top:0;">Type a word about what you want to talk about — like "bank", "wedding", or "video call".</p>
       <input type="text" id="scenarioSearch" placeholder="e.g. pharmacy, neighbours, restaurant...">
       <button class="btn big" id="scenarioSearchBtn">Find Practice</button>
@@ -670,11 +687,12 @@ function showDashboard(){
 
   const list = document.getElementById('topicList');
   list.innerHTML = '';
+  const levelEmoji = {beginner:'🌱', intermediate:'🌿', advanced:'🌳'};
   topics.forEach(t=>{
     const done = state.completedTopics[t.id];
     const btn = document.createElement('button');
     btn.className = 'btn big' + (done ? ' correct' : '');
-    btn.textContent = (done ? '✓ ' : '') + t.title + (done ? ` (Score: ${done.score}/${done.total})` : '');
+    btn.textContent = (done ? '✓ ' : levelEmoji[state.level] + ' ') + t.title + (done ? ` (Score: ${done.score}/${done.total})` : '');
     btn.onclick = ()=> startLesson(t);
     list.appendChild(btn);
   });
