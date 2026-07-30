@@ -128,8 +128,23 @@
     <p id="dashSummary"></p>
     <div class="progress"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
     <p id="progressText" style="font-size:0.9em; color:#666;"></p>
-    <h3>Choose a topic</h3>
+
+    <div id="todayPractice" style="background:#eef4ff; border:2px solid var(--primary); border-radius:12px; padding:16px; margin:16px 0;">
+      <p style="margin:0 0 8px; font-weight:bold; color:var(--primary-dark);">📅 Today's New Topic For You</p>
+      <p id="todayTopicName" style="font-size:1.1em; margin:0 0 10px;"></p>
+      <button class="btn big" id="startTodayBtn">Start Today's Practice →</button>
+    </div>
+
+    <h3>All topics (practice anytime)</h3>
     <div id="topicList"></div>
+
+    <div class="card" style="margin-top:18px; background:#fff8ec;">
+      <h3 style="margin-top:0;">💬 Practice Any Topic or Situation</h3>
+      <p style="font-size:0.9em; color:#666; margin-top:0;">Type a word about what you want to talk about — like "bank", "wedding", or "video call".</p>
+      <input type="text" id="scenarioSearch" placeholder="e.g. pharmacy, neighbours, restaurant...">
+      <button class="btn big" id="scenarioSearchBtn">Find Practice</button>
+      <div id="scenarioResults"></div>
+    </div>
     <button class="btn secondary" id="resetProgressBtn">Reset my progress</button>
   </div>
 
@@ -184,6 +199,90 @@ const CURRICULUM = {
         prompt: "Type your reply describing your family in 1-2 sentences.",
         keywords: ["son","daughter","children","husband","wife","grandchildren"]
       }
+    },
+    {
+      id: "numbers-time",
+      title: "Numbers & Telling Time",
+      teach: [
+        "It is nine o'clock.",
+        "The bus comes at half past ten.",
+        "I wake up at six in the morning.",
+        "My appointment is at three thirty.",
+        "There are seven days in a week."
+      ],
+      questions: [
+        {type:"mcq", q:"Which sentence tells the time correctly?", options:["It are nine o'clock.","It is nine o'clock.","It be nine o'clock.","It nine o'clock."], answer:1, explain:"Use 'It is' before a time, e.g. 'It is nine o'clock.'"},
+        {type:"fill", q:"I wake up ___ six in the morning.", answer:"at", explain:"We use 'at' with a specific time: at six o'clock."},
+        {type:"tf", q:"'Half past ten' means 10:30.", answer:true, explain:"Correct — half past means 30 minutes after the hour."}
+      ],
+      roleplay: {
+        scenario: "Someone asks you: 'What time does the market open?'",
+        prompt: "Type a reply telling them a time.",
+        keywords: ["o'clock","morning","evening","half","past","time","am","pm"]
+      }
+    },
+    {
+      id: "weather-daily",
+      title: "Weather & Daily Routine",
+      teach: [
+        "It is sunny today.",
+        "I go for a walk every morning.",
+        "It usually rains in July.",
+        "I take my medicine after breakfast.",
+        "In the evening, I watch the news."
+      ],
+      questions: [
+        {type:"mcq", q:"Choose the correct sentence about routine.", options:["I goes for a walk.","I go for a walk.","I going for a walk.","I gone for a walk."], answer:1, explain:"With 'I', use the base form: 'I go for a walk.'"},
+        {type:"fill", q:"I take my medicine ___ breakfast.", answer:"after", explain:"'After' shows something happens next, following breakfast."},
+        {type:"tf", q:"'It is sunny' describes the weather.", answer:true, explain:"Yes, sunny, rainy, cloudy all describe weather."}
+      ],
+      roleplay: {
+        scenario: "A friend calls and asks: 'How is the weather there today?'",
+        prompt: "Type your reply describing today's weather.",
+        keywords: ["sunny","rain","cloudy","hot","cold","weather","walk"]
+      }
+    },
+    {
+      id: "health-body",
+      title: "Health & How You Feel",
+      teach: [
+        "I have a slight headache today.",
+        "My knee is paining a little.",
+        "I feel much better now, thank you.",
+        "I need to see the doctor tomorrow.",
+        "Please drink some warm water."
+      ],
+      questions: [
+        {type:"mcq", q:"Which sentence describes feeling unwell?", options:["I have a headache.","I have a holiday.","I have a happy.","I have a house."], answer:0, explain:"'I have a headache' correctly describes an ache/pain."},
+        {type:"fill", q:"I need to ___ the doctor tomorrow.", answer:"see", explain:"'See the doctor' is the common phrase for a medical visit."},
+        {type:"tf", q:"'I feel much better' means your health has improved.", answer:true, explain:"Correct, 'better' shows improvement."}
+      ],
+      roleplay: {
+        scenario: "The pharmacist asks: 'How are you feeling today?'",
+        prompt: "Type your reply describing how you feel.",
+        keywords: ["better","pain","headache","fine","tired","doctor","medicine"]
+      }
+    },
+    {
+      id: "directions",
+      title: "Asking for Directions",
+      teach: [
+        "Excuse me, where is the bus stop?",
+        "Go straight and then turn left.",
+        "The temple is near the market.",
+        "Is it far from here?",
+        "Thank you for your help."
+      ],
+      questions: [
+        {type:"mcq", q:"Which phrase politely starts a question to a stranger?", options:["Hey you!","Excuse me,","Listen here,","You there,"], answer:1, explain:"'Excuse me' is the polite way to get someone's attention."},
+        {type:"fill", q:"Go straight and then turn ___.", answer:"left", explain:"'Left' or 'right' are common direction words after 'turn'."},
+        {type:"tf", q:"'Is it far from here?' is a question about distance.", answer:true, explain:"Correct, it asks how far away something is."}
+      ],
+      roleplay: {
+        scenario: "You stop someone on the street and need to find the post office.",
+        prompt: "Type what you would ask them.",
+        keywords: ["excuse me","where","post office","far","near","directions"]
+      }
     }
   ],
   intermediate: [
@@ -206,6 +305,69 @@ const CURRICULUM = {
         scenario: "You are at a shop. The shopkeeper says: 'This shirt is 800 rupees.'",
         prompt: "Type how you would respond — maybe ask for a discount or a different size.",
         keywords: ["discount","cheaper","size","expensive","take","buy"]
+      }
+    },
+    {
+      id: "phone-calls",
+      title: "Making a Phone Call",
+      teach: [
+        "Hello, may I speak to Mrs. Sharma, please?",
+        "Sorry, could you repeat that?",
+        "I will call you back in ten minutes.",
+        "The line is not clear, can you hear me?",
+        "Thank you for calling, goodbye."
+      ],
+      questions: [
+        {type:"mcq", q:"Which is a polite way to ask someone to repeat?", options:["Say again!","Could you repeat that?","What?","Speak properly."], answer:1, explain:"'Could you repeat that?' is polite and clear."},
+        {type:"fill", q:"I will call you ___ in ten minutes.", answer:"back", explain:"'Call back' means to return a phone call."},
+        {type:"tf", q:"'May I speak to...' is used to ask for a specific person on a call.", answer:true, explain:"Correct — it's a polite request to talk to someone."}
+      ],
+      roleplay: {
+        scenario: "You call a clinic and the receptionist says: 'Clinic, how may I help you?'",
+        prompt: "Type your reply asking for an appointment.",
+        keywords: ["appointment","doctor","speak","call","help","book"]
+      }
+    },
+    {
+      id: "travel-booking",
+      title: "Travelling & Booking Tickets",
+      teach: [
+        "I would like to book two tickets to Delhi.",
+        "What time does the train leave?",
+        "Is there a direct bus to the airport?",
+        "Could I get a window seat, please?",
+        "How long is the journey?"
+      ],
+      questions: [
+        {type:"mcq", q:"Which sentence is used to request a ticket?", options:["I want ticket.","I would like to book a ticket.","Give ticket now.","Ticket please give."], answer:1, explain:"'I would like to book a ticket' is polite and grammatically correct."},
+        {type:"fill", q:"Could I get a window ___, please?", answer:"seat", explain:"'Window seat' is the common travel phrase."},
+        {type:"tf", q:"'How long is the journey?' asks about the duration of travel.", answer:true, explain:"Correct, it asks how much time the trip takes."}
+      ],
+      roleplay: {
+        scenario: "At the railway counter, the clerk asks: 'Where would you like to travel?'",
+        prompt: "Type your reply with your destination and preference.",
+        keywords: ["ticket","train","bus","seat","travel","book","journey"]
+      }
+    },
+    {
+      id: "describing-people",
+      title: "Describing People & Places",
+      teach: [
+        "My neighbour is a kind and helpful person.",
+        "The garden near my house is very peaceful.",
+        "She has a warm smile and speaks softly.",
+        "The market is crowded but colourful.",
+        "He is tall, with grey hair and glasses."
+      ],
+      questions: [
+        {type:"mcq", q:"Which adjective describes a place, not a person?", options:["Kind","Peaceful","Helpful","Talkative"], answer:1, explain:"'Peaceful' usually describes a place or atmosphere."},
+        {type:"fill", q:"She has a warm smile and speaks ___.", answer:"softly", explain:"'Softly' describes how someone speaks."},
+        {type:"tf", q:"'Crowded but colourful' can describe a busy, lively market.", answer:true, explain:"Correct, it captures both the crowd and the vibrant look."}
+      ],
+      roleplay: {
+        scenario: "A friend asks: 'Can you describe your favourite place to relax?'",
+        prompt: "Type a short description of a place you like.",
+        keywords: ["peaceful","garden","quiet","beautiful","favourite","relax"]
       }
     }
   ],
@@ -230,9 +392,191 @@ const CURRICULUM = {
         prompt: "Type a polite response giving your own opinion.",
         keywords: ["opinion","think","understand","however","agree","disagree"]
       }
+    },
+    {
+      id: "storytelling",
+      title: "Telling a Story from the Past",
+      teach: [
+        "When I was young, we used to walk to school together.",
+        "I still remember the day my daughter was born.",
+        "Back then, things were much simpler.",
+        "We had gathered at my uncle's house for the festival.",
+        "It was one of the happiest days of my life."
+      ],
+      questions: [
+        {type:"mcq", q:"Which phrase signals a memory from long ago?", options:["Right now,","When I was young,","Later today,","Tomorrow,"], answer:1, explain:"'When I was young' clearly signals a past memory."},
+        {type:"fill", q:"We had ___ at my uncle's house for the festival.", answer:"gathered", explain:"'Gathered' fits the past-perfect storytelling style."},
+        {type:"tf", q:"'Used to walk' describes a repeated action in the past that no longer happens.", answer:true, explain:"Correct — 'used to' shows a past habit."}
+      ],
+      roleplay: {
+        scenario: "Your grandchild asks: 'What was life like when you were young?'",
+        prompt: "Type a short memory you would share with them.",
+        keywords: ["remember","young","used to","back then","memory","childhood"]
+      }
+    },
+    {
+      id: "formal-letters",
+      title: "Writing Formal Letters & Complaints",
+      teach: [
+        "I am writing to bring an issue to your attention.",
+        "I would appreciate it if this could be resolved soon.",
+        "Please find the details enclosed with this letter.",
+        "I look forward to your prompt response.",
+        "Thank you for your time and consideration."
+      ],
+      questions: [
+        {type:"mcq", q:"Which closing is appropriate for a formal letter?", options:["Bye bye!","Thank you for your time and consideration.","See ya!","Whatever."], answer:1, explain:"Formal letters need a polite, respectful closing."},
+        {type:"fill", q:"I would ___ it if this could be resolved soon.", answer:"appreciate", explain:"'Appreciate' is the formal way to express thanks in advance."},
+        {type:"tf", q:"'I am writing to bring an issue to your attention' is a good formal opening line.", answer:true, explain:"Correct, it's a standard formal complaint opening."}
+      ],
+      roleplay: {
+        scenario: "You need to write to your housing society about a maintenance issue.",
+        prompt: "Type one or two formal sentences describing the issue.",
+        keywords: ["writing","issue","request","appreciate","resolve","society"]
+      }
     }
   ]
 };
+
+/* ---------------- QUICK SCENARIOS (for "Practice Any Topic" search) ---------------- */
+const QUICK_SCENARIOS = [
+  {
+    id: "bank",
+    title: "At the Bank",
+    keywords: ["bank","money","account","withdraw","deposit","cheque","cash","atm"],
+    examples: [
+      "I would like to withdraw some money, please.",
+      "Could you help me deposit this cheque?",
+      "I need to check my account balance.",
+      "Where is the nearest ATM?"
+    ],
+    roleplayStarter: "The bank teller asks: 'How can I help you today?'"
+  },
+  {
+    id: "restaurant",
+    title: "At a Restaurant",
+    keywords: ["restaurant","food","order","menu","waiter","eat","dinner","lunch"],
+    examples: [
+      "Could I see the menu, please?",
+      "I would like to order the vegetable soup.",
+      "Could we get some water, please?",
+      "The food was delicious, thank you."
+    ],
+    roleplayStarter: "The waiter asks: 'What would you like to order?'"
+  },
+  {
+    id: "wedding-festival",
+    title: "Weddings & Festivals",
+    keywords: ["wedding","festival","marriage","celebration","diwali","function","party"],
+    examples: [
+      "Congratulations on your daughter's wedding!",
+      "We are so happy to celebrate with you.",
+      "The decorations look beautiful.",
+      "Wishing you a very happy Diwali."
+    ],
+    roleplayStarter: "A friend invites you: 'Please come to my granddaughter's wedding next week.'"
+  },
+  {
+    id: "video-call",
+    title: "Video Calling Grandchildren",
+    keywords: ["video call","grandchildren","phone","whatsapp","call","screen","camera"],
+    examples: [
+      "Can you see me clearly?",
+      "I miss you, when are you coming to visit?",
+      "Show me your new school bag.",
+      "Take care, speak to you soon."
+    ],
+    roleplayStarter: "Your grandchild says on a video call: 'Hi grandma/grandpa, how are you?'"
+  },
+  {
+    id: "pharmacy",
+    title: "At the Pharmacy",
+    keywords: ["pharmacy","medicine","tablet","chemist","prescription","dose"],
+    examples: [
+      "I need to buy this medicine, here is my prescription.",
+      "How many times a day should I take this?",
+      "Do you have a smaller pack of this tablet?",
+      "Thank you, please pack it carefully."
+    ],
+    roleplayStarter: "The pharmacist asks: 'Do you have a prescription for this?'"
+  },
+  {
+    id: "neighbours",
+    title: "Talking to Neighbours",
+    keywords: ["neighbour","neighbor","society","building","next door","apartment"],
+    examples: [
+      "Good morning! How are you today?",
+      "Could you please keep an eye on my house this weekend?",
+      "Thank you for helping me with the parcel.",
+      "Let's meet for tea sometime."
+    ],
+    roleplayStarter: "Your neighbour says: 'I heard you were unwell, are you feeling better now?'"
+  },
+  {
+    id: "society-complaint",
+    title: "Raising a Complaint Politely",
+    keywords: ["complaint","problem","issue","society","maintenance","water","electricity","repair"],
+    examples: [
+      "I would like to report a problem with the water supply.",
+      "This has been an issue for a few days now.",
+      "Could someone look into this soon, please?",
+      "Thank you for addressing this quickly."
+    ],
+    roleplayStarter: "The society office asks: 'What seems to be the problem?'"
+  },
+  {
+    id: "asking-slow",
+    title: "Asking Someone to Slow Down",
+    keywords: ["slow","speak slowly","fast","understand","repeat","again"],
+    examples: [
+      "Could you please speak a little slower?",
+      "I did not quite understand, could you repeat that?",
+      "Sorry, could you say that again?",
+      "Thank you for your patience."
+    ],
+    roleplayStarter: "Someone is speaking quickly to you on the phone."
+  },
+  {
+    id: "thanking",
+    title: "Thanking Someone",
+    keywords: ["thank","thanks","grateful","appreciate","kind"],
+    examples: [
+      "Thank you so much for your help.",
+      "I really appreciate what you did.",
+      "That was very kind of you.",
+      "I am grateful for your support."
+    ],
+    roleplayStarter: "Someone has just helped you carry your grocery bags home."
+  },
+  {
+    id: "morning-walk-group",
+    title: "Meeting Friends for a Morning Walk",
+    keywords: ["walk","morning","park","exercise","friends","garden"],
+    examples: [
+      "Good morning, shall we walk together today?",
+      "The park looks lovely this morning.",
+      "Let's sit on the bench and rest for a while.",
+      "See you tomorrow at the same time."
+    ],
+    roleplayStarter: "A friend at the park says: 'Good morning! Ready for our walk?'"
+  }
+];
+
+function searchScenarios(query){
+  const q = query.toLowerCase().trim();
+  if(!q) return [];
+  const words = q.split(/\s+/).filter(w=>w.length>1);
+  const scored = QUICK_SCENARIOS.map(s=>{
+    let score = 0;
+    const haystack = (s.title + ' ' + s.keywords.join(' ')).toLowerCase();
+    words.forEach(w=>{
+      if(haystack.includes(w)) score++;
+    });
+    return {s, score};
+  }).filter(x=>x.score>0);
+  scored.sort((a,b)=>b.score-a.score);
+  return scored.map(x=>x.s).slice(0,3);
+}
 
 /* ---------------- STATE ---------------- */
 const STORAGE_KEY = "englishHub_progress_v1";
@@ -301,6 +645,29 @@ function showDashboard(){
   document.getElementById('progressFill').style.width = pct + '%';
   document.getElementById('progressText').textContent = `${done} of ${topics.length} topics completed`;
 
+  // Today's Practice: pick the next topic this person hasn't completed yet.
+  // If they've finished everything, suggest their weakest-scoring completed topic to revisit.
+  let todayTopic = topics.find(t => !state.completedTopics[t.id]);
+  const todaySection = document.getElementById('todayPractice');
+  if(!todayTopic && topics.length){
+    let worst = topics[0];
+    topics.forEach(t=>{
+      const rec = state.completedTopics[t.id];
+      const worstRec = state.completedTopics[worst.id];
+      if(rec && worstRec && (rec.score/rec.total) < (worstRec.score/worstRec.total)) worst = t;
+    });
+    todayTopic = worst;
+    document.getElementById('todayTopicName').textContent = todayTopic.title + " (revisit — great for extra practice!)";
+  } else if(todayTopic){
+    document.getElementById('todayTopicName').textContent = todayTopic.title + " (new for you)";
+  }
+  if(todayTopic){
+    todaySection.classList.remove('hidden');
+    document.getElementById('startTodayBtn').onclick = ()=> startLesson(todayTopic);
+  } else {
+    todaySection.classList.add('hidden');
+  }
+
   const list = document.getElementById('topicList');
   list.innerHTML = '';
   topics.forEach(t=>{
@@ -319,6 +686,7 @@ function showDashboard(){
       showDashboard();
     }
   };
+  wireScenarioSearch();
 }
 function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 
@@ -487,6 +855,89 @@ function startLesson(topic){
 
 function escapeHtml(s){
   return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ---------------- SCENARIO SEARCH (Practice Any Topic) ---------------- */
+function wireScenarioSearch(){
+  const btn = document.getElementById('scenarioSearchBtn');
+  const input = document.getElementById('scenarioSearch');
+  if(!btn) return;
+  btn.onclick = runScenarioSearch;
+  input.addEventListener('keydown', e=>{ if(e.key === 'Enter') runScenarioSearch(); });
+}
+function runScenarioSearch(){
+  const val = document.getElementById('scenarioSearch').value;
+  const results = searchScenarios(val);
+  const box = document.getElementById('scenarioResults');
+  if(!val.trim()){
+    box.innerHTML = '';
+    return;
+  }
+  if(results.length === 0){
+    const allTitles = QUICK_SCENARIOS.map(s=>s.title).join(', ');
+    box.innerHTML = `<div class="feedback no">No exact match found. Try one of these: ${allTitles}</div>`;
+    return;
+  }
+  box.innerHTML = results.map(s => `<button class="choice-btn" data-id="${s.id}">${s.title}</button>`).join('');
+  [...box.children].forEach(b=>{
+    b.onclick = ()=> showScenarioDetail(QUICK_SCENARIOS.find(s=>s.id === b.dataset.id));
+  });
+}
+function showScenarioDetail(s){
+  document.getElementById('dashboard').classList.add('hidden');
+  const area = document.getElementById('lessonArea');
+  area.classList.remove('hidden');
+  area.innerHTML = `
+    <div class="card">
+      <h2>${s.title}</h2>
+      <p style="color:#666;">Useful sentences — tap Listen to hear each one</p>
+      <div id="scenarioLines"></div>
+      <h3>Try it yourself</h3>
+      <p style="font-size:1.05em;">${s.roleplayStarter}
+        <button class="btn speak-btn" style="padding:6px 12px; font-size:0.85em;" id="playStarter">🔊 Listen</button>
+      </p>
+      <textarea id="scenarioReply" rows="3" placeholder="Type your reply here..."></textarea>
+      <button class="btn big" id="submitScenarioReply">Submit Reply</button>
+      <div id="scenarioFeedback"></div>
+      <button class="btn secondary" id="backToDashFromScenario">← Back to menu</button>
+    </div>`;
+  const linesDiv = document.getElementById('scenarioLines');
+  s.examples.forEach(line=>{
+    const row = document.createElement('div');
+    row.style.margin = '10px 0';
+    row.innerHTML = `<span style="font-size:1.05em;">${line}</span> `;
+    const sp = document.createElement('button');
+    sp.className = 'btn speak-btn';
+    sp.textContent = '🔊 Listen';
+    sp.style.padding = '6px 12px';
+    sp.style.fontSize = '0.85em';
+    sp.onclick = ()=> speak(line);
+    row.appendChild(sp);
+    linesDiv.appendChild(row);
+  });
+  document.getElementById('playStarter').onclick = ()=> speak(s.roleplayStarter);
+  document.getElementById('backToDashFromScenario').onclick = showDashboard;
+  document.getElementById('submitScenarioReply').onclick = ()=>{
+    const val = document.getElementById('scenarioReply').value.trim();
+    const fb = document.getElementById('scenarioFeedback');
+    if(val.length < 2){
+      fb.innerHTML = `<div class="feedback no">Please type a short reply first.</div>`;
+      return;
+    }
+    const lower = val.toLowerCase();
+    const usedKeyword = s.keywords.some(k => lower.includes(k)) ||
+      s.examples.some(ex => ex.toLowerCase().split(' ').some(w => w.length>3 && lower.includes(w)));
+    const isFullSentence = val.split(' ').length >= 3;
+    let comment = usedKeyword && isFullSentence
+      ? "Good! That's a natural, complete reply."
+      : "Nice attempt — try using a full sentence, similar to the examples above.";
+    fb.innerHTML = `
+      <div class="feedback ${usedKeyword ? 'ok' : 'no'}">
+        <b>Your reply:</b> "${escapeHtml(val)}"<br><br>
+        ${comment}<br><br>
+        <b>Example reply:</b> "${s.examples[0]}"
+      </div>`;
+  };
 }
 
 /* ---------------- INIT ---------------- */
