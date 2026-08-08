@@ -51,6 +51,10 @@
     line-height:1.5;
   }
   .digest .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin-bottom:6px;}
+  .autofiled{
+    background:#fff;border:1px dashed var(--accent);border-radius:10px;
+    padding:10px 14px;margin-bottom:22px;font-size:12.5px;color:var(--accent);
+  }
   .section-title{
     font-size:13px;text-transform:uppercase;letter-spacing:.08em;
     color:var(--muted);font-weight:700;margin:26px 0 10px;
@@ -81,6 +85,10 @@
   }
   .move-row button:disabled{opacity:0.5;}
   .move-status{font-size:11.5px;color:var(--accent);margin-top:6px;}
+  .remember-row{
+    display:flex;align-items:center;gap:6px;margin-top:8px;
+    font-size:11.5px;color:var(--muted);
+  }
   .cat-group{margin-bottom:18px;}
   .cat-head{font-size:14px;font-weight:700;margin-bottom:8px;}
   .empty, .loading, .error{text-align:center;color:var(--muted);padding:60px 10px;font-size:14px;}
@@ -121,10 +129,18 @@
 const WORKER_URL = "https://email-assistant.chavan-umesh.workers.dev/";
 let lastData = null;
 let folderList = [];
+let uidToItem = {};
 
 fetch(WORKER_URL + "?action=folders").then(r => r.json()).then(d => {
   folderList = d.folders || [];
 }).catch(() => {});
+
+function extractEmail(fromStr){
+  const m = (fromStr || "").match(/<([^>]+)>/);
+  if (m) return m[1].trim();
+  const m2 = (fromStr || "").match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+  return m2 ? m2[0].trim() : "";
+}
 
 async function runScan(){
   const btn = document.getElementById('runBtn');
@@ -140,6 +156,7 @@ async function runScan(){
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     lastData = data;
+    (data.items || []).forEach(i => uidToItem[i.uid] = i);
     document.getElementById('searchBox').value = "";
     render(data);
     let statusText = "Last run: " + new Date().toLocaleString();
@@ -190,6 +207,12 @@ function render(data, isFiltered){
   let html = "";
   if (!isFiltered) {
     html += `<div class="digest"><div class="label">Digest</div>${escapeHtml(data.digest || "")}</div>`;
+    if (data.autoFiled && data.autoFiled.length) {
+      const byFolder = {};
+      data.autoFiled.forEach(f => { byFolder[f.folder] = (byFolder[f.folder]||0)+1; });
+      const summary = Object.entries(byFolder).map(([f,c]) => `${c} to ${f}`).join(", ");
+      html += `<div class="autofiled">Auto-filed ${data.autoFiled.length} email${data.autoFiled.length>1?'s':''} based on your rules (${summary})</div>`;
+    }
   }
 
   const important = items.filter(i => i.important);
@@ -236,6 +259,10 @@ function cardHtml(i, importantStyle){
       <select id="folder-${i.uid}">${folderOptions()}</select>
       <button onclick="moveCard('${i.uid}')">Move</button>
     </div>
+    <label class="remember-row">
+      <input type="checkbox" id="remember-${i.uid}" checked>
+      Always move emails from this sender here
+    </label>
     <div class="move-status" id="status-${i.uid}"></div>
   </div>`;
 }
@@ -245,16 +272,23 @@ async function moveCard(uid){
   const folder = select.value;
   const statusEl = document.getElementById('status-' + uid);
   const card = document.getElementById('card-' + uid);
+  const remember = document.getElementById('remember-' + uid).checked;
+  const item = uidToItem[uid];
+  const senderEmail = item ? extractEmail(item.from) : "";
   if (!folder) { statusEl.textContent = "Pick a folder first."; return; }
 
   card.classList.add('moving');
   statusEl.textContent = "Moving...";
   try {
-    const res = await fetch(WORKER_URL + `?action=move&uid=${encodeURIComponent(uid)}&folder=${encodeURIComponent(folder)}`);
+    let url = WORKER_URL + `?action=move&uid=${encodeURIComponent(uid)}&folder=${encodeURIComponent(folder)}`;
+    if (senderEmail) url += `&sender=${encodeURIComponent(senderEmail)}&remember=${remember}`;
+    const res = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    statusEl.textContent = `Moved to ${folder}`;
-    setTimeout(() => { card.style.display = "none"; }, 600);
+    statusEl.textContent = remember && senderEmail
+      ? `Moved to ${folder} — future emails from this sender will auto-file here`
+      : `Moved to ${folder}`;
+    setTimeout(() => { card.style.display = "none"; }, 900);
   } catch (e) {
     card.classList.remove('moving');
     statusEl.textContent = "Move failed: " + e.message;
