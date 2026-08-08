@@ -84,6 +84,7 @@
     background:#fff;color:var(--accent);font-weight:600;cursor:pointer;white-space:nowrap;
   }
   .move-row button:disabled{opacity:0.5;}
+  .spam-btn{border-color:var(--warn) !important;color:var(--warn) !important;}
   .move-status{font-size:11.5px;color:var(--accent);margin-top:6px;}
   .remember-row{
     display:flex;align-items:center;gap:6px;margin-top:8px;
@@ -213,6 +214,9 @@ function render(data, isFiltered){
       const summary = Object.entries(byFolder).map(([f,c]) => `${c} to ${f}`).join(", ");
       html += `<div class="autofiled">Auto-filed ${data.autoFiled.length} email${data.autoFiled.length>1?'s':''} based on your rules (${summary})</div>`;
     }
+    if (data.autoDeleted && data.autoDeleted.length) {
+      html += `<div class="autofiled">Auto-deleted ${data.autoDeleted.length} spam email${data.autoDeleted.length>1?'s':''} based on your rules</div>`;
+    }
   }
 
   const important = items.filter(i => i.important);
@@ -258,6 +262,7 @@ function cardHtml(i, importantStyle){
     <div class="move-row">
       <select id="folder-${i.uid}">${folderOptions()}</select>
       <button onclick="moveCard('${i.uid}')">Move</button>
+      <button class="spam-btn" onclick="spamCard('${i.uid}')">Spam</button>
     </div>
     <label class="remember-row">
       <input type="checkbox" id="remember-${i.uid}" checked>
@@ -292,6 +297,40 @@ async function moveCard(uid){
   } catch (e) {
     card.classList.remove('moving');
     statusEl.textContent = "Move failed: " + e.message;
+  }
+}
+
+async function spamCard(uid){
+  const statusEl = document.getElementById('status-' + uid);
+  const card = document.getElementById('card-' + uid);
+  const remember = document.getElementById('remember-' + uid).checked;
+  const item = uidToItem[uid];
+  const senderEmail = item ? extractEmail(item.from) : "";
+
+  const confirmed = confirm(
+    `Delete this email permanently${remember ? " and always delete future emails from this sender" : ""}? This can't be undone.`
+  );
+  if (!confirmed) return;
+
+  card.classList.add('moving');
+  statusEl.textContent = "Deleting and checking for an unsubscribe link...";
+  try {
+    let url = WORKER_URL + `?action=spam&uid=${encodeURIComponent(uid)}`;
+    if (senderEmail) url += `&sender=${encodeURIComponent(senderEmail)}&remember=${remember}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const u = data.unsubscribed || {};
+    let msg = "Deleted.";
+    if (u.attempted && u.method === "http") msg += ` Unsubscribe link opened (status ${u.status}).`;
+    else if (u.method === "mailto") msg += ` Unsubscribe needs a manual email to ${u.address}.`;
+    else msg += " No unsubscribe link found.";
+    if (remember && senderEmail) msg += " Future emails from this sender will be auto-deleted.";
+    statusEl.textContent = msg;
+    setTimeout(() => { card.style.display = "none"; }, 1600);
+  } catch (e) {
+    card.classList.remove('moving');
+    statusEl.textContent = "Delete failed: " + e.message;
   }
 }
 </script>
