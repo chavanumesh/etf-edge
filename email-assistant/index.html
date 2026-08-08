@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inbox Assistant</title>
+<style>
+  :root{
+    --ink:#1b2430;
+    --paper:#f6f4ef;
+    --line:#dcd7cb;
+    --accent:#2f5d50;
+    --accent-soft:#e4ede9;
+    --warn:#a14e3a;
+    --warn-soft:#f5e6e0;
+    --muted:#7a7469;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:680px;margin:0 auto;padding:24px 18px 60px;}
+  header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;}
+  h1{font-size:22px;letter-spacing:-0.01em;margin:0;font-weight:700;}
+  .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  button#runBtn{
+    background:var(--accent);color:#fff;border:none;border-radius:10px;
+    padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;
+  }
+  button#runBtn:disabled{opacity:0.6;}
+  .digest{
+    background:var(--accent-soft);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px 18px;
+    margin-bottom:22px;
+    font-size:14.5px;
+    line-height:1.5;
+  }
+  .digest .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin-bottom:6px;}
+  .section-title{
+    font-size:13px;text-transform:uppercase;letter-spacing:.08em;
+    color:var(--muted);font-weight:700;margin:26px 0 10px;
+  }
+  .card{
+    background:#fff;border:1px solid var(--line);border-radius:12px;
+    padding:14px 16px;margin-bottom:10px;
+  }
+  .card.important{border-color:var(--warn);background:var(--warn-soft);}
+  .card .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+  .card .from{font-size:12.5px;color:var(--muted);}
+  .card .subject{font-size:14.5px;font-weight:600;margin-top:2px;line-height:1.3;}
+  .card .reason{font-size:12.5px;color:var(--muted);margin-top:6px;}
+  .tag{
+    font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+    padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);
+    white-space:nowrap;
+  }
+  .cat-group{margin-bottom:18px;}
+  .cat-head{font-size:14px;font-weight:700;margin-bottom:8px;}
+  .empty, .loading, .error{text-align:center;color:var(--muted);padding:60px 10px;font-size:14px;}
+  .error{color:var(--warn);}
+  .spinner{
+    width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--accent);
+    border-radius:50%;margin:0 auto 12px;animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Inbox Assistant</h1>
+      <div class="sub" id="statusLine">Tap Run to scan your inbox</div>
+    </div>
+    <button id="runBtn" onclick="runScan()">Run</button>
+  </header>
+
+  <div id="content"></div>
+</div>
+
+<script>
+const WORKER_URL = "https://email-assistant.chavan-umesh.workers.dev/";
+
+async function runScan(){
+  const btn = document.getElementById('runBtn');
+  const content = document.getElementById('content');
+  const status = document.getElementById('statusLine');
+  btn.disabled = true;
+  status.textContent = "Scanning...";
+  content.innerHTML = `<div class="loading"><div class="spinner"></div>Reading your inbox and analyzing emails...</div>`;
+
+  try {
+    const res = await fetch(WORKER_URL);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    render(data);
+    status.textContent = "Last run: " + new Date().toLocaleString();
+  } catch (e) {
+    content.innerHTML = `<div class="error">Something went wrong: ${escapeHtml(e.message)}</div>`;
+    status.textContent = "Run failed";
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function render(data){
+  const items = data.items || [];
+  const content = document.getElementById('content');
+
+  if (!items.length) {
+    content.innerHTML = `<div class="digest"><div class="label">Digest</div>${escapeHtml(data.digest || "No emails found.")}</div>`;
+    return;
+  }
+
+  let html = `<div class="digest"><div class="label">Digest</div>${escapeHtml(data.digest || "")}</div>`;
+
+  const important = items.filter(i => i.important);
+  if (important.length){
+    html += `<div class="section-title">Flagged Important</div>`;
+    important.forEach(i => html += cardHtml(i, true));
+  }
+
+  const byCategory = {};
+  items.forEach(i => {
+    const c = i.category || "Other";
+    if (!byCategory[c]) byCategory[c] = [];
+    byCategory[c].push(i);
+  });
+
+  html += `<div class="section-title">All Emails by Category</div>`;
+  Object.keys(byCategory).sort().forEach(cat => {
+    html += `<div class="cat-group"><div class="cat-head">${escapeHtml(cat)} (${byCategory[cat].length})</div>`;
+    byCategory[cat].forEach(i => html += cardHtml(i, false));
+    html += `</div>`;
+  });
+
+  content.innerHTML = html;
+}
+
+function cardHtml(i, importantStyle){
+  return `<div class="card${importantStyle ? ' important' : ''}">
+    <div class="top">
+      <div>
+        <div class="from">${escapeHtml(i.from || "")}</div>
+        <div class="subject">${escapeHtml(i.subject || "(no subject)")}</div>
+      </div>
+      <div class="tag">${escapeHtml(i.category || "Other")}</div>
+    </div>
+    ${i.reason ? `<div class="reason">${escapeHtml(i.reason)}</div>` : ""}
+  </div>`;
+}
+</script>
+</body>
+</html>
