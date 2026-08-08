@@ -32,10 +32,14 @@
     padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;
   }
   button#runBtn:disabled{opacity:0.6;}
-  .range-row{margin-bottom:18px;}
+  .range-row{display:flex;gap:8px;margin-bottom:12px;}
   #rangeSelect{
-    width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+    flex:1;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
     background:#fff;font-size:14px;color:var(--ink);
+  }
+  #searchBox{
+    width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+    background:#fff;font-size:14px;color:var(--ink);margin-bottom:18px;
   }
   .digest{
     background:var(--accent-soft);
@@ -54,8 +58,10 @@
   .card{
     background:#fff;border:1px solid var(--line);border-radius:12px;
     padding:14px 16px;margin-bottom:10px;
+    transition:opacity 0.25s ease;
   }
   .card.important{border-color:var(--warn);background:var(--warn-soft);}
+  .card.moving{opacity:0.4;}
   .card .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
   .card .from{font-size:12.5px;color:var(--muted);}
   .card .subject{font-size:14.5px;font-weight:600;margin-top:2px;line-height:1.3;}
@@ -65,6 +71,16 @@
     padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);
     white-space:nowrap;
   }
+  .move-row{display:flex;gap:6px;margin-top:10px;}
+  .move-row select{
+    flex:1;font-size:12.5px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:#fff;
+  }
+  .move-row button{
+    font-size:12.5px;padding:6px 12px;border-radius:8px;border:1px solid var(--accent);
+    background:#fff;color:var(--accent);font-weight:600;cursor:pointer;white-space:nowrap;
+  }
+  .move-row button:disabled{opacity:0.5;}
+  .move-status{font-size:11.5px;color:var(--accent);margin-top:6px;}
   .cat-group{margin-bottom:18px;}
   .cat-head{font-size:14px;font-weight:700;margin-bottom:8px;}
   .empty, .loading, .error{text-align:center;color:var(--muted);padding:60px 10px;font-size:14px;}
@@ -96,12 +112,19 @@
       <option value="90">Last 90 days</option>
     </select>
   </div>
+  <input id="searchBox" type="text" placeholder="Search by sender or subject..." oninput="applyFilter()">
 
   <div id="content"></div>
 </div>
 
 <script>
 const WORKER_URL = "https://email-assistant.chavan-umesh.workers.dev/";
+let lastData = null;
+let folderList = [];
+
+fetch(WORKER_URL + "?action=folders").then(r => r.json()).then(d => {
+  folderList = d.folders || [];
+}).catch(() => {});
 
 async function runScan(){
   const btn = document.getElementById('runBtn');
@@ -116,6 +139,8 @@ async function runScan(){
     const res = await fetch(WORKER_URL + "?days=" + days);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+    lastData = data;
+    document.getElementById('searchBox').value = "";
     render(data);
     let statusText = "Last run: " + new Date().toLocaleString();
     if (data.totalFound && data.analyzed && data.totalFound > data.analyzed) {
@@ -130,22 +155,42 @@ async function runScan(){
   }
 }
 
+function applyFilter(){
+  if (!lastData) return;
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  if (!q) { render(lastData); return; }
+  const filtered = {
+    ...lastData,
+    items: (lastData.items || []).filter(i =>
+      (i.from || "").toLowerCase().includes(q) ||
+      (i.subject || "").toLowerCase().includes(q) ||
+      (i.category || "").toLowerCase().includes(q)
+    )
+  };
+  render(filtered, true);
+}
+
 function escapeHtml(s){
   const d = document.createElement('div');
   d.textContent = s;
   return d.innerHTML;
 }
 
-function render(data){
+function render(data, isFiltered){
   const items = data.items || [];
   const content = document.getElementById('content');
 
   if (!items.length) {
-    content.innerHTML = `<div class="digest"><div class="label">Digest</div>${escapeHtml(data.digest || "No emails found.")}</div>`;
+    content.innerHTML = isFiltered
+      ? `<div class="empty">No emails match your search.</div>`
+      : `<div class="digest"><div class="label">Digest</div>${escapeHtml(data.digest || "No emails found.")}</div>`;
     return;
   }
 
-  let html = `<div class="digest"><div class="label">Digest</div>${escapeHtml(data.digest || "")}</div>`;
+  let html = "";
+  if (!isFiltered) {
+    html += `<div class="digest"><div class="label">Digest</div>${escapeHtml(data.digest || "")}</div>`;
+  }
 
   const important = items.filter(i => i.important);
   if (important.length){
@@ -160,7 +205,7 @@ function render(data){
     byCategory[c].push(i);
   });
 
-  html += `<div class="section-title">All Emails by Category</div>`;
+  html += `<div class="section-title">${isFiltered ? "Matching Emails" : "All Emails by Category"}</div>`;
   Object.keys(byCategory).sort().forEach(cat => {
     html += `<div class="cat-group"><div class="cat-head">${escapeHtml(cat)} (${byCategory[cat].length})</div>`;
     byCategory[cat].forEach(i => html += cardHtml(i, false));
@@ -170,8 +215,15 @@ function render(data){
   content.innerHTML = html;
 }
 
+function folderOptions(){
+  if (!folderList.length) return `<option value="">Loading folders...</option>`;
+  return `<option value="">Move to...</option>` +
+    folderList.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join("");
+}
+
 function cardHtml(i, importantStyle){
-  return `<div class="card${importantStyle ? ' important' : ''}">
+  const cardId = "card-" + i.uid;
+  return `<div class="card${importantStyle ? ' important' : ''}" id="${cardId}">
     <div class="top">
       <div>
         <div class="from">${escapeHtml(i.from || "")}</div>
@@ -180,7 +232,33 @@ function cardHtml(i, importantStyle){
       <div class="tag">${escapeHtml(i.category || "Other")}</div>
     </div>
     ${i.reason ? `<div class="reason">${escapeHtml(i.reason)}</div>` : ""}
+    <div class="move-row">
+      <select id="folder-${i.uid}">${folderOptions()}</select>
+      <button onclick="moveCard('${i.uid}')">Move</button>
+    </div>
+    <div class="move-status" id="status-${i.uid}"></div>
   </div>`;
+}
+
+async function moveCard(uid){
+  const select = document.getElementById('folder-' + uid);
+  const folder = select.value;
+  const statusEl = document.getElementById('status-' + uid);
+  const card = document.getElementById('card-' + uid);
+  if (!folder) { statusEl.textContent = "Pick a folder first."; return; }
+
+  card.classList.add('moving');
+  statusEl.textContent = "Moving...";
+  try {
+    const res = await fetch(WORKER_URL + `?action=move&uid=${encodeURIComponent(uid)}&folder=${encodeURIComponent(folder)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    statusEl.textContent = `Moved to ${folder}`;
+    setTimeout(() => { card.style.display = "none"; }, 600);
+  } catch (e) {
+    card.classList.remove('moving');
+    statusEl.textContent = "Move failed: " + e.message;
+  }
 }
 </script>
 </body>
