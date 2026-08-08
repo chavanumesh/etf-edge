@@ -32,6 +32,11 @@
     padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;
   }
   button#runBtn:disabled{opacity:0.6;}
+  .range-row{margin-bottom:18px;}
+  #rangeSelect{
+    width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+    background:#fff;font-size:14px;color:var(--ink);
+  }
   .digest{
     background:var(--accent-soft);
     border:1px solid var(--line);
@@ -76,10 +81,21 @@
   <header>
     <div>
       <h1>Inbox Assistant</h1>
-      <div class="sub" id="statusLine">Tap Run to scan your inbox</div>
+      <div class="sub" id="statusLine">Choose a range and tap Run</div>
     </div>
     <button id="runBtn" onclick="runScan()">Run</button>
   </header>
+
+  <div class="range-row">
+    <select id="rangeSelect">
+      <option value="1">Today</option>
+      <option value="7">Last 7 days</option>
+      <option value="15" selected>Last 15 days</option>
+      <option value="30">Last 30 days</option>
+      <option value="60">Last 60 days</option>
+      <option value="90">Last 90 days</option>
+    </select>
+  </div>
 
   <div id="content"></div>
 </div>
@@ -91,16 +107,21 @@ async function runScan(){
   const btn = document.getElementById('runBtn');
   const content = document.getElementById('content');
   const status = document.getElementById('statusLine');
+  const days = document.getElementById('rangeSelect').value;
   btn.disabled = true;
   status.textContent = "Scanning...";
   content.innerHTML = `<div class="loading"><div class="spinner"></div>Reading your inbox and analyzing emails...</div>`;
 
   try {
-    const res = await fetch(WORKER_URL);
+    const res = await fetch(WORKER_URL + "?days=" + days);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     render(data);
-    status.textContent = "Last run: " + new Date().toLocaleString();
+    let statusText = "Last run: " + new Date().toLocaleString();
+    if (data.totalFound && data.analyzed && data.totalFound > data.analyzed) {
+      statusText += ` — showing ${data.analyzed} of ${data.totalFound} found. Narrow the range or run again to see more.`;
+    }
+    status.textContent = statusText;
   } catch (e) {
     content.innerHTML = `<div class="error">Something went wrong: ${escapeHtml(e.message)}</div>`;
     status.textContent = "Run failed";
