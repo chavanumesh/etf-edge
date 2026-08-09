@@ -85,6 +85,22 @@
   }
   .move-row button:disabled{opacity:0.5;}
   .spam-btn{border-color:var(--warn) !important;color:var(--warn) !important;}
+  .reply-btn{border-color:#4a6fa5 !important;color:#4a6fa5 !important;}
+  .reply-loading{font-size:12.5px;color:var(--muted);margin-top:10px;}
+  .reply-textarea{
+    width:100%;margin-top:10px;padding:10px;border-radius:8px;border:1px solid var(--line);
+    font-size:13.5px;font-family:inherit;color:var(--ink);resize:vertical;background:#fff;
+  }
+  .reply-actions{display:flex;gap:8px;margin-top:8px;}
+  .send-btn{
+    font-size:12.5px;padding:6px 14px;border-radius:8px;border:none;
+    background:var(--accent);color:#fff;font-weight:600;cursor:pointer;
+  }
+  .cancel-btn{
+    font-size:12.5px;padding:6px 14px;border-radius:8px;border:1px solid var(--line);
+    background:#fff;color:var(--muted);cursor:pointer;
+  }
+  .reply-status{font-size:11.5px;color:var(--accent);margin-top:6px;}
   .move-status{font-size:11.5px;color:var(--accent);margin-top:6px;}
   .remember-row{
     display:flex;align-items:center;gap:6px;margin-top:8px;
@@ -263,12 +279,14 @@ function cardHtml(i, importantStyle){
       <select id="folder-${i.uid}">${folderOptions()}</select>
       <button onclick="moveCard('${i.uid}')">Move</button>
       <button class="spam-btn" onclick="spamCard('${i.uid}')">Spam</button>
+      <button class="reply-btn" onclick="replyCard('${i.uid}')">Reply</button>
     </div>
     <label class="remember-row">
       <input type="checkbox" id="remember-${i.uid}" checked>
       Always move emails from this sender here
     </label>
     <div class="move-status" id="status-${i.uid}"></div>
+    <div id="reply-box-${i.uid}"></div>
   </div>`;
 }
 
@@ -331,6 +349,60 @@ async function spamCard(uid){
   } catch (e) {
     card.classList.remove('moving');
     statusEl.textContent = "Delete failed: " + e.message;
+  }
+}
+
+let replyMeta = {};
+
+async function replyCard(uid){
+  const box = document.getElementById('reply-box-' + uid);
+  box.innerHTML = `<div class="reply-loading">Drafting a reply...</div>`;
+
+  try {
+    const res = await fetch(WORKER_URL + `?action=draftReply&uid=${encodeURIComponent(uid)}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    replyMeta[uid] = { to: extractEmail(data.from), subject: data.subject, messageId: data.messageId };
+    box.innerHTML = `
+      <textarea id="draft-${uid}" class="reply-textarea" rows="6">${escapeHtml(data.draft)}</textarea>
+      <div class="reply-actions">
+        <button class="send-btn" onclick="sendReplyCard('${uid}')">Send</button>
+        <button class="cancel-btn" onclick="document.getElementById('reply-box-${uid}').innerHTML=''">Cancel</button>
+      </div>
+      <div class="reply-status" id="reply-status-${uid}"></div>
+    `;
+  } catch (e) {
+    box.innerHTML = `<div class="reply-status" style="color:var(--warn)">Couldn't draft a reply: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function sendReplyCard(uid){
+  const textarea = document.getElementById('draft-' + uid);
+  const statusEl = document.getElementById('reply-status-' + uid);
+  const meta = replyMeta[uid];
+  const text = textarea.value.trim();
+  if (!text) { statusEl.textContent = "Reply is empty."; return; }
+  if (!meta || !meta.to) { statusEl.textContent = "Missing recipient address."; return; }
+
+  statusEl.textContent = "Sending...";
+  try {
+    const res = await fetch(WORKER_URL + "?action=sendReply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        to: meta.to,
+        subject: meta.subject,
+        text,
+        inReplyTo: meta.messageId,
+        references: meta.messageId,
+      }),
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    statusEl.textContent = "Sent!";
+    setTimeout(() => { document.getElementById('reply-box-' + uid).innerHTML = ""; }, 1200);
+  } catch (e) {
+    statusEl.textContent = "Send failed: " + e.message;
   }
 }
 </script>
