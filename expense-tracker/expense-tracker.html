@@ -310,8 +310,20 @@
     <div class="date" id="todayDate"></div>
   </header>
 
+  <div class="card" id="budgetCard" style="display:none;">
+    <h2>This Month's Budget</h2>
+    <div class="cat-row" style="margin-bottom:0;">
+      <div class="cat-row-top"><span class="name" id="budgetSpentLabel">Spent Rs 0.00</span><span class="val" id="budgetRemainingLabel">Remaining Rs 0.00</span></div>
+      <div class="bar-track"><div class="bar-fill" id="budgetBarFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
   <div class="card">
     <h2>Add Expense</h2>
+    <div class="form-row">
+      <label for="entryDateInput">Date</label>
+      <input type="date" id="entryDateInput">
+    </div>
     <div class="form-row">
       <label for="amountInput">Amount</label>
       <div class="amount-input">
@@ -345,8 +357,11 @@
   </div>
 
   <footer>
-    <button class="gear" id="historyBtn" style="margin-right:8px;">History</button>
-    <button class="gear" id="settingsBtn">Settings</button>
+    <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:8px;">
+      <button class="gear" id="historyBtn">History</button>
+      <button class="gear" id="dashboardBtn">Dashboard</button>
+      <button class="gear" id="settingsBtn">Settings</button>
+    </div>
     <div style="color:var(--muted); font-size:11px; margin-top:8px;">Last export: <span id="lastExportLabel">never</span></div>
   </footer>
 </div>
@@ -364,7 +379,12 @@
       <label>Archived months</label>
       <div id="archiveList" style="font-size:13px; color:var(--muted);"></div>
     </div>
-    <button class="btn secondary" id="manualExportBtn">Export current data now (.xlsx)</button>
+    <div class="form-row" style="margin-top:14px;">
+      <label id="budgetMonthLabel">Monthly budget</label>
+      <input type="number" id="budgetInput" placeholder="e.g. 20000" min="0" step="1">
+    </div>
+    <button class="btn secondary" id="saveBudgetBtn">Save budget for this month</button>
+    <button class="btn secondary" id="manualExportBtn" style="margin-top:10px;">Export current data now (.xlsx)</button>
     <button class="btn secondary" id="changePinBtn" style="margin-top:10px;">Change PIN</button>
     <button class="btn danger" id="wipeBtn" style="margin-top:10px;">Erase all data</button>
     <p style="font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5;">
@@ -382,6 +402,8 @@
       <select id="historyMode">
         <option value="day">Single day</option>
         <option value="week">Week (7 days ending on a date)</option>
+        <option value="biweek">Biweekly (14 days ending on a date)</option>
+        <option value="month">Month</option>
       </select>
     </div>
     <div class="form-row">
@@ -393,6 +415,19 @@
     <p style="font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5;">
       Covers the last 30 days plus any archived months. This view only reads your saved data -- nothing is changed or deleted here.
     </p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="dashboardOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeDashboard">&times;</button>
+    <h3>Monthly Dashboard</h3>
+    <div class="form-row">
+      <label for="dashboardDate">Pick any date in the month</label>
+      <input type="date" id="dashboardDate">
+    </div>
+    <button class="btn secondary" id="dashboardGoBtn">Build Dashboard</button>
+    <div id="dashboardResult" style="margin-top:16px;"></div>
   </div>
 </div>
 
@@ -423,6 +458,7 @@
   var PIN_KEY = 'expenseTracker.pinHash';
   var ARCHIVE_KEY = 'expenseTracker.archive';
   var LASTEXPORT_KEY = 'expenseTracker.lastExport';
+  var BUDGET_KEY = 'expenseTracker.budgets';
   var RETENTION_DAYS = 30;
 
   var defaultCategories = ['Food', 'Transport', 'Bills', 'Entertainment', 'Other'];
@@ -474,6 +510,7 @@
   var categories = loadJSON(CATS_KEY, defaultCategories.slice());
   var archive = loadJSON(ARCHIVE_KEY, {}); // { "2026-06": [entries] }
   var lastExport = loadJSON(LASTEXPORT_KEY, null);
+  var budgets = loadJSON(BUDGET_KEY, {}); // { "2026-08": 20000 }
   var pendingDelete = null;
   var snackbarTimer = null;
 
@@ -481,6 +518,9 @@
     try{
       initPinLock();
       populateCategorySelect();
+      var dateInput = document.getElementById('entryDateInput');
+      dateInput.value = todayISO();
+      dateInput.max = todayISO();
       renderDate();
       render();
       checkRetentionAndBanner();
@@ -652,6 +692,57 @@
     renderBreakdown(todays, total);
     renderEntries(todays);
     renderLastExportLabel();
+    renderBudgetCard();
+  }
+
+  // ---------- Budget ----------
+  function currentMonthKey(){
+    return todayISO().slice(0,7);
+  }
+
+  function getMonthEntries(mk){
+    var all = getAllKnownEntries();
+    return all.filter(function(e){ return monthKeyFromDate(e.dateISO) === mk; });
+  }
+
+  function renderBudgetCard(){
+    var mk = currentMonthKey();
+    var budget = budgets[mk];
+    var card = document.getElementById('budgetCard');
+    if(budget == null){
+      card.style.display = 'none';
+      return;
+    }
+    var spent = getMonthEntries(mk).reduce(function(sum, e){ return sum + e.amount; }, 0);
+    var remaining = budget - spent;
+    var pct = budget > 0 ? Math.min(100, (spent/budget*100)) : 0;
+    document.getElementById('budgetSpentLabel').textContent = 'Spent Rs ' + spent.toFixed(2) + ' of Rs ' + budget.toFixed(2);
+    document.getElementById('budgetRemainingLabel').textContent = remaining >= 0 ?
+      'Remaining Rs ' + remaining.toFixed(2) : 'Over by Rs ' + Math.abs(remaining).toFixed(2);
+    var fill = document.getElementById('budgetBarFill');
+    fill.style.width = pct.toFixed(1) + '%';
+    fill.style.background = remaining < 0 ? 'var(--danger)' : 'var(--accent-2)';
+    card.style.display = 'block';
+  }
+
+  function renderBudgetSettingsField(){
+    var mk = currentMonthKey();
+    document.getElementById('budgetMonthLabel').textContent = 'Monthly budget (for ' + mk + ')';
+    var existing = budgets[mk];
+    document.getElementById('budgetInput').value = existing != null ? existing : '';
+  }
+
+  function saveBudget(){
+    var mk = currentMonthKey();
+    var val = parseFloat(document.getElementById('budgetInput').value);
+    if(!val || val <= 0){
+      alert('Please enter a valid budget amount.');
+      return;
+    }
+    budgets[mk] = val;
+    saveJSON(BUDGET_KEY, budgets);
+    renderBudgetCard();
+    alert('Budget saved for ' + mk + '.');
   }
 
   function renderBreakdown(todays, total){
@@ -719,10 +810,17 @@
 
   // ---------- Add / delete ----------
   function addExpense(){
+    var dateInput = document.getElementById('entryDateInput');
     var amountInput = document.getElementById('amountInput');
     var catSelect = document.getElementById('categorySelect');
     var otherInput = document.getElementById('otherCategoryInput');
     var noteInput = document.getElementById('noteInput');
+
+    var entryDateISO = dateInput.value || todayISO();
+    if(entryDateISO > todayISO()){
+      alert('You cannot add an expense for a future date.');
+      return;
+    }
 
     var amount = parseFloat(amountInput.value);
     if(!amount || amount <= 0){
@@ -744,16 +842,19 @@
       }
     }
     var now = new Date();
+    var timeOfDay = now.toTimeString().slice(0,8);
+    var combined = new Date(entryDateISO + 'T' + timeOfDay);
     var entry = {
       id: uuid(),
-      dateISO: todayISO(),
-      timeISO: now.toISOString(),
+      dateISO: entryDateISO,
+      timeISO: combined.toISOString(),
       amount: amount,
       category: category,
       note: noteInput.value.trim() || null
     };
     entries.push(entry);
     saveJSON(STORAGE_KEY, entries);
+    checkRetentionAndBanner();
 
     amountInput.value = '';
     noteInput.value = '';
@@ -945,10 +1046,18 @@
     if(mode === 'day'){
       var dayList = all.filter(function(e){ return e.dateISO === dateVal; });
       renderHistoryEntries(dayList, dateVal);
-    }else{
+    }else if(mode === 'week'){
       var startISO = addDaysISO(dateVal, -6);
       var weekList = all.filter(function(e){ return e.dateISO >= startISO && e.dateISO <= dateVal; });
       renderHistoryEntries(weekList, startISO + ' to ' + dateVal);
+    }else if(mode === 'biweek'){
+      var start2ISO = addDaysISO(dateVal, -13);
+      var biList = all.filter(function(e){ return e.dateISO >= start2ISO && e.dateISO <= dateVal; });
+      renderHistoryEntries(biList, start2ISO + ' to ' + dateVal);
+    }else if(mode === 'month'){
+      var mk = monthKeyFromDate(dateVal);
+      var monthList = all.filter(function(e){ return monthKeyFromDate(e.dateISO) === mk; });
+      renderHistoryEntries(monthList, mk + ' (full month)');
     }
   }
 
@@ -964,10 +1073,99 @@
   // ---------- Settings modal ----------
   function openSettings(){
     renderArchiveList();
+    renderBudgetSettingsField();
     document.getElementById('settingsOverlay').classList.add('show');
   }
   function closeSettingsModal(){
     document.getElementById('settingsOverlay').classList.remove('show');
+  }
+
+  // ---------- Dashboard ----------
+  function daysInMonth(mk){
+    var y = parseInt(mk.slice(0,4), 10), m = parseInt(mk.slice(5,7), 10);
+    return new Date(y, m, 0).getDate();
+  }
+
+  function renderDashboard(mk){
+    var container = document.getElementById('dashboardResult');
+    var monthList = getMonthEntries(mk);
+    var total = monthList.reduce(function(sum, e){ return sum + e.amount; }, 0);
+    var html = '';
+
+    html += '<div class="card" style="margin-bottom:12px;"><h2>' + escapeHtml(mk) + ' Overview</h2>';
+    html += '<div style="font-size:26px; font-weight:800; margin-bottom:4px;">Rs ' + total.toFixed(2) + '</div>';
+    html += '<div style="font-size:12px; color:var(--muted);">' + monthList.length + ' entries</div>';
+
+    var budget = budgets[mk];
+    if(budget != null){
+      var remaining = budget - total;
+      var pct = budget > 0 ? Math.min(100, total/budget*100) : 0;
+      html += '<div style="margin-top:10px;"><div class="cat-row-top"><span class="name">Budget Rs ' + budget.toFixed(2) + '</span>' +
+        '<span class="val">' + (remaining >= 0 ? 'Rs ' + remaining.toFixed(2) + ' left' : 'Over by Rs ' + Math.abs(remaining).toFixed(2)) + '</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) + '%; background:' + (remaining < 0 ? 'var(--danger)' : 'var(--accent-2)') + ';"></div></div></div>';
+    }
+    html += '</div>';
+
+    if(monthList.length === 0){
+      html += '<div class="empty">No expenses recorded for this month.</div>';
+      container.innerHTML = html;
+      return;
+    }
+
+    var byCat = {};
+    monthList.forEach(function(e){ byCat[e.category] = (byCat[e.category] || 0) + e.amount; });
+    var catKeys = Object.keys(byCat).sort(function(a,b){ return byCat[b]-byCat[a]; });
+    html += '<div class="card" style="margin-bottom:12px;"><h2>By Category</h2>';
+    catKeys.forEach(function(cat){
+      var amt = byCat[cat], pct = total > 0 ? (amt/total*100) : 0;
+      html += '<div class="cat-row"><div class="cat-row-top"><span class="name">' + escapeHtml(cat) + '</span>' +
+        '<span class="val">' + pct.toFixed(0) + '% - Rs ' + amt.toFixed(2) + '</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct.toFixed(1) + '%"></div></div></div>';
+    });
+    html += '</div>';
+
+    var byDay = {};
+    monthList.forEach(function(e){ byDay[e.dateISO] = (byDay[e.dateISO] || 0) + e.amount; });
+    var dim = daysInMonth(mk);
+    var maxDay = 0;
+    var dayVals = [];
+    for(var d=1; d<=dim; d++){
+      var dISO = mk + '-' + String(d).padStart(2,'0');
+      var v = byDay[dISO] || 0;
+      dayVals.push(v);
+      if(v > maxDay) maxDay = v;
+    }
+    html += '<div class="card" style="margin-bottom:12px;"><h2>Daily Spending</h2>';
+    html += '<div style="display:flex; align-items:flex-end; gap:2px; height:80px;">';
+    dayVals.forEach(function(v){
+      var h = maxDay > 0 ? Math.max(2, (v/maxDay*80)) : 2;
+      html += '<div style="flex:1; background:var(--accent-2); border-radius:2px; height:' + h.toFixed(0) + 'px;"></div>';
+    });
+    html += '</div><div style="display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:4px;"><span>Day 1</span><span>Day ' + dim + '</span></div>';
+    html += '</div>';
+
+    var spendDays = dayVals.filter(function(v){ return v > 0; }).length;
+    var avgPerSpendDay = spendDays > 0 ? total/spendDays : 0;
+    var biggest = monthList.slice().sort(function(a,b){ return b.amount-a.amount; })[0];
+    html += '<div class="card"><h2>Quick Insights</h2>';
+    html += '<div style="font-size:13px; line-height:1.8; color:var(--text);">';
+    html += 'Top category: <b>' + escapeHtml(catKeys[0]) + '</b> (Rs ' + byCat[catKeys[0]].toFixed(2) + ')<br>';
+    html += 'Days with spending: ' + spendDays + ' of ' + dim + '<br>';
+    html += 'Average on spending days: Rs ' + avgPerSpendDay.toFixed(2) + '<br>';
+    html += 'Largest single expense: Rs ' + biggest.amount.toFixed(2) + ' (' + escapeHtml(biggest.category) + ' on ' + biggest.dateISO + ')';
+    html += '</div></div>';
+
+    container.innerHTML = html;
+  }
+
+  function openDashboard(){
+    document.getElementById('dashboardDate').value = todayISO();
+    document.getElementById('dashboardResult').innerHTML = '';
+    document.getElementById('dashboardOverlay').classList.add('show');
+    renderDashboard(currentMonthKey());
+  }
+  function closeDashboardModal(){
+    document.getElementById('dashboardOverlay').classList.remove('show');
   }
 
   function wipeAllData(){
@@ -977,6 +1175,7 @@
     localStorage.removeItem(PIN_KEY);
     localStorage.removeItem(ARCHIVE_KEY);
     localStorage.removeItem(LASTEXPORT_KEY);
+    localStorage.removeItem(BUDGET_KEY);
     location.reload();
   }
 
@@ -994,6 +1193,14 @@
     document.getElementById('historyGoBtn').addEventListener('click', showHistory);
     document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
     document.getElementById('manualExportBtn').addEventListener('click', manualExportAll);
+    document.getElementById('saveBudgetBtn').addEventListener('click', saveBudget);
+    document.getElementById('dashboardBtn').addEventListener('click', openDashboard);
+    document.getElementById('closeDashboard').addEventListener('click', closeDashboardModal);
+    document.getElementById('dashboardGoBtn').addEventListener('click', function(){
+      var v = document.getElementById('dashboardDate').value;
+      if(!v){ alert('Please pick a date within the month.'); return; }
+      renderDashboard(monthKeyFromDate(v));
+    });
     document.getElementById('wipeBtn').addEventListener('click', wipeAllData);
     document.getElementById('changePinBtn').addEventListener('click', function(){
       closeSettingsModal();
