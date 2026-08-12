@@ -458,6 +458,7 @@
   var PIN_KEY = 'expenseTracker.pinHash';
   var ARCHIVE_KEY = 'expenseTracker.archive';
   var LASTEXPORT_KEY = 'expenseTracker.lastExport';
+  var LASTEXPORT_ISO_KEY = 'expenseTracker.lastExportISO';
   var BUDGET_KEY = 'expenseTracker.budgets';
   var RETENTION_DAYS = 30;
 
@@ -523,7 +524,8 @@
       dateInput.max = todayISO();
       renderDate();
       render();
-      checkRetentionAndBanner();
+      var didArchive = checkRetentionAndBanner();
+      if(!didArchive) checkExportReminder();
       bindEvents();
     }catch(err){
       showFatalError(err);
@@ -856,6 +858,7 @@
     saveJSON(STORAGE_KEY, entries);
     checkRetentionAndBanner();
 
+
     amountInput.value = '';
     noteInput.value = '';
     otherInput.value = '';
@@ -918,6 +921,27 @@
       saveJSON(STORAGE_KEY, entries);
       saveJSON(ARCHIVE_KEY, archive);
       showBanner('Older entries were archived. Export them from Settings whenever you like.', 'Open Settings', openSettings);
+      return true;
+    }
+    return false;
+  }
+
+  function daysBetween(aISO, bISO){
+    var a = new Date(aISO + 'T00:00:00');
+    var b = new Date(bISO + 'T00:00:00');
+    return Math.round((b - a) / (1000*60*60*24));
+  }
+
+  function checkExportReminder(){
+    var totalCount = entries.length + Object.keys(archive).reduce(function(sum, mk){ return sum + archive[mk].length; }, 0);
+    if(totalCount === 0) return;
+    var lastISO = loadJSON(LASTEXPORT_ISO_KEY, null);
+    var daysSince = lastISO ? daysBetween(lastISO, todayISO()) : null;
+    if(daysSince === null || daysSince >= 7){
+      var msg = daysSince === null ?
+        'You have not backed up your data yet. Export a copy so it is safe even if this device loses its data.' :
+        'It has been ' + daysSince + ' days since your last backup export. Export now to keep your data safe.';
+      showBanner(msg, 'Export now', manualExportAll);
     }
   }
 
@@ -952,6 +976,7 @@
 
       lastExport = new Date().toLocaleString('en-IN');
       saveJSON(LASTEXPORT_KEY, lastExport);
+      saveJSON(LASTEXPORT_ISO_KEY, todayISO());
       renderLastExportLabel();
     }).catch(function(err){
       alert(err.message || 'Export failed. Please try again with an internet connection.');
@@ -1175,6 +1200,7 @@
     localStorage.removeItem(PIN_KEY);
     localStorage.removeItem(ARCHIVE_KEY);
     localStorage.removeItem(LASTEXPORT_KEY);
+    localStorage.removeItem(LASTEXPORT_ISO_KEY);
     localStorage.removeItem(BUDGET_KEY);
     location.reload();
   }
