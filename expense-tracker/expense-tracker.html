@@ -418,6 +418,14 @@
     </div>
     <button class="btn secondary" id="saveBudgetBtn">Save budget for this month</button>
     <button class="btn secondary" id="manualExportBtn" style="margin-top:10px;">Export current data now (.xlsx)</button>
+
+    <div class="form-row" style="margin-top:14px;">
+      <label>Google Drive backup</label>
+      <div id="driveStatus" style="font-size:12px; color:var(--muted); margin-bottom:8px;">Not connected. No Drive backup yet.</div>
+      <button class="btn secondary" id="connectDriveBtn">Connect Google Drive</button>
+      <button class="btn" id="backupDriveBtn" style="margin-top:8px;">Backup Now</button>
+    </div>
+
     <button class="btn secondary" id="changePinBtn" style="margin-top:10px;">Change PIN</button>
     <button class="btn danger" id="wipeBtn" style="margin-top:10px;">Erase all data</button>
     <p style="font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5;">
@@ -493,6 +501,10 @@
   var LASTEXPORT_KEY = 'expenseTracker.lastExport';
   var LASTEXPORT_ISO_KEY = 'expenseTracker.lastExportISO';
   var BUDGET_KEY = 'expenseTracker.budgets';
+  var DRIVE_BACKUP_KEY = 'expenseTracker.lastDriveBackup';
+  var DRIVE_FILEID_KEY = 'expenseTracker.driveFileId';
+  var GOOGLE_CLIENT_ID = '471693826209-je025n810vq8iml6l5q8c9v5n578ifj9.apps.googleusercontent.com';
+  var DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
   var RETENTION_DAYS = 30;
 
   var defaultCategories = ['Food', 'Transport', 'Bills', 'Entertainment', 'Other'];
@@ -1138,10 +1150,148 @@
     document.getElementById('historyOverlay').classList.remove('show');
   }
 
+  // ---------- Google Drive backup ----------
+  var driveAccessToken = null;
+  var driveTokenClient = null;
+
+  function getStoredDriveToken(){
+    if(driveAccessToken) return driveAccessToken;
+    var t = sessionStorage.getItem('expenseTracker.driveToken');
+    if(t){ driveAccessToken = t; return t; }
+    return null;
+  }
+
+  function ensureGisLoaded(cb){
+    if(window.google && google.accounts && google.accounts.oauth2){ cb(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = cb;
+    s.onerror = function(){ alert('Could not load Google Sign-In. Check your internet connection and try again.'); };
+    document.head.appendChild(s);
+  }
+
+  function getDriveTokenClient(){
+    if(!driveTokenClient){
+      driveTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: DRIVE_SCOPE,
+        callback: ''
+      });
+    }
+    return driveTokenClient;
+  }
+
+  function connectGoogleDrive(){
+    ensureGisLoaded(function(){
+      var client = getDriveTokenClient();
+      client.callback = function(resp){
+        if(resp.error){
+          alert('Google sign-in failed: ' + resp.error);
+          return;
+        }
+        driveAccessToken = resp.access_token;
+        sessionStorage.setItem('expenseTracker.driveToken', driveAccessToken);
+        renderDriveStatus();
+        alert('Connected to Google Drive.');
+      };
+      client.requestAccessToken({ prompt: 'consent' });
+    });
+  }
+
+  function backupToGoogleDrive(){
+    var token = getStoredDriveToken();
+    if(!token){
+      ensureGisLoaded(function(){
+        var client = getDriveTokenClient();
+        client.callback = function(resp){
+          if(resp.error){
+            alert('Google sign-in failed: ' + resp.error);
+            return;
+          }
+          driveAccessToken = resp.access_token;
+          sessionStorage.setItem('expenseTracker.driveToken', driveAccessToken);
+          renderDriveStatus();
+          doDriveUpload(driveAccessToken);
+        };
+        client.requestAccessToken({ prompt: '' });
+      });
+      return;
+    }
+    doDriveUpload(token);
+  }
+
+  function doDriveUpload(token){
+    var payload = JSON.stringify({
+      exportedAt: new Date().toISOString(),
+      entries: entries,
+      archive: archive,
+      budgets: budgets,
+      categories: categories
+    }, null, 2);
+
+    function afterUpload(fileId){
+      saveJSON(DRIVE_FILEID_KEY, fileId);
+      saveJSON(DRIVE_BACKUP_KEY, new Date().toLocaleString('en-IN'));
+      renderDriveStatus();
+      alert('Backed up to Google Drive.');
+    }
+
+    function createNewDriveFile(){
+      var boundary = '-------expensetracker314159';
+      var delimiter = '\r\n--' + boundary + '\r\n';
+      var closeDelim = '\r\n--' + boundary + '--';
+      var metadata = { name: 'expense-tracker-backup.json', mimeType: 'application/json' };
+      var body = delimiter +
+        'Content-Type: application/json\r\n\r\n' + JSON.stringify(metadata) +
+        delimiter +
+        'Content-Type: application/json\r\n\r\n' + payload +
+        closeDelim;
+      fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+        },
+        body: body
+      }).then(function(r){ return r.json(); }).then(function(data){
+        if(data.id){ afterUpload(data.id); }
+        else{ alert('Backup failed. Please try connecting again from Settings.'); }
+      }).catch(function(){ alert('Backup failed. Check your internet connection.'); });
+    }
+
+    var existingFileId = loadJSON(DRIVE_FILEID_KEY, null);
+    if(existingFileId){
+      fetch('https://www.googleapis.com/upload/drive/v3/files/' + existingFileId + '?uploadType=media', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: payload
+      }).then(function(r){
+        if(r.ok){ afterUpload(existingFileId); }
+        else if(r.status === 404){ createNewDriveFile(); }
+        else{ alert('Backup failed (status ' + r.status + '). Please try again.'); }
+      }).catch(function(){ alert('Backup failed. Check your internet connection.'); });
+    }else{
+      createNewDriveFile();
+    }
+  }
+
+  function renderDriveStatus(){
+    var statusEl = document.getElementById('driveStatus');
+    if(!statusEl) return;
+    var lastBackup = loadJSON(DRIVE_BACKUP_KEY, null);
+    var connected = !!getStoredDriveToken();
+    statusEl.textContent = (connected ? 'Connected this session. ' : 'Not connected. ') +
+      (lastBackup ? 'Last Drive backup: ' + lastBackup : 'No Drive backup yet.');
+  }
+
   // ---------- Settings modal ----------
   function openSettings(){
     renderArchiveList();
     renderBudgetSettingsField();
+    renderDriveStatus();
     document.getElementById('settingsOverlay').classList.add('show');
   }
   function closeSettingsModal(){
@@ -1245,6 +1395,9 @@
     localStorage.removeItem(LASTEXPORT_KEY);
     localStorage.removeItem(LASTEXPORT_ISO_KEY);
     localStorage.removeItem(BUDGET_KEY);
+    localStorage.removeItem(DRIVE_BACKUP_KEY);
+    localStorage.removeItem(DRIVE_FILEID_KEY);
+    sessionStorage.removeItem('expenseTracker.driveToken');
     location.reload();
   }
 
@@ -1262,6 +1415,8 @@
     document.getElementById('historyGoBtn').addEventListener('click', showHistory);
     document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
     document.getElementById('manualExportBtn').addEventListener('click', manualExportAll);
+    document.getElementById('connectDriveBtn').addEventListener('click', connectGoogleDrive);
+    document.getElementById('backupDriveBtn').addEventListener('click', backupToGoogleDrive);
     document.getElementById('saveBudgetBtn').addEventListener('click', saveBudget);
     document.getElementById('dashboardBtn').addEventListener('click', openDashboard);
     document.getElementById('closeDashboard').addEventListener('click', closeDashboardModal);
