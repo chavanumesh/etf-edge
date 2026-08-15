@@ -132,6 +132,13 @@ canvas{width:100%;height:180px;display:block;}
 
   <!-- TODAY TAB -->
   <div class="tab-panel active" id="tab-today">
+    <div class="status-card" style="background:linear-gradient(135deg,#fff3e0,#e3f2fd);border:1px solid #ffd8a8;">
+      <div class="section-title" style="margin-bottom:6px;">📅 Logging For</div>
+      <div class="input-row">
+        <input type="date" id="active-date-today" onchange="setActiveDate(this.value)">
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="active-date-note-today"></div>
+    </div>
     <div class="status-card">
       <div style="display:flex;justify-content:space-between;align-items:baseline;">
         <span style="font-size:14px;font-weight:600;color:var(--text-muted);">DAILY ENERGY STATUS</span>
@@ -181,6 +188,13 @@ canvas{width:100%;height:180px;display:block;}
 
   <!-- LOG TAB (Weight, Sleep, Activity, Water sub-tabs) -->
   <div class="tab-panel" id="tab-log">
+    <div class="status-card" style="background:linear-gradient(135deg,#fff3e0,#e3f2fd);border:1px solid #ffd8a8;">
+      <div class="section-title" style="margin-bottom:6px;">📅 Logging For</div>
+      <div class="input-row">
+        <input type="date" id="active-date-log" onchange="setActiveDate(this.value)">
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:4px;" id="active-date-note-log"></div>
+    </div>
     <div class="subtabs">
       <button class="subtab-btn active" data-subtab="water">💧 Water</button>
       <button class="subtab-btn" data-subtab="weight">⚖️ Weight</button>
@@ -319,6 +333,7 @@ canvas{width:100%;height:180px;display:block;}
         <input type="date" id="history-date">
       </div>
       <button class="add-btn" onclick="viewHistoryDate()">View That Day</button>
+      <button class="add-btn" style="background:var(--success);margin-top:8px;" onclick="editHistoryDate()">✏️ Add / Edit Entries For That Day</button>
     </div>
     <div class="status-card" id="history-summary" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:baseline;">
@@ -350,8 +365,21 @@ canvas{width:100%;height:180px;display:block;}
     <div class="status-card">
       <div class="section-title">
         <span>Data since <span id="tracking-start-label"></span></span>
-        <button class="clear-txt" style="color:var(--primary);" onclick="exportOnly()">Export CSV</button>
+        <button class="clear-txt" style="color:var(--primary);" onclick="exportOnly()">Export All CSV</button>
       </div>
+    </div>
+    <div class="status-card" style="background:linear-gradient(135deg,#fff3e0,#e3f2fd);border:1px solid #ffd8a8;">
+      <div class="section-title" style="margin-bottom:10px;">📊 Insights Dashboard</div>
+      <div class="input-row">
+        <select id="period-select" onchange="renderInsights()">
+          <option value="7">Weekly (last 7 days)</option>
+          <option value="14">Biweekly (last 14 days)</option>
+          <option value="30">Monthly (last 30 days)</option>
+        </select>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin:4px 0 10px;" id="insights-period-label"></div>
+      <div id="insights-body"></div>
+      <button class="add-btn" style="margin-top:10px;" onclick="exportPeriod()">📥 Export This Period as CSV</button>
     </div>
     <div class="status-card">
       <div class="section-title" style="margin-bottom:10px;">Backup & Restore</div>
@@ -401,6 +429,24 @@ let editIndex = null;
 
 function todayKey(){ return new Date().toISOString().slice(0,10); }
 
+/* ===== Backdating: which date new entries/edits apply to ===== */
+let activeDate = todayKey();
+function setActiveDate(val){
+  if(!val) val = todayKey();
+  if(val > todayKey()) val = todayKey(); // no future entries
+  activeDate = val;
+  ['active-date-today','active-date-log'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) { el.max = todayKey(); el.value = activeDate; }
+  });
+  const note = activeDate===todayKey() ? "Logging for Today." : `⚠️ Logging for ${activeDate} (a past date), not today.`;
+  ['active-date-note-today','active-date-note-log'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.innerText = note;
+  });
+  renderApp(); renderWeightList(); renderSleepList(); renderActivityList(); renderWater(); renderMedicineList();
+}
+
 // Data model: { "2026-07-11": [{title,cals,clock}], ... }
 let allLogs = JSON.parse(localStorage.getItem('brioCalLogsV2')) || {};
 let weightLog = JSON.parse(localStorage.getItem('brioWeightLog')) || [];
@@ -420,15 +466,15 @@ function saveMedicineList(){ localStorage.setItem('brioMedicineList', JSON.strin
 function saveMedicineTaken(){ localStorage.setItem('brioMedicineTaken', JSON.stringify(medicineTaken)); }
 function saveSavedFoods(){ localStorage.setItem('brioSavedFoods', JSON.stringify(savedFoods)); }
 
-function getTodayActivity(){ return activityLogs[todayKey()] || []; }
-function setTodayActivity(arr){ activityLogs[todayKey()] = arr; saveActivity(); }
+function getTodayActivity(){ return activityLogs[activeDate] || []; }
+function setTodayActivity(arr){ activityLogs[activeDate] = arr; saveActivity(); }
 function getUserWeightKg(){
   if(weightLog.length>0) return weightLog[weightLog.length-1].weight;
   return 102; // fallback default
 }
 
-function getToday(){ return allLogs[todayKey()] || []; }
-function setToday(arr){ allLogs[todayKey()] = arr; saveLogs(); }
+function getToday(){ return allLogs[activeDate] || []; }
+function setToday(arr){ allLogs[activeDate] = arr; saveLogs(); }
 
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
@@ -436,8 +482,9 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-    if(btn.dataset.tab==='trends'){ drawCalChart(); drawWeightChart(); drawSleepChart(); }
-    if(btn.dataset.tab==='log'){ renderWeightList(); renderSleepList(); renderActivityList(); renderWater(); renderMedicineList(); }
+    if(btn.dataset.tab==='trends'){ drawCalChart(); drawWeightChart(); drawSleepChart(); renderInsights(); }
+    if(btn.dataset.tab==='log'){ setActiveDate(activeDate); }
+    if(btn.dataset.tab==='today'){ const el=document.getElementById('active-date-today'); if(el){ el.max=todayKey(); el.value=activeDate; } }
     if(btn.dataset.tab==='history'){
       const dInput = document.getElementById('history-date');
       if(!dInput.value) dInput.value = todayKey();
@@ -539,7 +586,7 @@ function deleteActivity(idx){
 
 /* ===== Water Intake ===== */
 function changeWater(delta){
-  const key = todayKey();
+  const key = activeDate;
   let current = waterLog[key] || 0;
   current = Math.max(0, current + delta);
   waterLog[key] = current;
@@ -548,7 +595,7 @@ function changeWater(delta){
 }
 
 function renderWater(){
-  const key = todayKey();
+  const key = activeDate;
   const count = waterLog[key] || 0;
   const target = 8;
   document.getElementById('water-count-num').innerText = count;
@@ -595,7 +642,7 @@ function deleteMedicine(id){
 }
 
 function toggleMedTaken(medId, slot){
-  const key = todayKey();
+  const key = activeDate;
   if(!medicineTaken[key]) medicineTaken[key] = {};
   if(!medicineTaken[key][medId]) medicineTaken[key][medId] = {};
   medicineTaken[key][medId][slot] = !medicineTaken[key][medId][slot];
@@ -611,7 +658,7 @@ function renderMedicineList(){
     el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:14px;">No medicines added yet.</div>';
     return;
   }
-  const key = todayKey();
+  const key = activeDate;
   const takenToday = medicineTaken[key] || {};
 
   medicineList.forEach(med=>{
@@ -768,6 +815,13 @@ function pickFoodResult(name, kcal){
 }
 
 /* ===== History: view any past date ===== */
+function editHistoryDate(){
+  const dateVal = document.getElementById('history-date').value;
+  if(!dateVal){ alert('Pick a date first'); return; }
+  setActiveDate(dateVal);
+  document.querySelector('.tab-btn[data-tab="today"]').click();
+  alert(`You're now logging/editing for ${dateVal}. Use Today and Log tabs as usual — entries save to this date. Switch back to today's date anytime from the "Logging For" box.`);
+}
 function viewHistoryDate(){
   const dateVal = document.getElementById('history-date').value;
   if(!dateVal){ alert('Pick a date first'); return; }
@@ -889,14 +943,14 @@ function saveEdit(){
 }
 
 function resetDay(){
-  if(confirm('Reset today\'s data?')){ setToday([]); setTodayActivity([]); delete waterLog[todayKey()]; saveWater(); renderApp(); renderActivityList(); renderWater(); }
+  if(confirm(`Reset data for ${activeDate}?`)){ setToday([]); setTodayActivity([]); delete waterLog[activeDate]; saveWater(); renderApp(); renderActivityList(); renderWater(); }
 }
 
 /* Weight */
 function addWeight(){
   let w=parseFloat(document.getElementById('weight-input').value);
   if(isNaN(w)||w<=0){ alert('Enter a valid weight'); return; }
-  let key=todayKey();
+  let key=activeDate;
   let existing=weightLog.findIndex(e=>e.date===key);
   if(existing>=0) weightLog[existing].weight=w;
   else weightLog.push({date:key,weight:w});
@@ -932,7 +986,7 @@ function addSleep(){
   let hrs=parseFloat(document.getElementById('sleep-hours').value);
   let quality=document.getElementById('sleep-quality').value;
   if(isNaN(hrs)||hrs<=0||hrs>24){ alert('Enter valid hours slept'); return; }
-  let key=todayKey();
+  let key=activeDate;
   let existing=sleepLog.findIndex(e=>e.date===key);
   if(existing>=0){ sleepLog[existing].hours=hrs; sleepLog[existing].quality=quality; }
   else sleepLog.push({date:key,hours:hrs,quality:quality});
@@ -1137,6 +1191,100 @@ function checkExportBanner(){
   document.getElementById('export-banner').style.display = (days>=30) ? 'block' : 'none';
 }
 checkExportBanner();
+setActiveDate(todayKey());
+
+/* ===== Period Pull: Weekly / Biweekly / Monthly ===== */
+function periodRange(days){
+  const end = new Date(); // through today
+  const start = new Date(); start.setDate(start.getDate() - (days-1));
+  const fmt = d => d.toISOString().slice(0,10);
+  return { start: fmt(start), end: fmt(end) };
+}
+function buildCSVForRange(startDate, endDate){
+  let rows = [['Type','Date','Time','Item/Detail','Value']];
+  const inRange = d => d>=startDate && d<=endDate;
+  Object.keys(allLogs).filter(inRange).sort().forEach(date=>{
+    (allLogs[date]||[]).forEach(item=> rows.push(['Meal', date, item.clock, item.title, item.cals+' kcal']));
+  });
+  weightLog.filter(e=>inRange(e.date)).forEach(e=> rows.push(['Weight', e.date, '', '', e.weight+' kg']));
+  sleepLog.filter(e=>inRange(e.date)).forEach(e=> rows.push(['Sleep', e.date, '', e.quality, e.hours+' hrs']));
+  Object.keys(activityLogs).filter(inRange).sort().forEach(date=>{
+    (activityLogs[date]||[]).forEach(item=> rows.push(['Activity', date, item.clock, item.title, '-'+item.calsBurned+' kcal']));
+  });
+  Object.keys(waterLog).filter(inRange).sort().forEach(date=> rows.push(['Water', date, '', '', waterLog[date]+' glasses']));
+  Object.keys(medicineTaken).filter(inRange).sort().forEach(date=>{
+    Object.entries(medicineTaken[date]).forEach(([medId, slots])=>{
+      const med = medicineList.find(m=>m.id===medId);
+      const medName = med ? med.name : medId;
+      Object.entries(slots).forEach(([slot, taken])=>{ if(taken) rows.push(['Medicine', date, '', medName, slot+' - taken']); });
+    });
+  });
+  return rows.map(r=> r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+}
+function exportPeriod(){
+  const days = parseInt(document.getElementById('period-select').value);
+  const {start,end} = periodRange(days);
+  const csv = buildCSVForRange(start,end);
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `BrioCal_${start}_to_${end}.csv`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+}
+function renderInsights(){
+  const days = parseInt(document.getElementById('period-select').value);
+  const {start,end} = periodRange(days);
+  const inRange = d => d>=start && d<=end;
+  const dateList = [...Array(days)].map((_,i)=>{ const d=new Date(); d.setDate(d.getDate()-(days-1)+i); return d.toISOString().slice(0,10); });
+
+  // Calories
+  let calDaysLogged=0, calTotal=0, overBudgetDays=0;
+  dateList.forEach(d=>{
+    const items = allLogs[d];
+    if(items && items.length){ const sum=items.reduce((s,i)=>s+i.cals,0); calTotal+=sum; calDaysLogged++; if(sum>CALORIE_BUDGET) overBudgetDays++; }
+  });
+  const avgCal = calDaysLogged ? Math.round(calTotal/calDaysLogged) : 0;
+
+  // Sleep
+  const sleepEntries = sleepLog.filter(e=>inRange(e.date));
+  const avgSleep = sleepEntries.length ? (sleepEntries.reduce((s,e)=>s+e.hours,0)/sleepEntries.length).toFixed(1) : '-';
+
+  // Activity burn
+  let activeDays=0, burnTotal=0;
+  dateList.forEach(d=>{ const acts=activityLogs[d]; if(acts&&acts.length){ activeDays++; burnTotal+=acts.reduce((s,a)=>s+(a.calsBurned||0),0); } });
+
+  // Water
+  let waterDaysLogged=0, waterTotal=0, waterGoalHit=0;
+  dateList.forEach(d=>{ if(waterLog[d]!==undefined){ waterDaysLogged++; waterTotal+=waterLog[d]; if(waterLog[d]>=8) waterGoalHit++; } });
+  const avgWater = waterDaysLogged ? (waterTotal/waterDaysLogged).toFixed(1) : '-';
+
+  // Medicine adherence
+  let medDue=0, medTaken=0;
+  dateList.forEach(d=>{
+    const takenToday = medicineTaken[d] || {};
+    medicineList.forEach(med=>{
+      ['morning','afternoon','night'].forEach(slot=>{
+        if(!med[slot]) return;
+        medDue++;
+        if(takenToday[med.id] && takenToday[med.id][slot]) medTaken++;
+      });
+    });
+  });
+  const medAdherence = medDue ? Math.round(100*medTaken/medDue) : null;
+
+  const label = days===7 ? 'Last 7 days' : days===14 ? 'Last 14 days' : 'Last 30 days';
+  document.getElementById('insights-period-label').innerText = `${label} (${start} → ${end})`;
+  document.getElementById('insights-body').innerHTML = `
+    <div class="metrics-grid" style="grid-template-columns:1fr 1fr;">
+      <div><div class="metric-num" style="color:var(--primary);">${avgCal||'-'}</div><div class="metric-label">Avg Calories/day (${calDaysLogged}/${days} logged)</div></div>
+      <div><div class="metric-num" style="color:${overBudgetDays>days/2?'var(--danger)':'var(--success)'};">${overBudgetDays}</div><div class="metric-label">Days over budget</div></div>
+      <div><div class="metric-num">${avgSleep}</div><div class="metric-label">Avg sleep hrs (${sleepEntries.length}/${days} logged)</div></div>
+      <div><div class="metric-num">${activeDays}/${days}</div><div class="metric-label">Active days (${burnTotal} kcal burned)</div></div>
+      <div><div class="metric-num">${avgWater}</div><div class="metric-label">Avg water glasses (${waterGoalHit}/${days} goal hit)</div></div>
+      <div><div class="metric-num">${medAdherence===null?'-':medAdherence+'%'}</div><div class="metric-label">Medicine adherence</div></div>
+    </div>`;
+}
 
 /* ===== Full Backup & Restore (JSON) ===== */
 function downloadBackup(){
