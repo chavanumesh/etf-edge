@@ -389,6 +389,16 @@ canvas{width:100%;height:180px;display:block;}
       <div id="insights-body"></div>
       <button class="add-btn" style="margin-top:10px;" onclick="exportPeriod()">📥 Export This Period as CSV</button>
     </div>
+    <div class="status-card" style="border:2px solid var(--primary-2);">
+      <div class="section-title" style="margin-bottom:10px;">🩺 Doctor Report</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">Pick a date range and generate a printable summary of your calorie, sleep, activity, water and medicine data to share with your doctor.</div>
+      <div class="input-row" style="display:flex;gap:8px;">
+        <input type="date" id="doc-report-start">
+        <input type="date" id="doc-report-end">
+      </div>
+      <button class="add-btn" style="margin-top:10px;background:var(--primary-2);" onclick="generateDoctorReport()">🖨️ Generate Printable Report</button>
+      <button class="add-btn" style="margin-top:8px;background:#edf2f7;color:var(--text-main);" onclick="exportDoctorCSV()">📥 Export Same Range as CSV</button>
+    </div>
     <div class="status-card">
       <div class="section-title" style="margin-bottom:10px;">Backup & Restore</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">A full backup saves every entry (meals, weight, sleep, activity, water, medicines, food memory). Keep this file safe — in Files app, email it to yourself, or save to iCloud Drive.</div>
@@ -502,7 +512,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-    if(btn.dataset.tab==='trends'){ drawCalChart(); drawWeightChart(); drawSleepChart(); renderInsights(); }
+    if(btn.dataset.tab==='trends'){ drawCalChart(); drawWeightChart(); drawSleepChart(); renderInsights(); initDoctorReportDates(); }
     if(btn.dataset.tab==='log'){ setActiveDate(activeDate); }
     if(btn.dataset.tab==='today'){ const el=document.getElementById('active-date-today'); if(el){ el.max=todayKey(); el.value=activeDate; } }
     if(btn.dataset.tab==='history'){
@@ -1304,6 +1314,113 @@ function renderInsights(){
       <div><div class="metric-num">${avgWater}</div><div class="metric-label">Avg water glasses (${waterGoalHit}/${days} goal hit)</div></div>
       <div><div class="metric-num">${medAdherence===null?'-':medAdherence+'%'}</div><div class="metric-label">Medicine adherence</div></div>
     </div>`;
+}
+
+/* ===== Doctor Report ===== */
+function initDoctorReportDates(){
+  const s = document.getElementById('doc-report-start');
+  const e = document.getElementById('doc-report-end');
+  if(s && !s.value){ const d=new Date(); d.setDate(d.getDate()-29); s.value = d.toISOString().slice(0,10); }
+  if(e && !e.value){ e.value = todayKey(); }
+  if(s) s.max = todayKey();
+  if(e) e.max = todayKey();
+}
+function exportDoctorCSV(){
+  const start = document.getElementById('doc-report-start').value;
+  const end = document.getElementById('doc-report-end').value;
+  if(!start || !end || start>end){ alert('Pick a valid date range (start before end).'); return; }
+  const csv = buildCSVForRange(start, end);
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `BrioCal_DoctorReport_${start}_to_${end}.csv`;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 500);
+}
+function generateDoctorReport(){
+  const start = document.getElementById('doc-report-start').value;
+  const end = document.getElementById('doc-report-end').value;
+  if(!start || !end || start>end){ alert('Pick a valid date range (start before end).'); return; }
+  const inRange = d => d>=start && d<=end;
+  const dateList = [];
+  for(let d=new Date(start); d<=new Date(end); d.setDate(d.getDate()+1)){ dateList.push(new Date(d).toISOString().slice(0,10)); }
+
+  // Calories
+  let calDaysLogged=0, calTotal=0, overBudgetDays=0;
+  dateList.forEach(d=>{ const items=allLogs[d]; if(items&&items.length){ const sum=items.reduce((s,i)=>s+i.cals,0); calTotal+=sum; calDaysLogged++; if(sum>CALORIE_BUDGET) overBudgetDays++; } });
+  const avgCal = calDaysLogged ? Math.round(calTotal/calDaysLogged) : 0;
+
+  // Weight trend
+  const weightsInRange = weightLog.filter(e=>inRange(e.date)).sort((a,b)=>a.date.localeCompare(b.date));
+  const startW = weightsInRange[0], endW = weightsInRange[weightsInRange.length-1];
+  const weightChange = (startW && endW) ? (endW.weight - startW.weight).toFixed(1) : null;
+
+  // Sleep
+  const sleepEntries = sleepLog.filter(e=>inRange(e.date));
+  const avgSleep = sleepEntries.length ? (sleepEntries.reduce((s,e)=>s+e.hours,0)/sleepEntries.length).toFixed(1) : '-';
+  const minSleep = sleepEntries.length ? Math.min(...sleepEntries.map(e=>e.hours)) : '-';
+  const maxSleep = sleepEntries.length ? Math.max(...sleepEntries.map(e=>e.hours)) : '-';
+
+  // Activity
+  let activeDays=0, burnTotal=0;
+  dateList.forEach(d=>{ const acts=activityLogs[d]; if(acts&&acts.length){ activeDays++; burnTotal+=acts.reduce((s,a)=>s+(a.calsBurned||0),0); } });
+
+  // Water
+  let waterDaysLogged=0, waterTotal=0;
+  dateList.forEach(d=>{ if(waterLog[d]!==undefined){ waterDaysLogged++; waterTotal+=waterLog[d]; } });
+  const avgWater = waterDaysLogged ? (waterTotal/waterDaysLogged).toFixed(1) : '-';
+
+  // Medicine adherence, per-medicine breakdown
+  let medRowsHtml = '';
+  medicineList.forEach(med=>{
+    let due=0, taken=0;
+    dateList.forEach(d=>{
+      const t = (medicineTaken[d]||{})[med.id] || {};
+      ['morning','afternoon','night'].forEach(slot=>{ if(med[slot]){ due++; if(t[slot]) taken++; } });
+    });
+    const pct = due ? Math.round(100*taken/due) : 0;
+    const slots = ['morning','afternoon','night'].filter(s=>med[s]).join(', ');
+    medRowsHtml += `<tr><td>${med.name}</td><td>${slots}</td><td>${taken}/${due} (${pct}%)</td></tr>`;
+  });
+  if(!medRowsHtml) medRowsHtml = '<tr><td colspan="3">No medicines logged in this app.</td></tr>';
+
+  // Weight table (all readings in range)
+  let weightRowsHtml = weightsInRange.map(w=>`<tr><td>${w.date}</td><td>${w.weight} kg</td></tr>`).join('') || '<tr><td colspan="2">No weight entries in this range.</td></tr>';
+
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html><head><title>BrioCal Health Report</title>
+    <style>
+      body{font-family:-apple-system,Arial,sans-serif;color:#2d3748;padding:24px;max-width:700px;margin:0 auto;}
+      h1{font-size:20px;background:linear-gradient(135deg,#ff8c28,#1e64dc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+      h2{font-size:15px;margin-top:24px;border-bottom:2px solid #ff8c28;padding-bottom:4px;}
+      table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px;}
+      td,th{border:1px solid #ddd;padding:6px 8px;text-align:left;}
+      .meta{font-size:12px;color:#718096;}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+      .box{border:1px solid #e2e8f0;border-radius:8px;padding:10px;}
+      .box b{font-size:18px;display:block;}
+      @media print{ button{display:none;} }
+    </style></head><body>
+    <h1>BrioCal Health Report</h1>
+    <div class="meta">Range: ${start} to ${end} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</div>
+    <h2>Summary</h2>
+    <div class="grid">
+      <div class="box"><b>${avgCal||'-'}</b>Avg calories/day (${calDaysLogged}/${dateList.length} days logged)</div>
+      <div class="box"><b>${overBudgetDays}</b>Days over calorie budget (${CALORIE_BUDGET} kcal)</div>
+      <div class="box"><b>${avgSleep} hrs</b>Avg sleep (range ${minSleep}\u2013${maxSleep} hrs, ${sleepEntries.length} nights logged)</div>
+      <div class="box"><b>${weightChange===null?'-':(weightChange>0?'+':'')+weightChange+' kg'}</b>Weight change (${weightsInRange.length} readings)</div>
+      <div class="box"><b>${activeDays}/${dateList.length}</b>Active days (${burnTotal} kcal burned total)</div>
+      <div class="box"><b>${avgWater}</b>Avg water glasses/day (${waterDaysLogged} days logged)</div>
+    </div>
+    <h2>Medicine Adherence</h2>
+    <table><tr><th>Medicine</th><th>Scheduled</th><th>Taken (adherence)</th></tr>${medRowsHtml}</table>
+    <h2>Weight Readings</h2>
+    <table><tr><th>Date</th><th>Weight</th></tr>${weightRowsHtml}</table>
+    <p class="meta" style="margin-top:24px;">Generated by BrioCal Tracker. Values are self-reported by the patient.</p>
+    <button onclick="window.print()" style="margin-top:16px;padding:10px 16px;">🖨️ Print / Save as PDF</button>
+    </body></html>`);
+  win.document.close();
 }
 
 /* ===== Full Backup & Restore (JSON) ===== */
