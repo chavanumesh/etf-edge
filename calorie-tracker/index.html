@@ -4,28 +4,36 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>BrioCal - Calorie & Weight Tracker</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff8c28">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BrioCal">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root{
   --bg-color:#f7f9fc; --card-bg:#ffffff; --text-main:#2d3748; --text-muted:#718096;
-  --primary:#6c5ce7; --success:#00b894; --warning:#fdcb6e; --danger:#d63031; --border:#e2e8f0;
+  --primary:#ff8c28; --primary-2:#1e64dc; --success:#00b894; --warning:#fdcb6e; --danger:#d63031; --border:#e2e8f0;
+  --grad: linear-gradient(135deg, #ff8c28 0%, #ff6b6b 40%, #1e64dc 100%);
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
 body{background:var(--bg-color);color:var(--text-main);padding:16px;padding-bottom:40px;}
 .app-container{max-width:480px;margin:0 auto;}
-.header{text-align:center;margin-bottom:16px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);padding:20px;border-radius:20px;color:#fff;box-shadow:0 8px 16px rgba(108,92,231,.2);}
+.header{text-align:center;margin-bottom:16px;background:var(--grad);padding:20px;border-radius:20px;color:#fff;box-shadow:0 8px 20px rgba(255,107,107,.28);}
 .header h1{font-size:24px;font-weight:800;}
 .header p{font-size:13px;opacity:.9;margin-top:4px;}
 
 /* Tabs */
 .tabs{display:flex;background:#fff;border-radius:14px;padding:4px;margin-bottom:16px;border:1px solid var(--border);}
 .tab-btn{flex:1;text-align:center;padding:10px;border:none;background:transparent;border-radius:10px;font-weight:700;font-size:13px;color:var(--text-muted);cursor:pointer;}
-.tab-btn.active{background:var(--primary);color:#fff;}
+.tab-btn.active{background:var(--grad);color:#fff;}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
 
 .subtabs{display:flex;background:#edf2f7;border-radius:12px;padding:3px;margin-bottom:16px;overflow-x:auto;gap:2px;}
 .subtab-btn{flex:1;min-width:70px;text-align:center;padding:8px 6px;border:none;background:transparent;border-radius:9px;font-weight:700;font-size:12px;color:var(--text-muted);cursor:pointer;white-space:nowrap;}
-.subtab-btn.active{background:var(--primary);color:#fff;}
+.subtab-btn.active{background:var(--primary-2);color:#fff;}
 .subtab-panel{display:none;}
 .subtab-panel.active{display:block;}
 
@@ -75,7 +83,7 @@ body{background:var(--bg-color);color:var(--text-main);padding:16px;padding-bott
 input,select{background:#edf2f7;border:1px solid transparent;padding:12px;border-radius:12px;font-size:16px;color:var(--text-main);outline:none;width:100%;}
 input:focus,select:focus{border-color:var(--primary);background:#fff;}
 #custom-name{flex:2;} #custom-cal{flex:1;}
-.add-btn{width:100%;background:var(--primary);color:#fff;border:none;padding:14px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;}
+.add-btn{width:100%;background:var(--grad);color:#fff;border:none;padding:14px;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(255,140,40,.25);}
 
 .log-box{background:var(--card-bg);border-radius:20px;border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.05);max-height:320px;overflow-y:auto;}
 .log-item{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);}
@@ -389,6 +397,18 @@ canvas{width:100%;height:180px;display:block;}
       <label for="restore-file-input" class="add-btn" style="display:block;text-align:center;background:#edf2f7;color:var(--text-main);cursor:pointer;">📤 Restore From Backup File</label>
       <input type="file" id="restore-file-input" accept="application/json" style="display:none;" onchange="restoreBackup(event)">
       <div id="last-backup-note" style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:10px;"></div>
+    </div>
+    <div class="status-card" style="background:var(--grad);color:#fff;">
+      <div class="section-title" style="margin-bottom:6px;color:#fff;">☁️ Google Drive Backup</div>
+      <div style="font-size:12px;opacity:.95;margin-bottom:12px;" id="drive-status-text">Not signed in. Sign in to auto-save a copy to your Google Drive.</div>
+      <button class="add-btn" style="background:#fff;color:var(--primary);" id="drive-signin-btn" onclick="driveSignIn()">Sign in to Google Drive</button>
+      <button class="add-btn" style="background:#fff;color:var(--primary-2);margin-top:8px;display:none;" id="drive-backup-btn" onclick="driveBackupNow()">Backup Now to Drive</button>
+      <div style="font-size:11px;opacity:.85;text-align:center;margin-top:10px;" id="drive-last-backup-note"></div>
+    </div>
+    <div class="status-card">
+      <div class="section-title" style="margin-bottom:6px;">📲 Install as App</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">In Safari, tap the Share icon, then "Add to Home Screen". BrioCal will open full-screen and keep working even without signal.</div>
+      <div style="font-size:11px;color:var(--text-muted);" id="pwa-status-note">Checking offline readiness…</div>
     </div>
     <div class="status-card">
       <div class="section-title">Last 7 Days — Calories</div>
@@ -1287,14 +1307,17 @@ function renderInsights(){
 }
 
 /* ===== Full Backup & Restore (JSON) ===== */
-function downloadBackup(){
-  const backup = {
+function buildBackupObject(){
+  return {
     version: 1,
     exportedAt: new Date().toISOString(),
     allLogs, weightLog, sleepLog, activityLogs, waterLog,
     medicineList, medicineTaken, savedFoods,
     trackingStart: localStorage.getItem('brioTrackStart')
   };
+}
+function downloadBackup(){
+  const backup = buildBackupObject();
   const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1306,6 +1329,118 @@ function downloadBackup(){
   checkBackupReminder();
   alert('Backup downloaded! Keep this file safe (Files app, email, or iCloud Drive).');
 }
+
+/* ===== Google Drive Backup ===== */
+const DRIVE_CLIENT_ID = '471693826209-je025n810vq8iml6l5q8c9v5n578ifj9.apps.googleusercontent.com';
+const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FILENAME = 'BrioCal_Backup.json';
+let driveTokenClient = null;
+let driveAccessToken = null;
+let driveFileId = localStorage.getItem('brioDriveFileId') || null;
+
+function driveSetStatus(text){ const el=document.getElementById('drive-status-text'); if(el) el.innerText = text; }
+
+function driveSignIn(){
+  if(!window.google || !google.accounts || !google.accounts.oauth2){
+    alert('Google Sign-In script has not loaded yet. Check your internet connection and try again.');
+    return;
+  }
+  if(!driveTokenClient){
+    driveTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: DRIVE_CLIENT_ID,
+      scope: DRIVE_SCOPE,
+      callback: (resp)=>{
+        if(resp.error){ driveSetStatus('Sign-in failed: '+resp.error); return; }
+        driveAccessToken = resp.access_token;
+        localStorage.setItem('brioDriveSignedIn','1');
+        document.getElementById('drive-signin-btn').style.display='none';
+        document.getElementById('drive-backup-btn').style.display='block';
+        driveSetStatus('Signed in. Auto-backup is on.');
+        driveBackupNow(true);
+      }
+    });
+  }
+  driveTokenClient.requestAccessToken({prompt: driveAccessToken ? '' : 'consent'});
+}
+
+async function driveFindExistingFile(){
+  const q = encodeURIComponent(`name='${DRIVE_FILENAME}' and trashed=false`);
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
+    headers: { Authorization: 'Bearer '+driveAccessToken }
+  });
+  const data = await res.json();
+  if(data.files && data.files.length){ driveFileId = data.files[0].id; localStorage.setItem('brioDriveFileId', driveFileId); }
+  return driveFileId;
+}
+
+async function driveBackupNow(silent){
+  if(!driveAccessToken){ driveSetStatus('Please sign in first.'); return; }
+  try{
+    driveSetStatus('Backing up to Drive…');
+    if(!driveFileId){ await driveFindExistingFile(); }
+    const backup = buildBackupObject();
+    const metadata = { name: DRIVE_FILENAME, mimeType: 'application/json' };
+    const boundary = '-------briocal' + Date.now();
+    const body =
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n` +
+      `--${boundary}\r\nContent-Type: application/json\r\n\r\n${JSON.stringify(backup)}\r\n--${boundary}--`;
+    const url = driveFileId
+      ? `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=multipart`
+      : `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`;
+    const res = await fetch(url, {
+      method: driveFileId ? 'PATCH' : 'POST',
+      headers: { Authorization: 'Bearer '+driveAccessToken, 'Content-Type': `multipart/related; boundary=${boundary}` },
+      body
+    });
+    const data = await res.json();
+    if(data.id){
+      driveFileId = data.id; localStorage.setItem('brioDriveFileId', driveFileId);
+      const now = new Date().toLocaleString();
+      localStorage.setItem('brioDriveLastBackup', now);
+      driveSetStatus('Signed in. Auto-backup is on.');
+      document.getElementById('drive-last-backup-note').innerText = `Last Drive backup: ${now}`;
+      if(!silent) alert('Backed up to Google Drive successfully.');
+    } else {
+      driveSetStatus('Backup failed. Try "Backup Now" again.');
+    }
+  } catch(e){
+    driveSetStatus('Backup failed: '+e.message);
+  }
+}
+
+function driveAutoBackupCheck(){
+  if(localStorage.getItem('brioDriveSignedIn')!=='1') return;
+  const last = localStorage.getItem('brioDriveLastBackup');
+  const hoursSince = last ? (Date.now()-new Date(last).getTime())/36e5 : 999;
+  if(hoursSince >= 24){
+    // Needs a fresh token silently; Google will use existing session if available.
+    driveSignIn();
+  } else {
+    document.getElementById('drive-signin-btn').style.display='none';
+    document.getElementById('drive-backup-btn').style.display='block';
+    driveSetStatus('Signed in previously. Tap "Backup Now" or wait for the next auto-backup.');
+    document.getElementById('drive-last-backup-note').innerText = last ? `Last Drive backup: ${last}` : '';
+  }
+}
+
+/* ===== PWA: service worker registration ===== */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').then(()=>{
+      const note = document.getElementById('pwa-status-note');
+      if(note) note.innerText = '✅ Offline mode is ready — this app will open even without signal.';
+    }).catch(()=>{
+      const note = document.getElementById('pwa-status-note');
+      if(note) note.innerText = 'Offline mode could not be enabled on this browser.';
+    });
+  });
+} else {
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const note = document.getElementById('pwa-status-note');
+    if(note) note.innerText = 'This browser does not support offline mode.';
+  });
+}
+setTimeout(driveAutoBackupCheck, 1500);
 
 function restoreBackup(event){
   const file = event.target.files[0];
