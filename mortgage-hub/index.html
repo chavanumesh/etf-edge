@@ -46,9 +46,6 @@
   --sh2: 0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(0,0,0,.10);
 }
 
-/* ══════════════════════════════════
-   RESET & BASE
-══════════════════════════════════ */
 *, *::before, *::after {
   box-sizing: border-box; margin: 0; padding: 0;
   -webkit-tap-highlight-color: transparent;
@@ -67,9 +64,6 @@ body {
 button { font-family: inherit; cursor: pointer; }
 textarea { font-family: inherit; }
 
-/* ══════════════════════════════════
-   TOP BAR
-══════════════════════════════════ */
 .topbar {
   background: var(--navy);
   padding-top: env(safe-area-inset-top);
@@ -106,9 +100,15 @@ textarea { font-family: inherit; }
 }
 .t-btn:active { background: rgba(255,255,255,.18); }
 
-/* ══════════════════════════════════
-   5C PILL STRIP
-══════════════════════════════════ */
+/* DISCLAIMER BANNER */
+.disclaimer-banner {
+  background: #FFFBEB; border-bottom: 1px solid #FDE68A;
+  padding: 8px 1rem; display: flex; align-items: center; gap: 8px;
+  font-size: 11.5px; color: #92400E; line-height: 1.4;
+}
+.disclaimer-banner strong { font-weight: 700; }
+.disclaimer-icon { font-size: 14px; flex-shrink: 0; }
+
 .cstrip {
   background: var(--navy);
   padding: 0 1rem 11px;
@@ -132,16 +132,10 @@ textarea { font-family: inherit; }
 .cpill[data-c="coll"].on { background: linear-gradient(135deg, var(--coll), var(--coll-mid)); box-shadow: 0 2px 10px rgba(220,38,38,.4); }
 .cpill[data-c="cond"].on { background: linear-gradient(135deg, var(--cond), var(--cond-mid)); box-shadow: 0 2px 10px rgba(8,145,178,.4); }
 
-/* ══════════════════════════════════
-   LAYOUT & PAGES
-══════════════════════════════════ */
 .main { padding: 1rem 1rem 0; max-width: 600px; margin: 0 auto; }
 .page { display: none; }
 .page.active { display: block; }
 
-/* ══════════════════════════════════
-   HERO BANNER
-══════════════════════════════════ */
 .hero {
   border-radius: var(--r); padding: 1.25rem 1.25rem 1.1rem;
   margin-bottom: 1.1rem; position: relative; overflow: hidden;
@@ -173,21 +167,14 @@ textarea { font-family: inherit; }
 .hstat-v { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: #fff; line-height: 1; }
 .hstat-l { font-size: 9px; text-transform: uppercase; letter-spacing: .5px; color: rgba(255,255,255,.35); margin-top: 3px; }
 
-/* ══════════════════════════════════
-   SECTION HEADER
-══════════════════════════════════ */
 .sec-hd { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
 .sec-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--tx); }
 .sec-note { font-size: 11.5px; color: var(--tx3); }
 
-/* C group divider */
 .cg-row { display: flex; align-items: center; gap: 8px; margin: 16px 0 9px; }
 .cg-chip { font-size: 10.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; padding: 4px 11px; border-radius: var(--rpill); white-space: nowrap; }
 .cg-line { flex: 1; height: 1px; background: var(--bord); }
 
-/* ══════════════════════════════════
-   TOPIC CARDS
-══════════════════════════════════ */
 .tcard {
   background: var(--surf); border-radius: var(--r);
   border: 1.5px solid var(--bord); border-left-width: 5px;
@@ -208,14 +195,12 @@ textarea { font-family: inherit; }
 .tcard-body { font-size: 12.5px; color: var(--tx2); line-height: 1.62; margin-bottom: 9px; }
 .tcard-foot { display: flex; gap: 5px; flex-wrap: wrap; }
 
-/* Badges */
 .badge { font-size: 10px; font-weight: 700; letter-spacing: .25px; text-transform: uppercase; padding: 3px 8px; border-radius: var(--rpill); }
 .badge-gse  { background: #F1F5F9; color: #64748B; }
 .badge-new  { background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; }
 .badge-core { background: #F2F1EE; color: #9CA3AF; }
 .badge-read { background: #D1FAE5; color: #059669; }
 
-/* Tutor button on card */
 .tcard-btn {
   flex-shrink: 0; border: none; border-radius: var(--rs);
   padding: 6px 11px; font-size: 11px; font-weight: 700; letter-spacing: .1px;
@@ -229,9 +214,6 @@ textarea { font-family: inherit; }
 .tcard[data-c="coll"] .tcard-btn { background: var(--coll); }
 .tcard[data-c="cond"] .tcard-btn { background: var(--cond); }
 
-/* ══════════════════════════════════
-   SEARCH PAGE
-══════════════════════════════════ */
 .search-box {
   display: flex; align-items: center; gap: 9px;
   background: var(--surf); border: 1.5px solid var(--bord);
@@ -249,7 +231,6 @@ textarea { font-family: inherit; }
   padding: 0; line-height: 1; display: none; flex-shrink: 0;
 }
 
-/* Search 5C filter pills */
 .sf-bar { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 1rem; }
 .sf-bar::-webkit-scrollbar { display: none; }
 .sfpill {
@@ -266,11 +247,9 @@ textarea { font-family: inherit; }
 .sfpill[data-f="coll"].on { background: var(--coll); }
 .sfpill[data-f="cond"].on { background: var(--cond); }
 
-/* Search result count row */
 .sresult-meta { font-size: 11.5px; color: var(--tx3); margin-bottom: 8px; }
 .sresult-meta strong { color: var(--tx2); }
 
-/* AI fallback card */
 .ai-fallback {
   background: var(--surf); border: 1.5px solid var(--bord);
   border-radius: var(--r); padding: 1.25rem; box-shadow: var(--sh); margin-bottom: 10px;
@@ -287,9 +266,6 @@ textarea { font-family: inherit; }
 .suggest-row { font-size: 11.5px; color: var(--tx3); text-align: center; padding: 6px 0; }
 .suggest-link { font-weight: 700; cursor: pointer; }
 
-/* ══════════════════════════════════
-   QUIZ
-══════════════════════════════════ */
 .qbanner {
   border-radius: var(--r); padding: 1.1rem 1.25rem; margin-bottom: 1rem;
   display: flex; align-items: center; justify-content: space-between;
@@ -330,9 +306,6 @@ textarea { font-family: inherit; }
 }
 .qnext-btn:active { opacity: .85; }
 
-/* ══════════════════════════════════
-   REFRESH PAGE
-══════════════════════════════════ */
 .rbanner {
   background: linear-gradient(140deg, var(--navy) 0%, var(--navy2) 100%);
   border-radius: var(--r); padding: 1.25rem; margin-bottom: 1.1rem; box-shadow: var(--sh2);
@@ -348,6 +321,10 @@ textarea { font-family: inherit; }
 }
 .rfetch-btn:disabled { opacity: .7; }
 .rfetch-btn:active { opacity: .85; }
+.rdemo-note {
+  font-size: 11px; color: rgba(255,255,255,.55); text-align: center;
+  margin-top: 9px; line-height: 1.5;
+}
 
 .rprog { margin-top: 1rem; display: none; }
 .rprogbar { height: 5px; background: rgba(255,255,255,.15); border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
@@ -365,9 +342,6 @@ textarea { font-family: inherit; }
 .ulog-meta { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--tx3); margin-bottom: 3px; }
 .ulog-desc { font-size: 12.5px; color: var(--tx2); line-height: 1.55; }
 
-/* ══════════════════════════════════
-   CHANGELOG
-══════════════════════════════════ */
 .cl-card { background: var(--surf); border: 1.5px solid var(--bord); border-radius: var(--r); padding: 1rem; margin-bottom: 10px; box-shadow: var(--sh); }
 .cl-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
 .cl-ver { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 600; }
@@ -376,9 +350,6 @@ textarea { font-family: inherit; }
 .cl-chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .cl-chip { font-size: 10px; padding: 2px 8px; border-radius: var(--rpill); border: 1px solid #A7D9BB; background: #D1FAE5; color: #059669; font-weight: 700; }
 
-/* ══════════════════════════════════
-   AI TUTOR PANEL
-══════════════════════════════════ */
 .tpanel {
   position: fixed; inset: 0; z-index: 200; background: var(--bg);
   display: flex; flex-direction: column;
@@ -441,7 +412,6 @@ textarea { font-family: inherit; }
 }
 .tpanel-send:active { opacity: .8; }
 
-/* Quiz choices inside tutor */
 .tchoice {
   display: block; width: 100%; text-align: left;
   border: 1.5px solid var(--bord); border-radius: var(--rs);
@@ -451,9 +421,6 @@ textarea { font-family: inherit; }
 .tchoice.ok  { background: #D1FAE5; border-color: var(--cap); color: var(--cap); font-weight: 700; }
 .tchoice.bad { background: #FEE2E2; border-color: var(--coll); color: var(--coll); }
 
-/* ══════════════════════════════════
-   BOTTOM NAV
-══════════════════════════════════ */
 .bnav {
   position: fixed; bottom: 0; left: 0; right: 0;
   background: var(--surf); border-top: 1px solid var(--bord);
@@ -471,9 +438,6 @@ textarea { font-family: inherit; }
 .ntab.on { color: var(--navy); }
 .ntab.on .ni { transform: scale(1.1); }
 
-/* ══════════════════════════════════
-   TOAST
-══════════════════════════════════ */
 .toast {
   position: fixed; bottom: 82px; left: 50%;
   transform: translateX(-50%) translateY(10px);
@@ -484,17 +448,11 @@ textarea { font-family: inherit; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ══════════════════════════════════
-   EMPTY STATE
-══════════════════════════════════ */
 .empty { text-align: center; padding: 2.5rem 1rem; color: var(--tx3); }
 .empty-ico { font-size: 40px; margin-bottom: 8px; }
 .empty-msg { font-size: 14px; line-height: 1.55; }
 .empty-msg small { font-size: 12px; opacity: .75; display: block; margin-top: 4px; }
 
-/* ══════════════════════════════════
-   Q&A BOT PAGE
-══════════════════════════════════ */
 .qa-page {
   display: flex; flex-direction: column;
   height: calc(100vh - 130px - env(safe-area-inset-bottom));
@@ -502,7 +460,6 @@ textarea { font-family: inherit; }
   padding: 0;
 }
 
-/* Bot header banner */
 .qa-banner {
   background: linear-gradient(140deg, var(--navy), var(--navy2));
   border-radius: var(--r); margin: 1rem 1rem 0;
@@ -519,7 +476,6 @@ textarea { font-family: inherit; }
 .qa-status { font-size: 11px; color: rgba(255,255,255,.4); letter-spacing: .3px; }
 .qa-status span { color: rgba(255,255,255,.7); font-weight: 600; }
 
-/* Suggested questions chips */
 .qa-chips {
   display: flex; gap: 6px; overflow-x: auto;
   scrollbar-width: none; padding: 10px 1rem 0; flex-shrink: 0;
@@ -538,14 +494,12 @@ textarea { font-family: inherit; }
 .qa-chip.c-coll { border-color: var(--coll); color: var(--coll); background: var(--coll-lt); }
 .qa-chip.c-cond { border-color: var(--cond); color: var(--cond); background: var(--cond-lt); }
 
-/* Chat message area */
 .qa-body {
   flex: 1; overflow-y: auto; padding: 1rem;
   display: flex; flex-direction: column; gap: 10px;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Welcome state (shown when no messages) */
 .qa-welcome {
   text-align: center; padding: 1.5rem 1rem;
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -559,7 +513,6 @@ textarea { font-family: inherit; }
 .qa-welcome-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--tx); }
 .qa-welcome-sub { font-size: 13px; color: var(--tx3); line-height: 1.6; max-width: 280px; }
 
-/* Chat messages */
 .qa-msg {
   max-width: 91%; padding: 11px 14px;
   border-radius: 16px; font-size: 14px; line-height: 1.68;
@@ -578,7 +531,6 @@ textarea { font-family: inherit; }
 .qa-msg.bot strong { color: var(--navy); }
 .qa-msg.bot a { color: var(--char); text-decoration: underline; }
 
-/* Source tag shown below bot answers */
 .qa-source-tag {
   font-size: 10px; font-weight: 700; letter-spacing: .3px;
   text-transform: uppercase; padding: 2px 8px;
@@ -586,7 +538,6 @@ textarea { font-family: inherit; }
   display: inline-block;
 }
 
-/* Typing indicator */
 .qa-typing {
   display: flex; gap: 5px; padding: 12px 14px;
   background: var(--surf); border: 1.5px solid var(--bord);
@@ -602,7 +553,6 @@ textarea { font-family: inherit; }
 .qa-dot:nth-child(3) { animation-delay: .4s; }
 @keyframes qabop { 0%,60%,100%{transform:translateY(0);} 30%{transform:translateY(-6px);} }
 
-/* Input bar */
 .qa-bar {
   background: var(--surf); border-top: 1px solid var(--bord);
   padding: 10px 1rem;
@@ -627,7 +577,6 @@ textarea { font-family: inherit; }
 .qa-send:active { opacity: .8; }
 .qa-send:disabled { opacity: .4; }
 
-/* Context pills shown in messages for topic links */
 .qa-topic-pill {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 11px; font-weight: 700; padding: 3px 9px;
@@ -639,7 +588,6 @@ textarea { font-family: inherit; }
 </head>
 <body>
 
-<!-- TOP BAR -->
 <header class="topbar">
   <div class="topbar-row">
     <div class="brand">
@@ -654,7 +602,6 @@ textarea { font-family: inherit; }
       <button class="t-btn" onclick="navTo('refresh')" title="Refresh data">↻</button>
     </div>
   </div>
-  <!-- 5C PILL STRIP -->
   <div class="cstrip">
     <button class="cpill on" data-c="all"  onclick="setC('all',this)">✦ All</button>
     <button class="cpill"    data-c="char" onclick="setC('char',this)">🧑 Character</button>
@@ -665,7 +612,11 @@ textarea { font-family: inherit; }
   </div>
 </header>
 
-<!-- AI TUTOR PANEL -->
+<div class="disclaimer-banner">
+  <span class="disclaimer-icon">⚠️</span>
+  <span><strong>Educational demo only.</strong> Content has not been verified against current official Fannie Mae / Freddie Mac guides. Treat all figures, dates, and bulletin references as illustrative, not authoritative.</span>
+</div>
+
 <div class="tpanel" id="tPanel">
   <div class="tpanel-top" id="tTop">
     <div class="tpanel-toprow">
@@ -681,13 +632,10 @@ textarea { font-family: inherit; }
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- MAIN -->
 <main class="main">
 
-  <!-- HOME -->
   <div class="page active" id="page-home">
     <div class="hero default" id="hero">
       <div class="hero-eye" id="hero-eye">The 5 C's of Mortgage Lending</div>
@@ -707,7 +655,6 @@ textarea { font-family: inherit; }
     <div id="topicList"><p style="padding:1rem;color:#9CA3AF;font-size:13px">Loading topics...</p></div>
   </div>
 
-  <!-- SEARCH -->
   <div class="page" id="page-search">
     <div class="search-box">
       <span class="search-icon">🔍</span>
@@ -732,7 +679,6 @@ textarea { font-family: inherit; }
     </div>
   </div>
 
-  <!-- QUIZ -->
   <div class="page" id="page-quiz">
     <div class="qbanner" id="qBanner">
       <div class="qbanner-left">
@@ -757,12 +703,12 @@ textarea { font-family: inherit; }
     <button class="qnext-btn" id="qNext" onclick="nextQ()">Next question →</button>
   </div>
 
-  <!-- REFRESH -->
   <div class="page" id="page-refresh">
     <div class="rbanner">
-      <div class="rbanner-title">Monthly guideline refresh</div>
-      <div class="rbanner-sub">Pull the latest Fannie Mae &amp; Freddie Mac bulletins and update all 5C topic areas. Seven automated checks run before any change is applied.</div>
-      <button class="rfetch-btn" id="rBtn" onclick="runRefresh()">↻ &nbsp;Fetch latest guidelines</button>
+      <div class="rbanner-title">Guideline refresh (demo)</div>
+      <div class="rbanner-sub">Demo of a guideline-refresh workflow concept. Content has not been verified against current official Fannie Mae &amp; Freddie Mac guides — treat all figures, dates, and bulletin references shown in this app as illustrative, not authoritative.</div>
+      <button class="rfetch-btn" id="rBtn" onclick="runRefresh()">↻ &nbsp;Simulate guideline refresh</button>
+      <div class="rdemo-note">⚠ Demo mode — this animation does not fetch real data. No live connection to Fannie Mae or Freddie Mac exists in this app.</div>
       <div class="rprog" id="rProg">
         <div class="rprogbar"><div class="rprogfill" id="rFill" style="width:0%"></div></div>
         <div id="rSteps"></div>
@@ -775,7 +721,6 @@ textarea { font-family: inherit; }
     <div id="uLog"></div>
   </div>
 
-  <!-- CHANGELOG -->
   <div class="page" id="page-changelog">
     <div class="sec-hd" style="margin-bottom:1rem">
       <div class="sec-title">Changelog</div>
@@ -783,11 +728,9 @@ textarea { font-family: inherit; }
     <div id="clList"></div>
   </div>
 
-  <!-- Q&A BOT -->
   <div class="page" id="page-qa" style="padding:0">
     <div class="qa-page">
 
-      <!-- Banner -->
       <div class="qa-banner">
         <div class="qa-banner-top">
           <div class="qa-banner-title">💬 Mortgage Q&amp;A Bot</div>
@@ -796,7 +739,6 @@ textarea { font-family: inherit; }
         <div class="qa-status">Session memory on &nbsp;·&nbsp; <span id="qa-msg-count">0 messages</span></div>
       </div>
 
-      <!-- Suggested question chips -->
       <div class="qa-chips" id="qaChips">
         <button class="qa-chip c-char" onclick="qaAsk('What credit score do I need for a Fannie Mae loan?')">Min credit score?</button>
         <button class="qa-chip c-cap"  onclick="qaAsk('How is DTI calculated and what is the maximum allowed?')">How is DTI calculated?</button>
@@ -808,16 +750,14 @@ textarea { font-family: inherit; }
         <button class="qa-chip c-cap"  onclick="qaAsk('What income documents does Freddie Mac require for W-2 borrowers?')">W-2 income docs?</button>
       </div>
 
-      <!-- Chat body -->
       <div class="qa-body" id="qaBody">
         <div class="qa-welcome" id="qaWelcome">
           <div class="qa-welcome-icon">💬</div>
           <div class="qa-welcome-title">Ask me anything</div>
-          <div class="qa-welcome-sub">Fannie Mae &amp; Freddie Mac guidelines, mortgage products, rates, terminology, process  -  anything goes. I remember context across our conversation.</div>
+          <div class="qa-welcome-sub">Fannie Mae &amp; Freddie Mac guidelines, mortgage products, rates, terminology, process  -  anything goes. I remember context across our conversation. This is an educational demo; verify anything important against official sources.</div>
         </div>
       </div>
 
-      <!-- Input bar -->
       <div class="qa-bar">
         <textarea class="qa-inp" id="qaInp" rows="1"
           placeholder="Ask any mortgage question..."
@@ -831,7 +771,6 @@ textarea { font-family: inherit; }
 
 </main>
 
-<!-- BOTTOM NAV -->
 <nav class="bnav">
   <button class="ntab on" id="tab-home"      onclick="navTo('home',this)"><span class="ni">🏠</span>Home</button>
   <button class="ntab"    id="tab-search"    onclick="goSearch()"><span class="ni">🔍</span>Search</button>
@@ -842,9 +781,6 @@ textarea { font-family: inherit; }
 </nav>
 
 <script>
-/* ==============================================
-   5C CONFIG
-============================================== */
 const C = {
   char: { label:'Character', icon:'🧑', color:'#2563EB', bg:'#DBEAFE',
     grad:'linear-gradient(140deg,#1D4ED8,#3B82F6)',
@@ -863,11 +799,7 @@ const C = {
     desc:'Considers the broader lending environment  -  loan purpose, interest rates, economic climate, and regulatory changes.' },
 };
 
-/* ==============================================
-   TOPIC DATA  (24 topics)
-============================================== */
 const TOPICS = [
-  //    CHARACTER   
   { id:'credit-score',   c:'char', gse:'both', tag:'Apr 2026',
     name:'Credit score models',
     body:'VantageScore 4.0 and FICO 10T are now approved alongside classic FICO for tri-merge reports. Lenders can select the model that best reflects each borrower\'s credit profile.',
@@ -889,7 +821,6 @@ const TOPICS = [
     body:'Post-foreclosure: 7 years (3 with extenuating circumstances). Post-Chapter 7 bankruptcy: 4 years. Post-short sale: 2 years. Documented extenuating circumstances  -  involuntary job loss, medical emergency  -  can shorten required seasoning periods.',
     kw:['waiting period','foreclosure','short sale','bankruptcy','chapter 7','chapter 13','deed in lieu','seasoning','extenuating','prior mortgage','requalify'] },
 
-  //    CAPACITY   
   { id:'dti',            c:'cap',  gse:'fm',   tag:'Core',
     name:'Debt-to-income ratio (DTI)',
     body:'Max 45% back-end DTI with standard DU approval; up to 50% with strong compensating factors. Front-end housing ratio should stay under 28% for best outcome. The primary gauge of monthly repayment ability.',
@@ -911,7 +842,6 @@ const TOPICS = [
     body:'Updated forbearance term requirements effective May 2026. Servicers now submit repayment plans via Freddie Mac\'s Resolve UI. Disaster loss mitigation evaluation hierarchy streamlined under Bulletin 2026-2.',
     kw:['forbearance','loss mitigation','repayment','disaster','servicer','resolve','deferral','modification'] },
 
-  //    CAPITAL   
   { id:'down-payment',   c:'capl', gse:'both', tag:'Core',
     name:'Down payment & reserves',
     body:'HomeOne (Freddie Mac): 3% down for first-time buyers. Standard: 5-20%. Reserves of 2-6 months PITIA significantly strengthen a file. Gift funds are allowed with a signed gift letter and donor bank documentation.',
@@ -933,7 +863,6 @@ const TOPICS = [
     body:'Freddie Mac\'s equivalent to Fannie\'s asset depletion. Formula: 70% of eligible assets / 240 months. Key differences from Fannie: lower asset inclusion rate (70% vs 100%) and fixed 240-month divisor regardless of loan term.',
     kw:['asset utilisation','asset utilization','asset depletion','freddie','eligible assets','240 months','70%','retiree','no employment'] },
 
-  //    COLLATERAL   
   { id:'ltv',            c:'coll', gse:'fre',  tag:'Core',
     name:'LTV & PMI rules',
     body:'Primary residence: up to 97% LTV via HomeOne. Investment property: capped at 85%. PMI required when LTV exceeds 80% and is cancellable once equity reaches 20%. Second homes: typically limited to 90% LTV.',
@@ -955,7 +884,6 @@ const TOPICS = [
     body:'Single-family, 2-4 units, condos, PUDs, and co-ops each carry distinct guidelines. Investment properties face tighter LTV caps (typically 75-85%) and higher reserve requirements (6 months PITIA) versus primary residences.',
     kw:['property','condo','pud','co-op','2-4 unit','investment','owner occupied','sfr','eligibility','property type'] },
 
-  //    CONDITIONS   
   { id:'loan-purpose',   c:'cond', gse:'both', tag:'Core',
     name:'Loan purpose & transaction type',
     body:'Purchase, rate/term refinance, and cash-out refinance each trigger separate overlays. Cash-out is the most restrictive: lower LTV caps, longer seasoning periods, and higher reserve requirements.',
@@ -974,9 +902,6 @@ const TOPICS = [
     kw:['emortgage','digital','eclose','bny','custodian','vpc','modification','closing','electronic','e-note'] },
 ];
 
-/* ==============================================
-   QUIZ DATA
-============================================== */
 const QUIZ = [
   { c:'char', q:'What new credit score models did Fannie Mae approve in April 2026?',
     opts:['FICO 9 & VantageScore 3.0','VantageScore 4.0 & FICO 10T','Only FICO 8','TransUnion CreditVision'], ans:1,
@@ -1010,9 +935,6 @@ const QUIZ = [
     exp:'Both GSEs buy conforming loans, pool them into Mortgage-Backed Securities, and sell those to investors  -  recycling capital back to lenders so they can keep making new loans.' },
 ];
 
-/* ==============================================
-   UPDATE LOG DATA
-============================================== */
 const UPDATES = [
   { gse:'fm',   date:'Jun 2026', ref:'SEL-2026-06',     desc:'RON requirements updated. Single-closing construction-to-permanent modifications clarified. Co-op project eligibility revised.' },
   { gse:'fre',  date:'May 2026', ref:'Bulletin 2026-6',  desc:'Schedule F farming income accepted. YTD paystub "paid-through" date requirement removed for employment verification.' },
@@ -1023,9 +945,6 @@ const UPDATES = [
   { gse:'both', date:'Feb 2026', ref:'FHFA Alignment',   desc:'MH Advantage and CHOICEHome aligned. Uniform manufactured home program specifications published under FHFA guidance.' },
 ];
 
-/* ==============================================
-   STATE
-============================================== */
 let readSet   = new Set();
 let activeC   = 'all';
 let searchF   = 'all';
@@ -1038,9 +957,6 @@ let changelog = [{
   tests:['5C pills','Topic cards','AI Tutor','Quiz scoring','Search & filter','AI fallback','Refresh flow','Changelog']
 }];
 
-/* ==============================================
-   HELPERS
-============================================== */
 function fmt(t) {
   return t
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -1053,9 +969,6 @@ function showToast(m) {
 }
 function $(id) { return document.getElementById(id); }
 
-/* ==============================================
-   BUILD TOPIC CARD
-============================================== */
 function buildCard(t) {
   const cfg      = C[t.c];
   const gseLabel = t.gse === 'fm' ? 'Fannie Mae' : t.gse === 'fre' ? 'Freddie Mac' : 'Both GSEs';
@@ -1078,9 +991,6 @@ function buildCard(t) {
   </div>`;
 }
 
-/* ==============================================
-   RENDER LIST (grouped or flat)
-============================================== */
 function renderList(list, elId, grouped) {
   const el = $(elId);
   if (!list.length) {
@@ -1102,9 +1012,6 @@ function renderList(list, elId, grouped) {
   el.innerHTML = html;
 }
 
-/* ==============================================
-   5C FILTER  -  HOME
-============================================== */
 function setC(ck, btn) {
   activeC = ck;
   document.querySelectorAll('.cpill').forEach(p => p.classList.remove('on'));
@@ -1133,7 +1040,6 @@ function setC(ck, btn) {
 
   renderList(list, 'topicList', ck === 'all');
 
-  // Sync quiz banner colour
   if (ck !== 'all') {
     $('qBanner').style.background = cfg.grad;
     $('qBLabel').textContent      = cfg.label;
@@ -1145,9 +1051,6 @@ function setC(ck, btn) {
   }
 }
 
-/* ==============================================
-   NAVIGATION
-============================================== */
 function navTo(id, btn) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.ntab').forEach(t => t.classList.remove('on'));
@@ -1160,9 +1063,6 @@ function goSearch() {
   setTimeout(() => $('sInp').focus(), 180);
 }
 
-/* ==============================================
-   MARK READ
-============================================== */
 function markRead(id) {
   if (!readSet.has(id)) {
     readSet.add(id);
@@ -1173,9 +1073,6 @@ function markRead(id) {
   renderList(list, 'topicList', activeC === 'all');
 }
 
-/* ==============================================
-   SEARCH  (scored matching + AI fallback)
-============================================== */
 function setSF(f, btn) {
   searchF = f;
   document.querySelectorAll('.sfpill').forEach(p => p.classList.remove('on'));
@@ -1192,7 +1089,6 @@ function runSearch() {
   const q   = raw.toLowerCase();
   const el  = $('sResults');
 
-  // Show/hide clear button
   $('sClear').style.display = raw ? 'block' : 'none';
 
   let pool = searchF === 'all' ? TOPICS : TOPICS.filter(t => t.c === searchF);
@@ -1206,7 +1102,6 @@ function runSearch() {
     return;
   }
 
-  // Score every topic
   const words = q.split(/\s+/).filter(w => w.length >= 2);
   const scored = pool.map(t => {
     const nm  = t.name.toLowerCase();
@@ -1229,7 +1124,6 @@ function runSearch() {
   if (scored.length) {
     el.innerHTML = `<div class="sresult-meta">${scored.length} result${scored.length!==1?'s':''} for "<strong>${raw}</strong>"</div>` + scored.map(buildCard).join('');
   } else {
-    // AI fallback  -  query stored in dataset, never evaluated as a string in onclick
     el.innerHTML = `
       <div class="ai-fallback">
         <div class="ai-fallback-title">🔎 No local topic found for "<em id="fbTerm"></em>"</div>
@@ -1243,7 +1137,6 @@ function runSearch() {
         <span class="suggest-link" style="color:#059669" onclick="setSearch('DTI')">DTI</span> . 
         <span class="suggest-link" style="color:#0891B2" onclick="setSearch('forbearance')">Forbearance</span>
       </div>`;
-    // Safely set text and bind click via DOM  -  no string evaluation
     const fbTerm = document.getElementById('fbTerm');
     const fbBtn  = document.getElementById('fbBtn');
     if (fbTerm) fbTerm.textContent = raw;
@@ -1260,9 +1153,6 @@ function setSearch(term) {
   runSearch();
 }
 
-/* ==============================================
-   QUIZ
-============================================== */
 function initQuiz() { qIdx=0; qRight=0; qTotal=0; loadQ(); }
 function loadQ() {
   const pool = activeC === 'all' ? QUIZ : QUIZ.filter(q => q.c === activeC);
@@ -1311,22 +1201,19 @@ function ansQ(i) {
 }
 function nextQ() { qIdx++; loadQ(); }
 
-/* ==============================================
-   REFRESH
-============================================== */
 function runRefresh() {
   const btn = $('rBtn');
-  btn.disabled = true; btn.innerHTML = '  &nbsp;Fetching...';
+  btn.disabled = true; btn.innerHTML = '  &nbsp;Running demo...';
   $('rProg').style.display = 'block';
   $('rFill').style.width   = '0%';
   const steps = [
-    { i:'🌐', t:'Checking Fannie Mae selling guide for new bulletins...' },
-    { i:'🌐', t:'Checking Freddie Mac single-family guide...' },
-    { i:'📥', t:'Downloading latest bulletin content...' },
-    { i:'🔍', t:'Comparing against current version...' },
-    { i:'✏ ', t:'Applying updates across all 5C topic areas...' },
-    { i:'🧪', t:'Running 7 automated validation tests...' },
-    { i:'📋', t:'Writing changelog entry...' },
+    { i:'🌐', t:'Demo step: simulating check of Fannie Mae selling guide...' },
+    { i:'🌐', t:'Demo step: simulating check of Freddie Mac single-family guide...' },
+    { i:'📥', t:'Demo step: simulating bulletin content download...' },
+    { i:'🔍', t:'Demo step: simulating comparison against current version...' },
+    { i:'✏ ', t:'Demo step: simulating updates across 5C topic areas...' },
+    { i:'🧪', t:'Demo step: simulating 7 automated validation tests...' },
+    { i:'📋', t:'Demo step: simulating changelog entry...' },
   ];
   $('rSteps').innerHTML = steps.map(s => `<div class="rstep"><span class="rstep-i"> </span><span>${s.t}</span></div>`).join('');
   const rows = $('rSteps').querySelectorAll('.rstep');
@@ -1345,17 +1232,17 @@ function runRefresh() {
       const now = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
       changelog.unshift({
         ver: 'v' + appVer, date: now,
-        desc: 'Monthly refresh: latest Fannie Mae & Freddie Mac bulletins applied across all 5C topic areas. All 7 automated tests passed.',
-        tests: ['5C pills','Topic cards','AI Tutor','Quiz scoring','Search+filter','AI fallback','Refresh','Changelog']
+        desc: 'Demo refresh simulation run (no real data fetched). UI/UX flow only.',
+        tests: ['5C pills','Topic cards','AI Tutor','Quiz scoring','Search+filter','AI fallback','Refresh (demo)','Changelog']
       });
-      btn.disabled = false; btn.innerHTML = '  &nbsp;Fetch latest guidelines';
-      showToast('✅ Updated to v' + appVer + ' . all tests passed');
+      btn.disabled = false; btn.innerHTML = '  &nbsp;Simulate guideline refresh';
+      showToast('Demo complete  -  no real data was fetched');
       setTimeout(() => $('rProg').style.display = 'none', 3500);
     }
   }, 660);
 }
 function renderULog() {
-  $('uCount').textContent = UPDATES.length + ' updates . Jan-Jun 2026';
+  $('uCount').textContent = UPDATES.length + ' entries (illustrative, unverified)';
   $('uLog').innerHTML = UPDATES.map(u => `
     <div class="ulog-card ${u.gse}">
       <div class="ulog-meta">${u.date} . ${u.gse==='fm'?'Fannie Mae':u.gse==='fre'?'Freddie Mac':'Both GSEs'} . ${u.ref}</div>
@@ -1363,9 +1250,6 @@ function renderULog() {
     </div>`).join('');
 }
 
-/* ==============================================
-   CHANGELOG
-============================================== */
 function renderCL() {
   $('clList').innerHTML = changelog.map(c => `
     <div class="cl-card">
@@ -1375,9 +1259,6 @@ function renderCL() {
     </div>`).join('');
 }
 
-/* ==============================================
-   AI TUTOR  -  open from topic card
-============================================== */
 function openTutor(id) {
   const t = TOPICS.find(x => x.id === id);
   tTopic = t; tHistory = [];
@@ -1391,9 +1272,6 @@ function openTutor(id) {
   setTimeout(() => startLesson(t), 420);
 }
 
-/* ==============================================
-   AI TUTOR  -  open from AI search fallback
-============================================== */
 function openAISearch(query) {
   tTopic = { id:'ai-search', c:'char', name: query, body:'', kw:[] };
   tHistory = [];
@@ -1411,7 +1289,6 @@ function closeTutor() {
   document.body.style.overflow = '';
 }
 
-/*    Tutor: start topic lesson    */
 async function startLesson(t) {
   showTyping();
   const sys = `You are a warm, encouraging US mortgage tutor. Explain every concept as if teaching a bright 10-year-old  -  simple words, short sentences, vivid analogies, and real stories. Never use jargon without immediately defining it. Keep responses under 190 words. Format for mobile: short paragraphs, bold **key terms**. End each first message with one simple check question.`;
@@ -1421,28 +1298,26 @@ Summary: ${t.body}
 Please: 1) Explain it in plain English with a relatable real-life analogy. 2) Tell me WHY lenders care about this. 3) Ask me one easy check question.`;
   const reply = await callClaude(sys, msg, []);
   hideTyping();
-  if (!reply) return; // error already shown by callClaude
+  if (!reply) return;
   addMsg('ai', reply);
   tHistory = [{ role:'user', content:msg }, { role:'assistant', content:reply }];
 }
 
-/*    Tutor: start AI search session    */
 async function startAISearch(query) {
   showTyping();
   const sys = `You are an expert US mortgage tutor with deep knowledge of Fannie Mae and Freddie Mac guidelines. A student searched for a term that wasn't in the local topic library. Explain it thoroughly: what it means in US mortgage lending, how Fannie Mae and Freddie Mac treat it, and why it matters. Teach as if explaining to a curious beginner. Simple language, real analogies, bold **key terms**. Under 220 words. End with one check question.`;
   const msg = `I searched for "${query}" in a US mortgage learning app and it wasn't found locally. Please explain what "${query}" means in the context of Fannie Mae and Freddie Mac guidelines. Give a clear explanation with a real example or analogy.`;
   const reply = await callClaude(sys, msg, []);
   hideTyping();
-  if (!reply) return; // error already shown by callClaude
+  if (!reply) return;
   addMsg('ai', reply);
   tHistory = [{ role:'user', content:msg }, { role:'assistant', content:reply }];
 }
 
-/*    Tutor: send user message    */
 async function sendMsg() {
   const inp = $('tInp');
   const m = inp.value.trim(); if (!m || _aiLoading) return;
-  inp.value = ''; inp.style.height = 'auto'; // reset textarea height
+  inp.value = ''; inp.style.height = 'auto';
   addMsg('user', m);
   tHistory.push({ role:'user', content:m });
   showTyping();
@@ -1459,7 +1334,7 @@ ANSWER: [A/B/C/D]
 If they answer wrong: gently re-explain and quiz again. If right: praise warmly and move to next concept. After 3 correct answers: celebrate and declare them a master of this topic! 🎓`;
   const reply = await callClaude(sys, null, tHistory);
   hideTyping();
-  if (!reply) return; // error already shown by callClaude
+  if (!reply) return;
   if (reply.includes('QUIZ:') && reply.includes('ANSWER:')) {
     renderTutorQuiz(reply);
   } else {
@@ -1473,7 +1348,6 @@ function handleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
 }
 
-/*    Tutor: render interactive quiz    */
 function renderTutorQuiz(raw) {
   const qm = raw.match(/Question:\s*(.+)/);
   const om = raw.match(/[A-D]\)\s*.+/g);
@@ -1504,7 +1378,6 @@ function pickTutorQ(btn, chosen, correct) {
   }, 650);
 }
 
-/*    Tutor: chat utilities    */
 function addMsg(role, text) {
   const cfg = tTopic ? (C[tTopic.c] || C['char']) : C['char'];
   const el  = document.createElement('div');
@@ -1523,13 +1396,10 @@ function showTyping() {
 function hideTyping() { const e = $('typing'); if (e) e.remove(); }
 function scrollT() { const b = $('tBody'); setTimeout(() => b.scrollTop = b.scrollHeight, 80); }
 
-/* ==============================================
-   ANTHROPIC API  -  with loading guard & error handling
-============================================== */
-let _aiLoading = false; // guard prevents duplicate concurrent requests
+let _aiLoading = false;
 
 async function callClaude(system, userMsg, history) {
-  if (_aiLoading) return null; // prevent overlapping calls
+  if (_aiLoading) return null;
   _aiLoading = true;
   hideErrorBanner();
 
@@ -1555,13 +1425,12 @@ async function callClaude(system, userMsg, history) {
   } catch (err) {
     console.error('Claude API error:', err);
     showErrorBanner('Could not reach the AI Tutor. Please check you\'re online and try again.');
-    return null; // caller checks for null and skips rendering
+    return null;
   } finally {
-    _aiLoading = false; // always release the guard
+    _aiLoading = false;
   }
 }
 
-/*    Error banner (shown inline above tutor body, auto-hides after 5s)    */
 function showErrorBanner(msg) {
   let banner = document.getElementById('errBanner');
   if (!banner) {
@@ -1584,19 +1453,10 @@ function hideErrorBanner() {
   if (b) b.style.display = 'none';
 }
 
-/* ==============================================
-   Q&A BOT
-   - Full conversational memory (session)
-   - Starts direct, builds context over time
-   - Covers Fannie/Freddie + broad mortgage world
-   - ASCII-safe strings throughout
-============================================== */
-
-let qaHistory  = [];   // full conversation history for Claude
+let qaHistory  = [];
 let qaLoading  = false;
 let qaMsgCount = 0;
 
-// System prompt: expert mortgage bot, direct answers, builds context
 const QA_SYSTEM = [
   'You are an expert US mortgage Q&A assistant with deep knowledge of:',
   '- Fannie Mae and Freddie Mac guidelines (selling guide, SELs, bulletins)',
@@ -1618,10 +1478,10 @@ const QA_SYSTEM = [
   '- End answers with one relevant follow-up question suggestion (prefix: "Follow-up:")',
   '- Format for mobile: short paragraphs, use line breaks generously',
   '- Max 250 words per answer unless the question genuinely requires more',
-  '- Never say "As an AI" or "I cannot" - just answer or say you need more detail'
+  '- Never say "As an AI" or "I cannot" - just answer or say you need more detail',
+  '- Always remind the user this is an educational demo and figures should be verified against official current guides for real decisions'
 ].join('\n');
 
-// Tag each response with which 5C it relates to
 function qaDetectC(text) {
   const t = text.toLowerCase();
   if (/credit.score|fico|vantage|payment.histor|bankruptcy|foreclos|npa|derogator|du|lpa|underwr/.test(t)) return 'char';
@@ -1639,20 +1499,17 @@ function qaGetCTag(cKey) {
     cfg.icon + ' ' + cfg.label + '</span>';
 }
 
-// Format bot reply: bold **text**, line breaks
 function qaFmt(text) {
   return text
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br>');
 }
 
-// Auto-expand textarea
 function qaAutoExpand(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
-// Keyboard handler - Enter sends, Shift+Enter is newline
 function qaHandleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -1660,7 +1517,6 @@ function qaHandleKey(e) {
   }
 }
 
-// Add a message bubble to the chat
 function qaAddMsg(role, html, cKey) {
   const welcome = document.getElementById('qaWelcome');
   if (welcome) welcome.remove();
@@ -1669,7 +1525,6 @@ function qaAddMsg(role, html, cKey) {
   el.className = 'qa-msg ' + role;
   el.innerHTML = html;
 
-  // Add 5C source tag below bot messages
   if (role === 'bot' && cKey) {
     const tag = document.createElement('div');
     tag.style.marginTop = '6px';
@@ -1682,7 +1537,6 @@ function qaAddMsg(role, html, cKey) {
   return el;
 }
 
-// Show animated typing dots
 function qaShowTyping() {
   const el = document.createElement('div');
   el.className = 'qa-typing'; el.id = 'qaTyping';
@@ -1700,14 +1554,12 @@ function qaScrollBottom() {
   if (b) setTimeout(() => { b.scrollTop = b.scrollHeight; }, 80);
 }
 
-// Update message count badge
 function qaUpdateCount() {
   qaMsgCount++;
   const el = document.getElementById('qa-msg-count');
   if (el) el.textContent = qaMsgCount + ' message' + (qaMsgCount !== 1 ? 's' : '');
 }
 
-// Clear the whole conversation
 function qaClear() {
   qaHistory  = [];
   qaLoading  = false;
@@ -1720,7 +1572,7 @@ function qaClear() {
       '<div class="qa-welcome-title">Ask me anything</div>',
       '<div class="qa-welcome-sub">Fannie Mae &amp; Freddie Mac guidelines, mortgage products,',
       'rates, terminology, process - anything goes.',
-      'I remember context across our conversation.</div>',
+      'I remember context across our conversation. This is an educational demo; verify anything important against official sources.</div>',
       '</div>'
     ].join('');
   }
@@ -1729,14 +1581,12 @@ function qaClear() {
   showToast('Chat cleared');
 }
 
-// Ask via suggestion chip
 function qaAsk(question) {
   const inp = document.getElementById('qaInp');
   if (inp) inp.value = question;
   qaSubmit();
 }
 
-// Main submit handler
 async function qaSubmit() {
   if (qaLoading) return;
   const inp = document.getElementById('qaInp');
@@ -1744,22 +1594,17 @@ async function qaSubmit() {
   const question = inp.value.trim();
   if (!question) return;
 
-  // Clear input immediately
   inp.value = '';
   inp.style.height = 'auto';
 
-  // Disable send button while loading
   const sendBtn = document.getElementById('qaSend');
   if (sendBtn) sendBtn.disabled = true;
 
-  // Add user bubble
   qaAddMsg('user', question.replace(/</g, '&lt;').replace(/>/g, '&gt;'));
   qaUpdateCount();
 
-  // Add to history for Claude
   qaHistory.push({ role: 'user', content: question });
 
-  // Show typing indicator
   qaLoading = true;
   qaShowTyping();
 
@@ -1785,19 +1630,15 @@ async function qaSubmit() {
     const data = await res.json();
     const reply = data.content?.[0]?.text || 'Sorry, I did not receive a response. Please try again.';
 
-    // Store assistant reply in history for next turn
     qaHistory.push({ role: 'assistant', content: reply });
 
     qaHideTyping();
 
-    // Detect which 5C this answer relates to
     const cKey = qaDetectC(question + ' ' + reply);
 
-    // Render bot reply
     qaAddMsg('bot', qaFmt(reply), cKey);
     qaUpdateCount();
 
-    // Update suggestion chips contextually after first exchange
     if (qaMsgCount >= 2) qaUpdateChips(cKey);
 
   } catch (err) {
@@ -1807,12 +1648,10 @@ async function qaSubmit() {
   } finally {
     qaLoading = false;
     if (sendBtn) sendBtn.disabled = false;
-    // Re-focus input on iPad/desktop; skip on iPhone to avoid keyboard popup
     if (window.innerWidth > 430) inp.focus();
   }
 }
 
-// Update chips based on conversation context
 function qaUpdateChips(cKey) {
   const follow = {
     char: [
@@ -1862,33 +1701,23 @@ function qaUpdateChips(cKey) {
   ).join('');
 }
 
-/* ==============================================
-   INIT  -  triple-safe for iOS Safari
-   Tries immediately, then DOMContentLoaded,
-   then window.onload as final fallback
-============================================== */
 let _appInited = false;
 
 function initApp() {
-  if (_appInited) return; // only run once
+  if (_appInited) return;
   _appInited = true;
 
-  // Directly render all 24 topics into the list
   renderList(TOPICS, 'topicList', true);
 
-  // Set the All pill as active
   const allPill = document.querySelector('.cpill[data-c="all"]');
   if (allPill) allPill.classList.add('on');
 
-  // Set stat counts
   $('list-title').textContent = 'All topics';
   $('list-count').textContent = TOPICS.length + ' topics';
 
-  // Render update log and quiz
   renderULog();
   initQuiz();
 
-  // Auto-expanding textarea
   const inp = $('tInp');
   if (inp) {
     inp.addEventListener('input', function () {
@@ -1897,16 +1726,11 @@ function initApp() {
     });
   }
 
-  setTimeout(() => showToast('👋 Mortgage Hub v1.0 . 5C Framework'), 800);
+  setTimeout(() => showToast('👋 Mortgage Hub v1.0 . 5C Framework . Educational demo'), 800);
 }
 
-// Attempt 1: immediate (script is at bottom of body, usually works)
 try { initApp(); } catch(e) { console.warn('Immediate init failed, waiting for DOM:', e); }
-
-// Attempt 2: DOMContentLoaded (catches Safari timing edge cases)
 document.addEventListener('DOMContentLoaded', initApp);
-
-// Attempt 3: window.onload (absolute last resort  -  fires after all resources load)
 window.addEventListener('load', initApp);
 </script>
 </body>
