@@ -24,6 +24,8 @@
   /* App shell */
   --navy:    #0C1F3D;
   --navy2:   #1E3A5F;
+  --navy3:   #3B2A6B;
+  --navy4:   #0B4A52;
   --gold:    #D97706;
   --gold2:   #F59E0B;
   --bg:      #F2F1EE;
@@ -40,6 +42,9 @@
   --r:   14px;
   --rs:  9px;
   --rpill: 100px;
+
+  /* 5C spectrum - the app's signature: all five pillars, one strip */
+  --spectrum: linear-gradient(90deg, var(--char) 0%, var(--cap) 25%, var(--capl) 52%, var(--coll) 76%, var(--cond) 100%);
 
   /* Shadows */
   --sh:  0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.07);
@@ -100,6 +105,12 @@ textarea { font-family: inherit; }
 }
 .t-btn:active { background: rgba(255,255,255,.18); }
 
+.spectrum-bar {
+  height: 6px; width: 100%;
+  background: var(--spectrum);
+  flex-shrink: 0;
+}
+
 /* DISCLAIMER BANNER */
 .disclaimer-banner {
   background: #FFFBEB; border-bottom: 1px solid #FDE68A;
@@ -141,7 +152,7 @@ textarea { font-family: inherit; }
   margin-bottom: 1.1rem; position: relative; overflow: hidden;
   transition: background .3s ease;
 }
-.hero.default { background: linear-gradient(140deg, var(--navy) 0%, var(--navy2) 100%); }
+.hero.default { background: linear-gradient(140deg, var(--navy) 0%, var(--navy3) 55%, var(--navy4) 100%); }
 .hero::after {
   content: ''; position: absolute; right: -24px; bottom: -36px;
   width: 140px; height: 140px; border-radius: 50%;
@@ -281,7 +292,7 @@ textarea { font-family: inherit; }
 .qbanner {
   border-radius: var(--r); padding: 1.1rem 1.25rem; margin-bottom: 1rem;
   display: flex; align-items: center; justify-content: space-between;
-  background: linear-gradient(135deg, var(--navy), var(--navy2));
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy3) 55%, var(--navy4) 100%);
 }
 .qbanner-left .qlabel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: rgba(255,255,255,.45); margin-bottom: 3px; }
 .qbanner-left .qtitle { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: #fff; }
@@ -319,7 +330,7 @@ textarea { font-family: inherit; }
 .qnext-btn:active { opacity: .85; }
 
 .rbanner {
-  background: linear-gradient(140deg, var(--navy) 0%, var(--navy2) 100%);
+  background: linear-gradient(140deg, var(--navy) 0%, var(--navy3) 55%, var(--navy4) 100%);
   border-radius: var(--r); padding: 1.25rem; margin-bottom: 1.1rem; box-shadow: var(--sh2);
 }
 .rbanner-title { font-family: 'Fraunces', serif; font-size: 19px; font-weight: 700; color: #fff; margin-bottom: 5px; }
@@ -473,7 +484,7 @@ textarea { font-family: inherit; }
 }
 
 .qa-banner {
-  background: linear-gradient(140deg, var(--navy), var(--navy2));
+  background: linear-gradient(140deg, var(--navy) 0%, var(--navy3) 55%, var(--navy4) 100%);
   border-radius: var(--r); margin: 1rem 1rem 0;
   padding: 1rem 1.1rem; flex-shrink: 0;
 }
@@ -720,6 +731,7 @@ textarea { font-family: inherit; }
     <button class="cpill"    data-c="coll" onclick="setC('coll',this)">🏠 Collateral</button>
     <button class="cpill"    data-c="cond" onclick="setC('cond',this)">🌐 Conditions</button>
   </div>
+  <div class="spectrum-bar"></div>
 </header>
 
 <div class="disclaimer-banner">
@@ -1143,7 +1155,7 @@ function buildCard(t) {
   const gseLabel = t.gse === 'fm' ? 'Fannie Mae' : t.gse === 'fre' ? 'Freddie Mac' : 'Both GSEs';
   const isRead   = readSet.has(t.id);
   const tagCls   = t.tag === 'Core' ? 'badge-core' : 'badge-new';
-  return `<div class="tcard${isRead?' read':''}" data-c="${t.c}" onclick="markRead('${t.id}')">
+  return `<div class="tcard${isRead?' read':''}" data-c="${t.c}" onclick="markRead('${t.id}')" style="background:linear-gradient(165deg, var(--surf) 15%, ${cfg.bg} 130%)">
     <div class="tcard-inner">
       <div class="tcard-top">
         <div class="tcard-name">${t.name}</div>
@@ -1215,7 +1227,7 @@ function setC(ck, btn) {
     $('qBLabel').textContent      = cfg.label;
     $('qNext').style.background   = cfg.grad;
   } else {
-    $('qBanner').style.background = 'linear-gradient(135deg,#0C1F3D,#1E3A5F)';
+    $('qBanner').style.background = 'linear-gradient(135deg,#0C1F3D,#3B2A6B,#0B4A52)';
     $('qBLabel').textContent      = 'All 5Cs';
     $('qNext').style.background   = 'linear-gradient(135deg,#0C1F3D,#1E3A5F)';
   }
