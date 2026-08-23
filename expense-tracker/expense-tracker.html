@@ -223,13 +223,17 @@
     font-weight:600;
   }
   .entry .note{ font-size:12px; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .entry .del{
+  .entry .actions{ display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
+  .entry .del, .entry .edit{
     background:none;
     border:none;
-    color:var(--danger);
-    font-size:18px;
-    padding:6px;
+    font-size:12px;
+    font-weight:700;
+    padding:4px 8px;
+    border-radius:6px;
   }
+  .entry .del{ color:var(--danger); }
+  .entry .edit{ color:var(--accent-4); }
   .empty{ color:var(--muted); font-size:13px; text-align:center; padding:16px 0; }
 
   .snackbar{
@@ -454,8 +458,40 @@
     <button class="btn secondary" id="historyGoBtn">Show</button>
     <div id="historyResult" style="margin-top:16px;"></div>
     <p style="font-size:11px; color:var(--muted); margin-top:14px; line-height:1.5;">
-      Covers the last 30 days plus any archived months. This view only reads your saved data -- nothing is changed or deleted here.
+      Covers the last 30 days plus any archived months. Tap Edit or Delete on any entry above to correct it -- totals update immediately.
     </p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editEntryOverlay">
+  <div class="modal">
+    <button class="close-x" id="closeEditEntry">&times;</button>
+    <h3>Edit Expense</h3>
+    <div class="form-row">
+      <label for="editDateInput">Date</label>
+      <input type="date" id="editDateInput">
+    </div>
+    <div class="form-row">
+      <label for="editAmountInput">Amount</label>
+      <div class="amount-input">
+        <span>Rs</span>
+        <input type="number" id="editAmountInput" inputmode="decimal" step="0.01" min="0.01" aria-label="Amount in rupees">
+      </div>
+    </div>
+    <div class="form-row">
+      <label for="editCategorySelect">Category</label>
+      <select id="editCategorySelect" aria-label="Category"></select>
+    </div>
+    <div class="form-row" id="editOtherCategoryRow" style="display:none;">
+      <label for="editOtherCategoryInput">New category name</label>
+      <input type="text" id="editOtherCategoryInput" placeholder="e.g. Health" maxlength="20">
+    </div>
+    <div class="form-row">
+      <label for="editNoteInput">Note (optional)</label>
+      <input type="text" id="editNoteInput" placeholder="e.g. Auto rickshaw" maxlength="60">
+    </div>
+    <button class="btn" id="saveEditBtn">Save Changes</button>
+    <button class="btn danger" id="deleteEditBtn" style="margin-top:10px;">Delete This Expense</button>
   </div>
 </div>
 
@@ -704,8 +740,8 @@
   }
 
   // ---------- Category select ----------
-  function populateCategorySelect(){
-    var sel = document.getElementById('categorySelect');
+  function populateCategorySelect(targetId){
+    var sel = document.getElementById(targetId || 'categorySelect');
     sel.innerHTML = '';
     categories.forEach(function(cat){
       var opt = document.createElement('option');
@@ -835,12 +871,20 @@
           '<span class="badge" style="border:1px solid ' + categoryColor(e.category) + '55; color:' + categoryColor(e.category) + '">' + catDot(e.category) + escapeHtml(e.category) + '</span>' +
           (e.note ? '<div class="note">' + escapeHtml(e.note) + '</div>' : '') +
         '</div>' +
-        '<button class="del" data-id="' + e.id + '" aria-label="Delete entry">Delete</button>';
+        '<div class="actions">' +
+          '<button class="edit" data-edit-id="' + e.id + '" aria-label="Edit entry">Edit</button>' +
+          '<button class="del" data-id="' + e.id + '" aria-label="Delete entry">Delete</button>' +
+        '</div>';
       container.appendChild(row);
     });
     container.querySelectorAll('.del').forEach(function(btn){
       btn.addEventListener('click', function(){
         deleteEntry(btn.getAttribute('data-id'));
+      });
+    });
+    container.querySelectorAll('.edit').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        openEditEntry(btn.getAttribute('data-edit-id'));
       });
     });
   }
@@ -913,7 +957,6 @@
     saveJSON(STORAGE_KEY, entries);
     checkRetentionAndBanner();
 
-
     amountInput.value = '';
     noteInput.value = '';
     otherInput.value = '';
@@ -921,6 +964,8 @@
     catSelect.value = category === entry.category && categories.indexOf(category) > -1 ? category : catSelect.value;
 
     render();
+    refreshHistory();
+    showToast('Added. ' + entryDateISO + ' total: Rs ' + dayTotalFor(entryDateISO).toFixed(2));
   }
 
   function deleteEntry(id){
@@ -935,6 +980,7 @@
 
   function showSnackbar(text){
     document.getElementById('snackbarText').textContent = text;
+    document.getElementById('snackbarUndo').style.display = '';
     var bar = document.getElementById('snackbar');
     bar.classList.add('show');
     if(snackbarTimer) clearTimeout(snackbarTimer);
@@ -953,6 +999,157 @@
     }
     document.getElementById('snackbar').classList.remove('show');
     if(snackbarTimer) clearTimeout(snackbarTimer);
+  }
+
+  function showToast(text){
+    document.getElementById('snackbarText').textContent = text;
+    var undoBtn = document.getElementById('snackbarUndo');
+    undoBtn.style.display = 'none';
+    var bar = document.getElementById('snackbar');
+    bar.classList.add('show');
+    if(snackbarTimer) clearTimeout(snackbarTimer);
+    snackbarTimer = setTimeout(function(){
+      bar.classList.remove('show');
+      undoBtn.style.display = '';
+    }, 3500);
+  }
+
+  function dayTotalFor(dateISO){
+    return getAllKnownEntries()
+      .filter(function(e){ return e.dateISO === dateISO; })
+      .reduce(function(sum, e){ return sum + e.amount; }, 0);
+  }
+
+  // ---------- Locate / edit / delete an entry wherever it lives (active or archived) ----------
+  function locateEntry(id){
+    var idx = entries.findIndex(function(e){ return e.id === id; });
+    if(idx !== -1) return { arr: entries, idx: idx, isArchive: false };
+    var mks = Object.keys(archive);
+    for(var i=0; i<mks.length; i++){
+      var mk = mks[i];
+      var idx2 = archive[mk].findIndex(function(e){ return e.id === id; });
+      if(idx2 !== -1) return { arr: archive[mk], idx: idx2, isArchive: true, mk: mk };
+    }
+    return null;
+  }
+
+  function deleteEntryFromHistory(id){
+    var loc = locateEntry(id);
+    if(!loc) return;
+    var removedDate = loc.arr[loc.idx].dateISO;
+    loc.arr.splice(loc.idx, 1);
+    saveJSON(loc.isArchive ? ARCHIVE_KEY : STORAGE_KEY, loc.isArchive ? archive : entries);
+    render();
+    refreshHistory();
+    showToast('Deleted. ' + removedDate + ' total: Rs ' + dayTotalFor(removedDate).toFixed(2));
+  }
+
+  var editingEntryId = null;
+
+  function openEditEntry(id){
+    var loc = locateEntry(id);
+    if(!loc) return;
+    var e = loc.arr[loc.idx];
+    editingEntryId = id;
+
+    var dateInput = document.getElementById('editDateInput');
+    dateInput.value = e.dateISO;
+    dateInput.max = todayISO();
+    document.getElementById('editAmountInput').value = e.amount;
+    populateCategorySelect('editCategorySelect');
+    var sel = document.getElementById('editCategorySelect');
+    if(categories.indexOf(e.category) > -1){
+      sel.value = e.category;
+      document.getElementById('editOtherCategoryRow').style.display = 'none';
+    }else{
+      sel.value = '__other__';
+      document.getElementById('editOtherCategoryRow').style.display = 'block';
+      document.getElementById('editOtherCategoryInput').value = e.category;
+    }
+    document.getElementById('editNoteInput').value = e.note || '';
+    document.getElementById('editEntryOverlay').classList.add('show');
+  }
+
+  function closeEditEntryModal(){
+    document.getElementById('editEntryOverlay').classList.remove('show');
+    editingEntryId = null;
+  }
+
+  function saveEditedEntry(){
+    if(!editingEntryId) return;
+    var loc = locateEntry(editingEntryId);
+    if(!loc){ closeEditEntryModal(); return; }
+    var e = loc.arr[loc.idx];
+
+    var newDateISO = document.getElementById('editDateInput').value || e.dateISO;
+    if(newDateISO > todayISO()){
+      alert('You cannot set a future date.');
+      return;
+    }
+    var amount = parseFloat(document.getElementById('editAmountInput').value);
+    if(!amount || amount <= 0){
+      alert('Please enter an amount greater than 0.');
+      return;
+    }
+    var catSelect = document.getElementById('editCategorySelect');
+    var category = catSelect.value;
+    if(category === '__other__'){
+      var newCat = document.getElementById('editOtherCategoryInput').value.trim();
+      if(!newCat){ alert('Please type a category name.'); return; }
+      category = newCat;
+      if(categories.indexOf(newCat) === -1){
+        categories.push(newCat);
+        saveJSON(CATS_KEY, categories);
+        populateCategorySelect();
+      }
+    }
+    var note = document.getElementById('editNoteInput').value.trim() || null;
+
+    var oldMonthKey = monthKeyFromDate(e.dateISO);
+    var newMonthKey = monthKeyFromDate(newDateISO);
+    var wasArchived = loc.isArchive;
+
+    e.dateISO = newDateISO;
+    e.amount = amount;
+    e.category = category;
+    e.note = note;
+    var timeOfDay = new Date(e.timeISO).toTimeString().slice(0,8);
+    e.timeISO = new Date(newDateISO + 'T' + timeOfDay).toISOString();
+
+    var cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - RETENTION_DAYS);
+    var cutoffISO = cutoff.toISOString().slice(0,10);
+    var shouldBeArchived = newDateISO < cutoffISO;
+
+    var needsMove = (shouldBeArchived !== wasArchived) || (shouldBeArchived && wasArchived && newMonthKey !== oldMonthKey);
+    if(needsMove){
+      loc.arr.splice(loc.idx, 1);
+      saveJSON(wasArchived ? ARCHIVE_KEY : STORAGE_KEY, wasArchived ? archive : entries);
+      if(shouldBeArchived){
+        if(!archive[newMonthKey]) archive[newMonthKey] = [];
+        archive[newMonthKey].push(e);
+        saveJSON(ARCHIVE_KEY, archive);
+      }else{
+        entries.push(e);
+        saveJSON(STORAGE_KEY, entries);
+      }
+    }else{
+      saveJSON(wasArchived ? ARCHIVE_KEY : STORAGE_KEY, wasArchived ? archive : entries);
+    }
+
+    closeEditEntryModal();
+    render();
+    refreshHistory();
+    showToast('Saved. ' + newDateISO + ' total: Rs ' + dayTotalFor(newDateISO).toFixed(2));
+  }
+
+  function deleteFromEditModal(){
+    if(!editingEntryId) return;
+    if(confirm('Delete this expense?')){
+      var id = editingEntryId;
+      closeEditEntryModal();
+      deleteEntryFromHistory(id);
+    }
   }
 
   // ---------- Retention / archive / export ----------
@@ -1092,6 +1289,8 @@
     return y + '-' + m + '-' + day;
   }
 
+  var lastHistoryQuery = null;
+
   function renderHistoryEntries(list, headingText){
     var container = document.getElementById('historyResult');
     var total = list.reduce(function(sum, e){ return sum + e.amount; }, 0);
@@ -1108,11 +1307,34 @@
           '<div class="mid"><span class="amt">Rs ' + e.amount.toFixed(2) + '</span>' +
           '<span class="badge" style="border:1px solid ' + categoryColor(e.category) + '55; color:' + categoryColor(e.category) + '">' + catDot(e.category) + escapeHtml(e.category) + '</span>' +
           (e.note ? '<div class="note">' + escapeHtml(e.note) + '</div>' : '') +
-          '</div></div>';
+          '</div>' +
+          '<div class="actions">' +
+            '<button class="edit" data-edit-id="' + e.id + '" aria-label="Edit entry">Edit</button>' +
+            '<button class="del" data-hist-del-id="' + e.id + '" aria-label="Delete entry">Delete</button>' +
+          '</div>' +
+          '</div>';
       });
     }
     html += '</div>';
     container.innerHTML = html;
+    container.querySelectorAll('.edit').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        openEditEntry(btn.getAttribute('data-edit-id'));
+      });
+    });
+    container.querySelectorAll('[data-hist-del-id]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        if(confirm('Delete this expense?')){
+          deleteEntryFromHistory(btn.getAttribute('data-hist-del-id'));
+        }
+      });
+    });
+  }
+
+  function refreshHistory(){
+    if(!lastHistoryQuery) return;
+    var dateVal = document.getElementById('historyDate').value;
+    if(dateVal) showHistory();
   }
 
   function showHistory(){
@@ -1122,6 +1344,7 @@
       alert('Please pick a date first.');
       return;
     }
+    lastHistoryQuery = { mode: mode, dateVal: dateVal };
     var all = getAllKnownEntries();
     if(mode === 'day'){
       var dayList = all.filter(function(e){ return e.dateISO === dateVal; });
@@ -1407,12 +1630,19 @@
       var showOther = this.value === '__other__';
       document.getElementById('otherCategoryRow').style.display = showOther ? 'block' : 'none';
     });
+    document.getElementById('editCategorySelect').addEventListener('change', function(){
+      var showOther = this.value === '__other__';
+      document.getElementById('editOtherCategoryRow').style.display = showOther ? 'block' : 'none';
+    });
     document.getElementById('addBtn').addEventListener('click', addExpense);
     document.getElementById('snackbarUndo').addEventListener('click', undoDelete);
     document.getElementById('settingsBtn').addEventListener('click', openSettings);
     document.getElementById('historyBtn').addEventListener('click', openHistory);
     document.getElementById('closeHistory').addEventListener('click', closeHistoryModal);
     document.getElementById('historyGoBtn').addEventListener('click', showHistory);
+    document.getElementById('closeEditEntry').addEventListener('click', closeEditEntryModal);
+    document.getElementById('saveEditBtn').addEventListener('click', saveEditedEntry);
+    document.getElementById('deleteEditBtn').addEventListener('click', deleteFromEditModal);
     document.getElementById('closeSettings').addEventListener('click', closeSettingsModal);
     document.getElementById('manualExportBtn').addEventListener('click', manualExportAll);
     document.getElementById('connectDriveBtn').addEventListener('click', connectGoogleDrive);
