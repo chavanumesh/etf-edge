@@ -584,6 +584,104 @@ textarea { font-family: inherit; }
   cursor: pointer; transition: opacity .15s;
 }
 .qa-topic-pill:active { opacity: .75; }
+
+/* ══════════════════════════════════
+   MOCK INTERVIEW TAB
+══════════════════════════════════ */
+.iv-page {
+  display: flex; flex-direction: column;
+  height: calc(100vh - 130px - env(safe-area-inset-bottom));
+  max-width: 600px; margin: 0 auto; padding: 0;
+}
+.iv-banner {
+  background: linear-gradient(140deg, #7C2D12, #C2410C);
+  border-radius: var(--r); margin: 1rem 1rem 0;
+  padding: 1rem 1.1rem; flex-shrink: 0;
+}
+.iv-banner-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.iv-banner-title { font-family: 'Fraunces', serif; color: #fff; font-size: 17px; font-weight: 600; }
+.iv-reset-btn {
+  font-size: 11px; font-weight: 700; color: rgba(255,255,255,.55);
+  border: 1px solid rgba(255,255,255,.2); border-radius: var(--rpill);
+  padding: 4px 10px; background: transparent;
+}
+.iv-reset-btn:active { background: rgba(255,255,255,.1); }
+.iv-banner-sub { font-size: 11.5px; color: rgba(255,255,255,.6); line-height: 1.5; }
+
+.iv-mode-select { padding: 1rem 1rem 0; flex-shrink: 0; }
+.iv-mode-card {
+  display: block; width: 100%; text-align: left;
+  background: var(--surf); border: 1.5px solid var(--bord);
+  border-radius: var(--r); padding: 13px 14px; margin-bottom: 9px;
+  box-shadow: var(--sh); transition: transform .12s;
+}
+.iv-mode-card:active { transform: scale(.98); }
+.iv-mode-name { font-family: 'Fraunces', serif; font-size: 14.5px; font-weight: 600; color: var(--tx); margin-bottom: 3px; }
+.iv-mode-desc { font-size: 12px; color: var(--tx2); line-height: 1.5; }
+
+.iv-modepill {
+  display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .3px;
+  text-transform: uppercase; padding: 4px 10px; border-radius: var(--rpill);
+  margin-bottom: 8px; color: #fff;
+}
+
+.iv-body {
+  flex: 1; overflow-y: auto; padding: 1rem;
+  display: flex; flex-direction: column; gap: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+.iv-msg {
+  max-width: 91%; padding: 11px 14px; border-radius: 16px;
+  font-size: 14px; line-height: 1.68; animation: msgIn .18s ease;
+}
+.iv-msg.panel {
+  background: var(--surf); border: 1.5px solid var(--bord);
+  border-bottom-left-radius: 4px; align-self: flex-start;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06);
+}
+.iv-msg.panel strong { color: #C2410C; }
+.iv-msg.user {
+  background: linear-gradient(135deg, var(--navy), var(--navy2));
+  color: #fff; border-bottom-right-radius: 4px; align-self: flex-end;
+}
+.iv-typing {
+  display: flex; gap: 5px; padding: 12px 14px;
+  background: var(--surf); border: 1.5px solid var(--bord);
+  border-radius: 16px; border-bottom-left-radius: 4px;
+  align-self: flex-start; box-shadow: 0 1px 6px rgba(0,0,0,.06);
+}
+.iv-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--tx3); animation: qabop 1.2s ease infinite; }
+.iv-dot:nth-child(2) { animation-delay: .2s; }
+.iv-dot:nth-child(3) { animation-delay: .4s; }
+
+.iv-bar {
+  background: var(--surf); border-top: 1px solid var(--bord);
+  padding: 10px 1rem; padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
+}
+.iv-inputrow { display: flex; gap: 8px; align-items: flex-end; }
+.iv-inp {
+  flex: 1; border: 1.5px solid var(--bord); border-radius: var(--r);
+  padding: 10px 13px; font-size: 14px; color: var(--tx);
+  resize: none; outline: none; max-height: 110px; min-height: 42px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+.iv-inp:focus { border-color: var(--bord2); }
+.iv-send {
+  width: 42px; height: 42px; border: none; border-radius: var(--r);
+  background: linear-gradient(135deg, #7C2D12, #C2410C);
+  font-size: 18px; color: #fff; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(124,45,18,.3); transition: opacity .15s;
+}
+.iv-send:active { opacity: .8; }
+.iv-send:disabled { opacity: .4; }
+.iv-end-btn {
+  width: 100%; border: none; border-radius: var(--rs); padding: 9px;
+  font-size: 12px; font-weight: 700; color: #C2410C;
+  background: #FFF7ED; border: 1.5px solid #FDBA74;
+}
+.iv-end-btn:active { background: #FFEDD5; }
 </style>
 </head>
 <body>
@@ -769,6 +867,49 @@ textarea { font-family: inherit; }
     </div>
   </div>
 
+  <!-- MOCK INTERVIEW -->
+  <div class="page" id="page-interview" style="padding:0">
+    <div class="iv-page">
+
+      <div class="iv-banner">
+        <div class="iv-banner-top">
+          <div class="iv-banner-title">🎤 Mock Interview Panel</div>
+          <button class="iv-reset-btn" onclick="ivReset()">Restart</button>
+        </div>
+        <div class="iv-banner-sub" id="ivBannerSub">Critical, realistic interview practice for live US mortgage underwriting roles — technical and leadership.</div>
+      </div>
+
+      <div class="iv-mode-select" id="ivModeSelect">
+        <button class="iv-mode-card" onclick="ivStart('technical')">
+          <div class="iv-mode-name">🧮 Technical — Live Underwriting</div>
+          <div class="iv-mode-desc">Real-time decisioning scenarios: DTI edge cases, self-employed income, appraisal issues, compliance judgment calls. Expect follow-ups and pushback, not easy questions.</div>
+        </button>
+        <button class="iv-mode-card" onclick="ivStart('leadership')">
+          <div class="iv-mode-name">👔 Behavioral & Leadership</div>
+          <div class="iv-mode-desc">Your IC-to-management story, the 2015 transition, team leadership examples, handling underperformance and conflict. STAR structure expected and enforced.</div>
+        </button>
+        <button class="iv-mode-card" onclick="ivStart('mixed')">
+          <div class="iv-mode-name">🎯 Full Mock Panel</div>
+          <div class="iv-mode-desc">A realistic mixed panel round — technical and leadership questions interleaved, the way a real hiring loop would run. Ends with a scored assessment.</div>
+        </button>
+      </div>
+
+      <div class="iv-body" id="ivBody" style="display:none"></div>
+
+      <div class="iv-bar" id="ivBar" style="display:none">
+        <div class="iv-inputrow">
+          <textarea class="iv-inp" id="ivInp" rows="1"
+            placeholder="Answer as you would in the real interview..."
+            onkeydown="ivHandleKey(event)"
+            oninput="ivAutoExpand(this)"></textarea>
+          <button class="iv-send" id="ivSend" onclick="ivSubmit()">↑</button>
+        </div>
+        <button class="iv-end-btn" onclick="ivEndAndAssess()">🏁 End interview & get critical assessment</button>
+      </div>
+
+    </div>
+  </div>
+
 </main>
 
 <nav class="bnav">
@@ -776,6 +917,7 @@ textarea { font-family: inherit; }
   <button class="ntab"    id="tab-search"    onclick="goSearch()"><span class="ni">🔍</span>Search</button>
   <button class="ntab"    id="tab-qa"        onclick="navTo('qa',this)"><span class="ni">💬</span>Ask</button>
   <button class="ntab"    id="tab-quiz"      onclick="navTo('quiz',this);initQuiz()"><span class="ni">🏆</span>Quiz</button>
+  <button class="ntab"    id="tab-interview" onclick="navTo('interview',this)"><span class="ni">🎤</span>Interview</button>
   <button class="ntab"    id="tab-refresh"   onclick="navTo('refresh',this)"><span class="ni">↻</span>Refresh</button>
   <button class="ntab"    id="tab-changelog" onclick="navTo('changelog',this);renderCL()"><span class="ni">📋</span>Log</button>
 </nav>
@@ -1699,6 +1841,193 @@ function qaUpdateChips(cKey) {
     '<button class="qa-chip ' + cls + '" onclick="qaAsk(\'' +
     q.replace(/'/g, "\\'") + '\')">' + q + '</button>'
   ).join('');
+}
+
+/* ==============================================
+   MOCK INTERVIEW PANEL
+   - Strict, critical panelist persona (not the
+     friendly tutor used elsewhere in this app)
+   - Not limited to this app's own 24 topics
+============================================== */
+let ivHistory  = [];
+let ivLoading  = false;
+let ivMode     = null;
+
+const IV_CANDIDATE = [
+  'CANDIDATE BACKGROUND (from their resume - use this to ask targeted, personalized follow-ups, not generic questions):',
+  '- Umesh Chavan, 20+ years in US and UK mortgage underwriting and investment banking operations.',
+  '- CURRENT ROLE: Mortgage Underwriter, SitusAMC Shared Services (Feb 2021-present) - this is POST-CLOSE review (reviewing files after closing), not live/real-time underwriting. 4,000+ files reviewed, $800M+, FHA/VA/USDA, HUD/FNMA/FHLMC/TRID compliance, uses Fannie Mae DU and Freddie Mac LP.',
+  '- THE INTERVIEW THEY ARE PREPARING FOR IS FOR A LIVE UNDERWRITING ROLE (real-time decisioning), which is a meaningful step up in ambiguity and speed from their current post-close role. Probe this gap directly and realistically.',
+  '- Prior live decisioning experience: UK Mortgage Underwriter at Intelenet (2018-2019) - had individual authority to approve residential and buy-to-let mortgages up to GBP 600,000, principal decision-maker, used the MSO system, worked within FCA requirements. This is their strongest evidence of live decisioning - press on how current that skill still is.',
+  '- Leadership background: Operations Manager at State Street (2013-2015) leading 57 FTEs in APAC custody operations; Team Manager at Deutsche Bank (2006-2013) leading 22 FTEs in pre-settlement operations, including two major office transitions.',
+  '- 2015-2018: stepped away from management to run a family residential home-lending business in India (sourcing clients, processing home loan applications) - stayed in the lending domain throughout.',
+  '- Long-term goal: return to people management eventually, but the CURRENT interview is for an individual-contributor live underwriting role.',
+  '- Also built "Mortgage Hub", a self-directed AI-assisted learning app (this very app) covering the 5C framework and Fannie Mae/Freddie Mac guidelines - it is an educational demo, NOT verified against live official guides. If the candidate cites this app as an authority during the interview, that is a mistake worth flagging.',
+].join('\n');
+
+const IV_PERSONA_RULES = [
+  'You are a senior, skeptical US mortgage underwriting hiring manager conducting a REAL mock interview. You are not a tutor and not a cheerleader. Your job is to find the gaps in this candidate before a real panel does, so be direct, professional, and rigorous.',
+  '',
+  'Rules:',
+  '- Ask ONE question at a time. Wait for their answer before moving on.',
+  '- After each answer, give a short, honest critique first (what was strong, what was missing, whether it would actually satisfy a real panel) BEFORE asking the next question.',
+  '- If an answer is vague, generic, rehearsed-sounding, or dodges specifics, say so plainly and ask a tougher, more specific follow-up on the SAME scenario before moving on. Do not let weak answers pass.',
+  '- Do not limit yourself to any fixed topic list - draw on the full breadth of real mortgage underwriting practice and, in leadership mode, real management scenarios, even ones not covered elsewhere in this app.',
+  '- Reference their actual background from CANDIDATE BACKGROUND when it sharpens a question (e.g. contrasting their post-close experience against the live-decisioning demands of the role they are interviewing for).',
+  '- Never be falsely encouraging. No "great job!" for a mediocre answer. Praise only when it is actually earned and specific.',
+  '- Keep each message under 180 words.',
+  '- Bold **key terms** where useful.',
+].join('\n');
+
+const IV_SYSTEMS = {
+  technical: 'ROUND FOCUS: Live real-time mortgage underwriting technical judgment.\n' + IV_CANDIDATE + '\n\n' + IV_PERSONA_RULES +
+    '\nAsk realistic, scenario-based live-underwriting questions: DTI edge cases, self-employed and complex income, appraisal/collateral issues, credit anomalies, compensating factors, conflicting guideline situations, and time-pressured decision-making. Push specifically on the gap between post-close review (their current job) and live decisioning (the job they are interviewing for).',
+  leadership: 'ROUND FOCUS: Behavioral and leadership readiness, both for returning to people management eventually and for operating well as a senior IC now.\n' + IV_CANDIDATE + '\n\n' + IV_PERSONA_RULES +
+    '\nAsk real behavioral questions: the IC-to-management story, the 2015 transition to running the family business and back, concrete team leadership examples (hiring, performance management, conflict, underperformance), and how they would operate day-to-day without formal authority in an IC role. Require STAR structure (Situation, Task, Action, Result) and call it out directly when an answer lacks one of these parts.',
+  mixed: 'ROUND FOCUS: Full mixed mock panel - alternate between live-underwriting technical questions and leadership/behavioral questions the way a real interview loop would.\n' + IV_CANDIDATE + '\n\n' + IV_PERSONA_RULES +
+    '\nAlternate question types across the conversation. Keep the candidate on their toes the way a real panel with multiple interviewers would.',
+};
+
+function ivFmt(text) {
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+}
+function ivAddMsg(role, html) {
+  const el = document.createElement('div');
+  el.className = 'iv-msg ' + role;
+  el.innerHTML = html;
+  $('ivBody').appendChild(el);
+  ivScroll();
+}
+function ivShowTyping() {
+  const el = document.createElement('div');
+  el.className = 'iv-typing'; el.id = 'ivTyping';
+  el.innerHTML = '<div class="iv-dot"></div><div class="iv-dot"></div><div class="iv-dot"></div>';
+  $('ivBody').appendChild(el); ivScroll();
+}
+function ivHideTyping() { const e = $('ivTyping'); if (e) e.remove(); }
+function ivScroll() { const b = $('ivBody'); if (b) setTimeout(() => b.scrollTop = b.scrollHeight, 80); }
+function ivAutoExpand(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+function ivHandleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ivSubmit(); } }
+
+const IV_MODE_LABEL = {
+  technical:  '🧮 Technical — Live Underwriting round in progress',
+  leadership: '👔 Behavioral & Leadership round in progress',
+  mixed:      '🎯 Full Mock Panel round in progress',
+};
+
+async function ivStart(mode) {
+  ivMode = mode; ivHistory = [];
+  $('ivModeSelect').style.display = 'none';
+  $('ivBody').style.display = 'flex';
+  $('ivBar').style.display  = 'flex';
+  $('ivBody').innerHTML = '';
+  $('ivBannerSub').textContent = IV_MODE_LABEL[mode];
+
+  ivAddMsg('panel', "Let's begin. I'll ask you questions the way a real panel would — answer as if this is the actual interview. I will critique each answer honestly before moving to the next question.");
+  ivShowTyping();
+
+  const openingMsg = mode === 'technical'
+    ? 'Begin the interview now with your first live-underwriting scenario question.'
+    : mode === 'leadership'
+    ? 'Begin the interview now with your first behavioral/leadership question.'
+    : 'Begin the interview now with your first question (alternate technical and leadership as the round progresses).';
+
+  const reply = await ivCallClaude(IV_SYSTEMS[mode], openingMsg, []);
+  ivHideTyping();
+  if (!reply) return;
+  ivAddMsg('panel', ivFmt(reply));
+  ivHistory = [{ role:'user', content: openingMsg }, { role:'assistant', content: reply }];
+}
+
+async function ivSubmit() {
+  if (ivLoading) return;
+  const inp = $('ivInp');
+  const answer = inp.value.trim();
+  if (!answer) return;
+  inp.value = ''; inp.style.height = 'auto';
+
+  const sendBtn = $('ivSend');
+  if (sendBtn) sendBtn.disabled = true;
+
+  ivAddMsg('user', answer.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
+  ivHistory.push({ role:'user', content: answer });
+
+  ivLoading = true;
+  ivShowTyping();
+  const reply = await ivCallClaude(IV_SYSTEMS[ivMode], null, ivHistory);
+  ivHideTyping();
+  ivLoading = false;
+  if (sendBtn) sendBtn.disabled = false;
+  if (!reply) return;
+
+  ivAddMsg('panel', ivFmt(reply));
+  ivHistory.push({ role:'assistant', content: reply });
+}
+
+async function ivEndAndAssess() {
+  if (ivLoading || !ivHistory.length) return;
+  ivLoading = true;
+  const sendBtn = $('ivSend');
+  if (sendBtn) sendBtn.disabled = true;
+
+  ivAddMsg('user', '[Ending interview - please give my final assessment]');
+  ivShowTyping();
+
+  const assessPrompt = [
+    'The candidate has ended the mock interview. Based on the FULL conversation above, give a rigorous, honest final assessment. Do NOT soften this - the candidate explicitly wants a critical, blunt evaluation, not encouragement. Structure it EXACTLY as:',
+    '',
+    '**Readiness for live underwriting (IC role): X/10** - one or two sentences of justification.',
+    '**Readiness for people-management roles: X/10** - one or two sentences of justification.',
+    '**Top strengths shown:** (bulleted, max 3, specific to what they actually said)',
+    '**Gaps that could hurt them in the real interview:** (bulleted, max 3, specific and blunt)',
+    '**Two concrete actions before the real interview:** (bulleted, specific and doable)',
+  ].join('\n');
+
+  const reply = await ivCallClaude(IV_SYSTEMS[ivMode] || IV_SYSTEMS.mixed, assessPrompt, ivHistory);
+  ivHideTyping();
+  ivLoading = false;
+  if (sendBtn) sendBtn.disabled = false;
+  if (!reply) return;
+
+  ivAddMsg('panel', ivFmt(reply));
+  ivHistory.push({ role:'user', content: assessPrompt }, { role:'assistant', content: reply });
+  showToast('Assessment complete');
+}
+
+function ivReset() {
+  ivHistory = []; ivMode = null; ivLoading = false;
+  $('ivModeSelect').style.display = 'block';
+  $('ivBody').style.display = 'none';
+  $('ivBar').style.display  = 'none';
+  $('ivBody').innerHTML = '';
+  $('ivBannerSub').textContent = 'Critical, realistic interview practice for live US mortgage underwriting roles — technical and leadership.';
+}
+
+async function ivCallClaude(system, userMsg, history) {
+  try {
+    const messages = [...history];
+    if (userMsg) messages.push({ role: 'user', content: userMsg });
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model:      'claude-sonnet-4-6',
+        max_tokens: 900,
+        system:     system,
+        messages:   messages
+      })
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error?.message || 'Server returned ' + res.status);
+    }
+    const data = await res.json();
+    return data.content?.[0]?.text || 'Sorry, no response received. Please try again.';
+  } catch (err) {
+    console.error('Mock Interview API error:', err);
+    ivAddMsg('panel', '⚠ Could not reach the panel. Please check you are online and try again.');
+    return null;
+  }
 }
 
 let _appInited = false;
