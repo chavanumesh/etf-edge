@@ -195,6 +195,18 @@ textarea { font-family: inherit; }
 .tcard-body { font-size: 12.5px; color: var(--tx2); line-height: 1.62; margin-bottom: 9px; }
 .tcard-foot { display: flex; gap: 5px; flex-wrap: wrap; }
 
+.tcard-official {
+  margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--bord);
+  display: flex; gap: 7px; flex-wrap: wrap;
+}
+.official-link {
+  font-size: 10.5px; font-weight: 700; color: var(--navy);
+  text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border: 1.5px solid var(--bord2); border-radius: var(--rpill);
+  background: var(--bg); transition: background .12s;
+}
+.official-link:active { background: var(--bord); }
+
 .badge { font-size: 10px; font-weight: 700; letter-spacing: .25px; text-transform: uppercase; padding: 3px 8px; border-radius: var(--rpill); }
 .badge-gse  { background: #F1F5F9; color: #64748B; }
 .badge-new  { background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; }
@@ -712,7 +724,7 @@ textarea { font-family: inherit; }
 
 <div class="disclaimer-banner">
   <span class="disclaimer-icon">⚠️</span>
-  <span><strong>Educational demo only.</strong> Content has not been verified against current official Fannie Mae / Freddie Mac guides. Treat all figures, dates, and bulletin references as illustrative, not authoritative.</span>
+  <span><strong>Educational demo only.</strong> Content has not been verified against current official Fannie Mae / Freddie Mac guides. Treat all figures, dates, and bulletin references as illustrative, not authoritative — use the official guide links on each topic to confirm.</span>
 </div>
 
 <div class="tpanel" id="tPanel">
@@ -1111,6 +1123,21 @@ function showToast(m) {
 }
 function $(id) { return document.getElementById(id); }
 
+/* Verified official entry points only - never a guessed/fabricated
+   deep link to a specific guide chapter. FM_SEARCH_URL and
+   FRE_GUIDE_URL are confirmed real URLs; individual topics link to
+   these scoped by which GSE(s) they relate to. */
+const FM_SEARCH_URL  = 'https://selling-guide.fanniemae.com/selling-guide-search';
+const FRE_GUIDE_URL  = 'https://guide.freddiemac.com/app/guide/segment/selling';
+
+function officialLinks(gse) {
+  const fm  = `<a class="official-link" href="${FM_SEARCH_URL}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📖 Search official Fannie Mae Guide ↗</a>`;
+  const fre = `<a class="official-link" href="${FRE_GUIDE_URL}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📖 Open official Freddie Mac Guide ↗</a>`;
+  if (gse === 'fm')  return fm;
+  if (gse === 'fre') return fre;
+  return fm + fre;
+}
+
 function buildCard(t) {
   const cfg      = C[t.c];
   const gseLabel = t.gse === 'fm' ? 'Fannie Mae' : t.gse === 'fre' ? 'Freddie Mac' : 'Both GSEs';
@@ -1129,6 +1156,7 @@ function buildCard(t) {
         <span class="badge ${tagCls}">${t.tag}</span>
         ${isRead ? '<span class="badge badge-read">✓ Read</span>' : ''}
       </div>
+      <div class="tcard-official">${officialLinks(t.gse)}</div>
     </div>
   </div>`;
 }
