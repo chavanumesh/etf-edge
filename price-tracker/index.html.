@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Price Watch — Manage Tracked Products</title>
+<style>
+  :root {
+    --ink: #1a1d29;
+    --paper: #fdfbf6;
+    --tag-red: #c2410c;
+    --tag-red-deep: #9a3412;
+    --line: #e5e0d5;
+    --muted: #8a8578;
+    --success: #166534;
+    --success-bg: #f0fdf4;
+    --danger: #b91c1c;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    min-height: 100vh;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 16px;
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    font-size: 28px;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+
+  h1 .tag {
+    color: var(--tag-red);
+  }
+
+  .subtitle {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+  }
+
+  section {
+    margin-bottom: 40px;
+  }
+
+  .section-label {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  label {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"], input[type="password"], input[type="number"] {
+    width: 100%;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 15px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 3px;
+    background: white;
+    color: var(--ink);
+    margin-bottom: 18px;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: var(--tag-red);
+  }
+
+  .field-row {
+    display: flex;
+    gap: 12px;
+  }
+  .field-row > div { flex: 1; }
+  .field-row > div:last-child { flex: 0 0 140px; }
+
+  button {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    padding: 13px 24px;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.08s ease, opacity 0.15s ease;
+  }
+
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-primary {
+    background: var(--tag-red);
+    color: white;
+    width: 100%;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--tag-red-deep); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--danger);
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .token-box {
+    background: #fff8ed;
+    border: 1px solid #f0dcb0;
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    color: #6b5423;
+    line-height: 1.5;
+  }
+  .token-box a { color: var(--tag-red-deep); }
+
+  .product-card {
+    border: 1.5px solid var(--line);
+    border-radius: 4px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    background: white;
+  }
+
+  .product-url {
+    font-size: 14px;
+    word-break: break-all;
+    margin-bottom: 4px;
+  }
+  .product-url a { color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+
+  .product-target {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    color: var(--tag-red-deep);
+    font-weight: 600;
+  }
+
+  .empty-state {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 24px 0;
+    text-align: center;
+    border: 1.5px dashed var(--line);
+    border-radius: 4px;
+  }
+
+  .status {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    padding: 10px 14px;
+    border-radius: 3px;
+    margin-bottom: 18px;
+    display: none;
+  }
+  .status.show { display: block; }
+  .status.ok { background: var(--success-bg); color: var(--success); border: 1px solid #bbf7d0; }
+  .status.err { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+  .status.loading { background: #f5f4f0; color: var(--muted); border: 1px solid var(--line); }
+
+  footer {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 40px;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Price<span class="tag">Watch</span></h1>
+      <div class="subtitle">Tracked product manager</div>
+    </div>
+  </header>
+
+  <div class="token-box">
+    Paste a temporary GitHub token to connect (Settings → Developer settings → Personal access tokens → Generate new token → repo scope only). Delete it from GitHub once you're done for this session.
+  </div>
+
+  <section>
+    <div class="section-label">Connect</div>
+    <label for="token">GitHub Personal Access Token</label>
+    <input type="password" id="token" placeholder="ghp_...">
+    <button class="btn-primary" onclick="loadProducts()" id="connectBtn">Connect & Load Products</button>
+  </section>
+
+  <div id="status" class="status"></div>
+
+  <section id="addSection" style="display:none;">
+    <div class="section-label">Add a product</div>
+    <label for="url">Product URL</label>
+    <input type="text" id="url" placeholder="https://amzn.in/d/xxxxxxx">
+    <div class="field-row">
+      <div>
+        <label for="price">Target price (₹)</label>
+        <input type="number" id="price" placeholder="2500">
+      </div>
+      <div style="display:flex; align-items:flex-end;">
+        <button class="btn-primary" onclick="addProduct()" id="addBtn" style="height:48px;">Add Product</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="listSection" style="display:none;">
+    <div class="section-label">Currently tracked</div>
+    <div id="productList"></div>
+  </section>
+
+  <footer>Changes commit directly to price-tracker/products.txt in etf-edge</footer>
+</div>
+
+<script>
+const OWNER = "chavanumesh";
+const REPO = "etf-edge";
+const PATH = "price-tracker/products.txt";
+let currentSha = null;
+let currentLines = [];
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = 'status show ' + type;
+}
+
+function hideStatus() {
+  document.getElementById('status').className = 'status';
+}
+
+function getToken() {
+  return document.getElementById('token').value.trim();
+}
+
+async function githubRequest(method, body) {
+  const token = getToken();
+  const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`, {
+    method: method,
+    headers: {
+      "Authorization": `token ${token}`,
+      "Accept": "application/vnd.github+json"
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `GitHub API error (${res.status})`);
+  }
+  return res.json();
+}
+
+async function loadProducts() {
+  const token = getToken();
+  if (!token) {
+    showStatus("Please paste your GitHub token first.", "err");
+    return;
+  }
+  showStatus("Connecting to GitHub…", "loading");
+  document.getElementById('connectBtn').disabled = true;
+
+  try {
+    const data = await githubRequest("GET");
+    currentSha = data.sha;
+    const content = atob(data.content);
+    currentLines = content.split("\n");
+    renderProducts();
+    document.getElementById('addSection').style.display = 'block';
+    document.getElementById('listSection').style.display = 'block';
+    showStatus("Connected. Product list loaded.", "ok");
+  } catch (e) {
+    showStatus("Couldn't connect: " + e.message, "err");
+  } finally {
+    document.getElementById('connectBtn').disabled = false;
+  }
+}
+
+function renderProducts() {
+  const listEl = document.getElementById('productList');
+  const productLines = currentLines
+    .map((line, idx) => ({ line: line.trim(), idx }))
+    .filter(item => item.line && !item.line.startsWith("#"));
+
+  if (productLines.length === 0) {
+    listEl.innerHTML = '<div class="empty-state">No products tracked yet. Add one above.</div>';
+    return;
+  }
+
+  listEl.innerHTML = productLines.map(item => {
+    const parts = item.line.split(",");
+    const url = parts[0].trim();
+    const price = parts[1] ? parts[1].trim() : "—";
+    return `
+      <div class="product-card">
+        <div>
+          <div class="product-url"><a href="${url}" target="_blank">${url}</a></div>
+          <div class="product-target">Alert at ₹${price}</div>
+        </div>
+        <button class="btn-ghost" onclick="removeProduct(${item.idx})">Remove</button>
+      </div>
+    `;
+  }).join("");
+}
+
+async function addProduct() {
+  const url = document.getElementById('url').value.trim();
+  const price = document.getElementById('price').value.trim();
+
+  if (!url || !price) {
+    showStatus("Enter both a product URL and a target price.", "err");
+    return;
+  }
+
+  currentLines.push(`${url}, ${price}`);
+  await commitChanges(`Add product via Price Watch UI`);
+  document.getElementById('url').value = '';
+  document.getElementById('price').value = '';
+}
+
+async function removeProduct(idx) {
+  currentLines.splice(idx, 1);
+  await commitChanges(`Remove product via Price Watch UI`);
+}
+
+async function commitChanges(message) {
+  showStatus("Saving to GitHub…", "loading");
+  document.getElementById('addBtn').disabled = true;
+
+  try {
+    const newContent = currentLines.join("\n");
+    const encoded = btoa(newContent);
+    const result = await githubRequest("PUT", {
+      message: message,
+      content: encoded,
+      sha: currentSha
+    });
+    currentSha = result.content.sha;
+    renderProducts();
+    showStatus("Saved. Change is live in your repo.", "ok");
+  } catch (e) {
+    showStatus("Couldn't save: " + e.message, "err");
+  } finally {
+    document.getElementById('addBtn').disabled = false;
+  }
+}
+</script>
+</body>
+</html>
