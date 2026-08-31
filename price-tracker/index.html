@@ -227,14 +227,19 @@
   </header>
 
   <div class="token-box">
-    Paste a temporary GitHub token to connect (Settings → Developer settings → Personal access tokens → Generate new token → repo scope only). Delete it from GitHub once you're done for this session.
+    Paste a GitHub token to connect (Settings → Developer settings → Personal access tokens → Generate new token → repo scope only). Tick "Remember on this device" to skip this step next time — the token then stays only in this browser, never sent anywhere except GitHub.
   </div>
 
   <section>
     <div class="section-label">Connect</div>
     <label for="token">GitHub Personal Access Token</label>
     <input type="password" id="token" placeholder="ghp_...">
+    <label style="display:flex; align-items:center; gap:8px; margin:-10px 0 18px; cursor:pointer;">
+      <input type="checkbox" id="rememberToken" style="width:auto; margin:0;">
+      <span style="font-size:13px; color:var(--muted);">Remember on this device</span>
+    </label>
     <button class="btn-primary" onclick="loadProducts()" id="connectBtn">Connect & Load Products</button>
+    <button class="btn-ghost" onclick="forgetToken()" id="forgetBtn" style="display:none; width:100%; text-align:center; margin-top:8px;">Forget saved token on this device</button>
   </section>
 
   <div id="status" class="status"></div>
@@ -283,6 +288,23 @@ function getToken() {
   return document.getElementById('token').value.trim();
 }
 
+function forgetToken() {
+  localStorage.removeItem('pricewatch_token');
+  document.getElementById('token').value = '';
+  document.getElementById('rememberToken').checked = false;
+  document.getElementById('forgetBtn').style.display = 'none';
+  showStatus("Saved token removed from this device.", "ok");
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('pricewatch_token');
+  if (saved) {
+    document.getElementById('token').value = saved;
+    document.getElementById('rememberToken').checked = true;
+    document.getElementById('forgetBtn').style.display = 'block';
+  }
+});
+
 async function githubRequest(method, body) {
   const token = getToken();
   const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`, {
@@ -317,6 +339,15 @@ async function loadProducts() {
     renderProducts();
     document.getElementById('addSection').style.display = 'block';
     document.getElementById('listSection').style.display = 'block';
+
+    if (document.getElementById('rememberToken').checked) {
+      localStorage.setItem('pricewatch_token', token);
+      document.getElementById('forgetBtn').style.display = 'block';
+    } else {
+      localStorage.removeItem('pricewatch_token');
+      document.getElementById('forgetBtn').style.display = 'none';
+    }
+
     showStatus("Connected. Product list loaded.", "ok");
   } catch (e) {
     showStatus("Couldn't connect: " + e.message, "err");
