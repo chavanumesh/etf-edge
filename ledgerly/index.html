@@ -180,7 +180,8 @@
   <div class="summary-grid" id="summaryGrid"></div>
 
   <div class="card">
-    <h2>Add a transaction</h2>
+    <h2 id="formTitle">Add a transaction</h2>
+    <div id="editBanner" style="display:none;" class="hint">Editing an existing transaction — Save will update it instead of adding a new one.</div>
     <div class="grid">
       <div>
         <label for="f-date">Date</label>
@@ -265,6 +266,7 @@
     <div class="actions">
       <button class="primary" id="btnSave">Save transaction</button>
       <button class="ghost" id="btnClear">Clear form</button>
+      <button class="ghost" id="btnCancelEdit" style="display:none;">Cancel edit</button>
     </div>
   </div>
 
@@ -321,6 +323,51 @@ const els = {
   btnSave: document.getElementById('btnSave'),
   btnClear: document.getElementById('btnClear'),
 };
+
+let editingId = null;
+const formTitle = document.getElementById('formTitle');
+const editBanner = document.getElementById('editBanner');
+const btnCancelEdit = document.getElementById('btnCancelEdit');
+
+function loadIntoForm(t){
+  editingId = t.id;
+  document.getElementById('f-date').value = t.txn_date;
+  document.getElementById('f-instrument').value = t.instrument;
+  document.getElementById('f-market').value = t.market;
+  document.getElementById('f-type').value = t.txn_type;
+  document.getElementById('f-qty').value = t.quantity;
+  document.getElementById('f-price').value = t.price;
+  document.getElementById('f-currency').value = t.currency;
+  document.getElementById('f-charges').value = t.total_charges ?? 0;
+  document.getElementById('f-notes').value = t.notes || '';
+
+  const isFxConversion = t.inr_amount !== null && t.inr_amount !== undefined;
+  els.fxToggle.checked = isFxConversion;
+  els.fxFields.classList.toggle('show', isFxConversion);
+  document.getElementById('f-inr').value = t.inr_amount ?? '';
+  document.getElementById('f-usd').value = t.usd_amount ?? '';
+  document.getElementById('f-fxrate').value = isFxConversion ? (t.exchange_rate ?? '') : '';
+  document.getElementById('f-fxcharges').value = t.fx_conversion_charges ?? '';
+
+  syncRefRateVisibility(); // shows/hides ref-rate field based on currency, may trigger auto-fetch
+  if (!isFxConversion) refRateInput.value = t.exchange_rate ?? '';
+
+  formTitle.textContent = `Editing transaction — ${t.instrument} (${t.txn_date})`;
+  editBanner.style.display = 'block';
+  btnCancelEdit.style.display = 'inline-block';
+  els.btnSave.textContent = 'Update transaction';
+  window.scrollTo({top: document.querySelector('.card').offsetTop - 10, behavior:'smooth'});
+}
+
+function exitEditMode(){
+  editingId = null;
+  formTitle.textContent = 'Add a transaction';
+  editBanner.style.display = 'none';
+  btnCancelEdit.style.display = 'none';
+  els.btnSave.textContent = 'Save transaction';
+}
+
+btnCancelEdit.addEventListener('click', () => { exitEditMode(); clearForm(); });
 
 els.fxToggle.addEventListener('change', () => {
   els.fxFields.classList.toggle('show', els.fxToggle.checked);
@@ -488,8 +535,18 @@ function renderTransactions(txns){
       <td class="num">${fmt(t.total_charges, t.currency)}</td>
       <td>${fx}</td>
       <td class="num">${inrEq}</td>
-      <td><button class="danger-text" data-id="${t.id}">Delete</button></td>`;
+      <td>
+        <button class="danger-text" style="color:var(--moss-dark);" data-edit-id="${t.id}">Edit</button>
+        <button class="danger-text" data-id="${t.id}">Delete</button>
+      </td>`;
     els.txnBody.appendChild(tr);
+  });
+
+  els.txnBody.querySelectorAll('button[data-edit-id]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = txns.find(x => String(x.id) === btn.dataset.editId);
+      if (t) loadIntoForm(t);
+    });
   });
 
   els.txnBody.querySelectorAll('button[data-id]').forEach(btn => {
@@ -519,7 +576,7 @@ function clearForm(){
   document.getElementById('f-date').valueAsDate = new Date();
 }
 
-els.btnClear.addEventListener('click', clearForm);
+els.btnClear.addEventListener('click', () => { exitEditMode(); clearForm(); });
 
 els.btnSave.addEventListener('click', async () => {
   const instrument = document.getElementById('f-instrument').value.trim();
@@ -555,12 +612,19 @@ els.btnSave.addEventListener('click', async () => {
   }
 
   els.btnSave.disabled = true;
-  els.btnSave.textContent = 'Saving…';
-  const {error} = await sb.from('transactions').insert(payload);
+  els.btnSave.textContent = editingId ? 'Updating…' : 'Saving…';
+  const query = editingId
+    ? sb.from('transactions').update(payload).eq('id', editingId)
+    : sb.from('transactions').insert(payload);
+  const {error} = await query;
   els.btnSave.disabled = false;
-  els.btnSave.textContent = 'Save transaction';
 
-  if (error) { alert('Save failed: ' + error.message); console.error(error); return; }
+  if (error) {
+    els.btnSave.textContent = editingId ? 'Update transaction' : 'Save transaction';
+    alert('Save failed: ' + error.message); console.error(error); return;
+  }
+  const wasEditing = editingId;
+  exitEditMode();
   clearForm();
   loadAll();
 });
