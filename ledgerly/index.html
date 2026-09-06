@@ -160,6 +160,8 @@
   .stat .label{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:var(--muted);margin-bottom:6px;}
   .stat .value{font-size:22px;font-weight:600;}
   .toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:var(--muted);}
+  .hint{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:var(--muted);margin-top:5px;}
+  .inr-eq{color:var(--muted);font-size:12px;}
 </style>
 </head>
 <body>
@@ -221,6 +223,13 @@
       <div>
         <label for="f-charges">Total charges</label>
         <input type="number" step="any" id="f-charges" placeholder="0.00">
+        <div class="hint">Brokerage, GST, taxes, etc. only — not the trade value.</div>
+      </div>
+
+      <div id="refRateField" style="display:none;">
+        <label for="f-refrate">USD/INR rate (auto-filled, editable)</label>
+        <input type="number" step="any" id="f-refrate" placeholder="e.g. 95.40">
+        <div class="hint" id="refRateHint">Fetches that day's rate automatically — override if your broker used a different rate.</div>
       </div>
 
       <div class="fx-fields" id="fxFields">
@@ -283,7 +292,7 @@
           <tr>
             <th>Date</th><th>Instrument</th><th>Market</th><th>Type</th>
             <th class="num">Qty</th><th class="num">Price</th><th>Ccy</th>
-            <th class="num">Charges</th><th>FX</th><th></th>
+            <th class="num">Charges</th><th>FX</th><th class="num">INR equiv.</th><th></th>
           </tr>
         </thead>
         <tbody id="txnBody"></tbody>
@@ -316,6 +325,46 @@ const els = {
 els.fxToggle.addEventListener('change', () => {
   els.fxFields.classList.toggle('show', els.fxToggle.checked);
 });
+
+const currencySelect = document.getElementById('f-currency');
+const refRateField = document.getElementById('refRateField');
+const refRateInput = document.getElementById('f-refrate');
+const refRateHint = document.getElementById('refRateHint');
+const dateInput = document.getElementById('f-date');
+
+function syncRefRateVisibility(){
+  refRateField.style.display = currencySelect.value === 'USD' ? 'block' : 'none';
+  if (currencySelect.value === 'USD') fetchRefRate();
+}
+
+let rateFetchToken = 0;
+async function fetchRefRate(){
+  const date = dateInput.value;
+  if (!date) return;
+  const today = new Date().toISOString().slice(0,10);
+  const useDate = date > today ? today : date; // API has no future rates
+  const myToken = ++rateFetchToken;
+  refRateHint.textContent = 'Fetching that day\'s rate…';
+  try {
+    const res = await fetch(`https://api.frankfurter.app/${useDate}?from=USD&to=INR`);
+    const data = await res.json();
+    if (myToken !== rateFetchToken) return; // a newer request superseded this one
+    const rate = data && data.rates && data.rates.INR;
+    if (rate) {
+      refRateInput.value = rate.toFixed(4);
+      refRateHint.textContent = `Auto-filled from ${useDate}'s official rate — override if your broker used a different one.`;
+    } else {
+      refRateHint.textContent = 'Could not auto-fetch a rate for this date — enter it manually if you know it.';
+    }
+  } catch (e) {
+    if (myToken !== rateFetchToken) return;
+    refRateHint.textContent = 'Auto-fetch failed (offline?) — enter the rate manually if you know it.';
+  }
+}
+
+currencySelect.addEventListener('change', syncRefRateVisibility);
+dateInput.addEventListener('change', () => { if (currencySelect.value === 'USD') fetchRefRate(); });
+syncRefRateVisibility();
 
 document.getElementById('f-date').valueAsDate = new Date();
 
@@ -421,6 +470,11 @@ function renderTransactions(txns){
     const tr = document.createElement('tr');
     const typeClass = t.txn_type === 'Buy' ? 'tag-buy' : t.txn_type === 'Sell' ? 'tag-sell' : 'tag-sip';
     const fx = t.exchange_rate ? `<span class="pill">@ ${t.exchange_rate}</span>` : '—';
+    let inrEq = '—';
+    if (t.currency === 'USD' && t.exchange_rate) {
+      const val = (Number(t.quantity) * Number(t.price) + Number(t.total_charges || 0)) * Number(t.exchange_rate);
+      inrEq = `<span class="inr-eq">${fmt(val, 'INR')}</span>`;
+    }
     tr.innerHTML = `
       <td>${t.txn_date}</td>
       <td>${t.instrument}</td>
@@ -431,6 +485,7 @@ function renderTransactions(txns){
       <td>${t.currency}</td>
       <td class="num">${fmt(t.total_charges, t.currency)}</td>
       <td>${fx}</td>
+      <td class="num">${inrEq}</td>
       <td><button class="danger-text" data-id="${t.id}">Delete</button></td>`;
     els.txnBody.appendChild(tr);
   });
@@ -455,6 +510,8 @@ function clearForm(){
   document.getElementById('f-usd').value = '';
   document.getElementById('f-fxrate').value = '';
   document.getElementById('f-fxcharges').value = '';
+  document.getElementById('f-refrate').value = '';
+  document.getElementById('refRateHint').textContent = "Fetches that day's rate automatically — override if your broker used a different rate.";
   els.fxToggle.checked = false;
   els.fxFields.classList.remove('show');
   document.getElementById('f-date').valueAsDate = new Date();
@@ -490,6 +547,9 @@ els.btnSave.addEventListener('click', async () => {
     payload.usd_amount = parseFloat(document.getElementById('f-usd').value) || null;
     payload.exchange_rate = parseFloat(document.getElementById('f-fxrate').value) || null;
     payload.fx_conversion_charges = parseFloat(document.getElementById('f-fxcharges').value) || 0;
+  } else if (payload.currency === 'USD') {
+    const refRate = parseFloat(document.getElementById('f-refrate').value);
+    if (!isNaN(refRate)) payload.exchange_rate = refRate;
   }
 
   els.btnSave.disabled = true;
