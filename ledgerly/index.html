@@ -287,6 +287,62 @@
   </div>
 
   <div class="card">
+    <h2>FX conversions (INR → USD cash movements)</h2>
+    <div class="grid">
+      <div>
+        <label for="fx-date">Date</label>
+        <input type="date" id="fx-date">
+      </div>
+      <div>
+        <label for="fx-inr">INR amount sent</label>
+        <input type="number" step="any" id="fx-inr" placeholder="0.00">
+      </div>
+      <div>
+        <label for="fx-usd">USD amount received</label>
+        <input type="number" step="any" id="fx-usd" placeholder="0.00">
+      </div>
+      <div>
+        <label for="fx-rate">Exchange rate</label>
+        <input type="number" step="any" id="fx-rate" placeholder="auto-calculated if left blank">
+        <div class="hint">Leave blank to auto-calculate from INR ÷ USD above.</div>
+      </div>
+      <div>
+        <label for="fx-charges">Conversion charges (INR)</label>
+        <input type="number" step="any" id="fx-charges" placeholder="0.00">
+      </div>
+      <div>
+        <label for="fx-source">Source account</label>
+        <input type="text" id="fx-source" placeholder="e.g. HDFC Savings">
+      </div>
+      <div>
+        <label for="fx-dest">Destination account</label>
+        <input type="text" id="fx-dest" placeholder="e.g. IBKR USD">
+      </div>
+      <div style="grid-column:1/-1;">
+        <label for="fx-notes">Notes (optional)</label>
+        <input type="text" id="fx-notes" placeholder="Optional note">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btnFxSave">Save conversion</button>
+      <button class="ghost" id="btnFxClear">Clear form</button>
+    </div>
+
+    <div class="scroll-x" style="margin-top:20px;">
+      <table id="fxTable">
+        <thead>
+          <tr>
+            <th>Date</th><th class="num">INR sent</th><th class="num">USD received</th>
+            <th class="num">Rate</th><th class="num">Charges</th><th>Source</th><th>Destination</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="fxBody"></tbody>
+      </table>
+      <div id="fxEmpty" class="empty" style="display:none;">No FX conversions logged yet.</div>
+    </div>
+  </div>
+
+  <div class="card">
     <h2>All transactions</h2>
     <div class="scroll-x">
       <table id="txnTable">
@@ -318,6 +374,8 @@ const els = {
   holdingsEmpty: document.getElementById('holdingsEmpty'),
   txnBody: document.getElementById('txnBody'),
   txnEmpty: document.getElementById('txnEmpty'),
+  fxBody: document.getElementById('fxBody'),
+  fxEmpty: document.getElementById('fxEmpty'),
   fxToggle: document.getElementById('f-fxtoggle'),
   fxFields: document.getElementById('fxFields'),
   btnSave: document.getElementById('btnSave'),
@@ -416,6 +474,7 @@ dateInput.addEventListener('change', () => { if (currencySelect.value === 'USD')
 syncRefRateVisibility();
 
 document.getElementById('f-date').valueAsDate = new Date();
+document.getElementById('fx-date').valueAsDate = new Date();
 
 function fmt(n, ccy){
   if (n === null || n === undefined || isNaN(n)) return '—';
@@ -424,15 +483,16 @@ function fmt(n, ccy){
 }
 
 async function loadAll(){
-  const [{data: txns, error: e1}, {data: opens, error: e2}] = await Promise.all([
+  const [{data: txns, error: e1}, {data: opens, error: e2}, {data: fxRows, error: e3}] = await Promise.all([
     sb.from('transactions').select('*').order('txn_date', {ascending:true}),
-    sb.from('opening_holdings').select('*')
+    sb.from('opening_holdings').select('*'),
+    sb.from('fx_conversions').select('*').order('conversion_date', {ascending:true})
   ]);
 
-  if (e1 || e2) {
+  if (e1 || e2 || e3) {
     els.connStatus.textContent = 'Connection error — check console for details.';
     els.connStatus.className = 'status err';
-    console.error(e1, e2);
+    console.error(e1, e2, e3);
     return;
   }
 
@@ -441,10 +501,84 @@ async function loadAll(){
   els.connCount.textContent = `${txns.length} transaction${txns.length===1?'':'s'} logged`;
 
   renderTransactions(txns);
+  renderFxConversions(fxRows);
   const holdings = computeHoldings(opens, txns);
   renderHoldings(holdings);
-  renderSummary(holdings, txns);
+  renderSummary(holdings, txns, fxRows);
 }
+
+function renderFxConversions(rows){
+  els.fxBody.innerHTML = '';
+  els.fxEmpty.style.display = rows.length ? 'none' : 'block';
+  rows.slice().reverse().forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.conversion_date}</td>
+      <td class="num">${fmt(r.inr_amount, 'INR')}</td>
+      <td class="num">${fmt(r.usd_amount, 'USD')}</td>
+      <td class="num">${Number(r.exchange_rate).toFixed(4)}</td>
+      <td class="num">${fmt(r.conversion_charges, 'INR')}</td>
+      <td>${r.source_account || '—'}</td>
+      <td>${r.destination_account || '—'}</td>
+      <td><button class="danger-text" data-fxid="${r.id}">Delete</button></td>`;
+    els.fxBody.appendChild(tr);
+  });
+  els.fxBody.querySelectorAll('button[data-fxid]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this FX conversion record? This cannot be undone.')) return;
+      const {error} = await sb.from('fx_conversions').delete().eq('id', btn.dataset.fxid);
+      if (error) { alert('Delete failed: ' + error.message); return; }
+      loadAll();
+    });
+  });
+}
+
+function clearFxForm(){
+  document.getElementById('fx-inr').value = '';
+  document.getElementById('fx-usd').value = '';
+  document.getElementById('fx-rate').value = '';
+  document.getElementById('fx-charges').value = '';
+  document.getElementById('fx-source').value = '';
+  document.getElementById('fx-dest').value = '';
+  document.getElementById('fx-notes').value = '';
+  document.getElementById('fx-date').valueAsDate = new Date();
+}
+
+document.getElementById('btnFxClear').addEventListener('click', clearFxForm);
+
+document.getElementById('btnFxSave').addEventListener('click', async () => {
+  const inr = parseFloat(document.getElementById('fx-inr').value);
+  const usd = parseFloat(document.getElementById('fx-usd').value);
+  let rate = parseFloat(document.getElementById('fx-rate').value);
+
+  if (isNaN(inr) || inr <= 0 || isNaN(usd) || usd <= 0) {
+    alert('Please enter both the INR amount sent and USD amount received.');
+    return;
+  }
+  if (isNaN(rate) || rate <= 0) rate = inr / usd; // auto-calculate if left blank
+
+  const payload = {
+    conversion_date: document.getElementById('fx-date').value,
+    inr_amount: inr,
+    usd_amount: usd,
+    exchange_rate: rate,
+    conversion_charges: parseFloat(document.getElementById('fx-charges').value) || 0,
+    source_account: document.getElementById('fx-source').value.trim() || null,
+    destination_account: document.getElementById('fx-dest').value.trim() || null,
+    notes: document.getElementById('fx-notes').value.trim() || null,
+  };
+
+  const btn = document.getElementById('btnFxSave');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+  const {error} = await sb.from('fx_conversions').insert(payload);
+  btn.disabled = false;
+  btn.textContent = 'Save conversion';
+
+  if (error) { alert('Save failed: ' + error.message); console.error(error); return; }
+  clearFxForm();
+  loadAll();
+});
 
 function computeHoldings(opens, txns){
   const map = {};
@@ -498,14 +632,16 @@ function renderHoldings(holdings){
   });
 }
 
-function renderSummary(holdings, txns){
+function renderSummary(holdings, txns, fxRows){
   const inr = holdings.filter(h=>h.currency==='INR').reduce((s,h)=>s+h.invested,0);
   const usd = holdings.filter(h=>h.currency==='USD').reduce((s,h)=>s+h.invested,0);
+  const totalUsdConverted = (fxRows||[]).reduce((s,r)=>s+Number(r.usd_amount),0);
   const items = [
     {label:'Instruments held', value: holdings.length},
     {label:'Invested (INR)', value: fmt(inr,'INR')},
     {label:'Invested (USD)', value: fmt(usd,'USD')},
     {label:'Total transactions', value: txns.length},
+    {label:'USD converted to date', value: fmt(totalUsdConverted,'USD')},
   ];
   els.summaryGrid.innerHTML = items.map(i => `
     <div class="stat"><div class="label">${i.label}</div><div class="value">${i.value}</div></div>
