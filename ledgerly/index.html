@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledgerly — Transaction Ledger</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#1b2430;
+    --paper:#f6f4ee;
+    --card:#ffffff;
+    --line:#e3ddcf;
+    --moss:#2f5d4f;
+    --moss-dark:#213f36;
+    --rust:#a4552f;
+    --gold:#c8973a;
+    --muted:#6c6459;
+    --buy:#2f5d4f;
+    --sell:#a4552f;
+    --sip:#7a6a3f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Iowan Old Style','Georgia',serif;
+    line-height:1.5;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:32px 20px 80px;}
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  header h1{
+    font-size:28px;
+    margin:0;
+    letter-spacing:0.3px;
+    font-weight:600;
+  }
+  header .tag{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:12px;
+    color:var(--muted);
+  }
+  .status{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:12px;
+    padding:6px 10px;
+    border-radius:3px;
+    display:inline-block;
+    margin-bottom:20px;
+  }
+  .status.ok{background:#e7efe9;color:var(--moss-dark);}
+  .status.err{background:#f6e5df;color:var(--rust);}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:22px;
+    margin-bottom:24px;
+  }
+  .card h2{
+    font-size:15px;
+    text-transform:none;
+    margin:0 0 16px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:14px;
+  }
+  label{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:11.5px;
+    color:var(--muted);
+    display:block;
+    margin-bottom:5px;
+  }
+  input, select{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:14px;
+    background:#fffdfa;
+    color:var(--ink);
+  }
+  input:focus, select:focus{outline:2px solid var(--moss);outline-offset:1px;}
+  .fx-fields{
+    display:none;
+    grid-column:1/-1;
+    border-top:1px dashed var(--line);
+    padding-top:14px;
+    margin-top:4px;
+  }
+  .fx-fields.show{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
+  .actions{margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;}
+  button{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:3px;
+    border:none;
+    cursor:pointer;
+  }
+  button.primary{background:var(--moss);color:#fff;}
+  button.primary:hover{background:var(--moss-dark);}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
+  button.ghost:hover{background:#f0ede4;}
+  button.danger-text{background:transparent;color:var(--rust);border:none;padding:4px 8px;font-size:12px;}
+
+  table{width:100%;border-collapse:collapse;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13.5px;}
+  th{
+    text-align:left;
+    font-size:11px;
+    color:var(--muted);
+    font-weight:600;
+    padding:8px 10px;
+    border-bottom:1px solid var(--ink);
+    white-space:nowrap;
+  }
+  td{padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tr:hover td{background:#faf8f2;}
+  .tag-buy{color:var(--buy);font-weight:600;}
+  .tag-sell{color:var(--sell);font-weight:600;}
+  .tag-sip{color:var(--sip);font-weight:600;}
+  .num{text-align:right;font-variant-numeric:tabular-nums;}
+  .empty{
+    padding:40px 20px;
+    text-align:center;
+    color:var(--muted);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:13.5px;
+  }
+  .scroll-x{overflow-x:auto;}
+  .pill{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:10.5px;
+    padding:2px 7px;
+    border-radius:10px;
+    background:#eee8d8;
+    color:var(--muted);
+  }
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px;}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px 18px;}
+  .stat .label{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:11px;color:var(--muted);margin-bottom:6px;}
+  .stat .value{font-size:22px;font-weight:600;}
+  .toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Ledgerly</h1>
+      <div class="tag">Transaction ledger &amp; average-cost engine</div>
+    </div>
+    <div class="tag" id="connCount"></div>
+  </header>
+
+  <div id="connStatus" class="status">Connecting…</div>
+
+  <div class="summary-grid" id="summaryGrid"></div>
+
+  <div class="card">
+    <h2>Add a transaction</h2>
+    <div class="grid">
+      <div>
+        <label for="f-date">Date</label>
+        <input type="date" id="f-date">
+      </div>
+      <div>
+        <label for="f-instrument">Instrument</label>
+        <input type="text" id="f-instrument" placeholder="e.g. NIFTYBEES, INFY, VOO">
+      </div>
+      <div>
+        <label for="f-market">Market</label>
+        <select id="f-market">
+          <option value="India">India</option>
+          <option value="US">US</option>
+        </select>
+      </div>
+      <div>
+        <label for="f-type">Type</label>
+        <select id="f-type">
+          <option value="Buy">Buy</option>
+          <option value="Sell">Sell</option>
+          <option value="SIP">SIP</option>
+        </select>
+      </div>
+      <div>
+        <label for="f-qty">Quantity</label>
+        <input type="number" step="any" id="f-qty" placeholder="0">
+      </div>
+      <div>
+        <label for="f-price">Price (per unit)</label>
+        <input type="number" step="any" id="f-price" placeholder="0.00">
+      </div>
+      <div>
+        <label for="f-currency">Currency</label>
+        <select id="f-currency">
+          <option value="INR">INR</option>
+          <option value="USD">USD</option>
+        </select>
+      </div>
+      <div>
+        <label for="f-charges">Total charges</label>
+        <input type="number" step="any" id="f-charges" placeholder="0.00">
+      </div>
+
+      <div class="fx-fields" id="fxFields">
+        <div>
+          <label for="f-inr">INR amount converted</label>
+          <input type="number" step="any" id="f-inr" placeholder="0.00">
+        </div>
+        <div>
+          <label for="f-usd">USD amount received</label>
+          <input type="number" step="any" id="f-usd" placeholder="0.00">
+        </div>
+        <div>
+          <label for="f-fxrate">Exchange rate (INR/USD)</label>
+          <input type="number" step="any" id="f-fxrate" placeholder="0.00">
+        </div>
+        <div>
+          <label for="f-fxcharges">FX conversion charges</label>
+          <input type="number" step="any" id="f-fxcharges" placeholder="0.00">
+        </div>
+      </div>
+
+      <div style="grid-column:1/-1;">
+        <label for="f-notes">Notes (optional)</label>
+        <input type="text" id="f-notes" placeholder="Optional note">
+      </div>
+    </div>
+
+    <div class="toggle-row" style="margin-top:14px;">
+      <input type="checkbox" id="f-fxtoggle" style="width:auto;">
+      <label for="f-fxtoggle" style="margin:0;">This is an INR → USD conversion transaction</label>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="btnSave">Save transaction</button>
+      <button class="ghost" id="btnClear">Clear form</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Holdings — running quantity &amp; average cost</h2>
+    <div class="scroll-x">
+      <table id="holdingsTable">
+        <thead>
+          <tr>
+            <th>Instrument</th><th>Market</th><th class="num">Qty held</th>
+            <th class="num">Avg cost</th><th>Ccy</th><th class="num">Invested amount</th>
+          </tr>
+        </thead>
+        <tbody id="holdingsBody"></tbody>
+      </table>
+      <div id="holdingsEmpty" class="empty" style="display:none;">No holdings yet — add a transaction or seed your opening holdings.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>All transactions</h2>
+    <div class="scroll-x">
+      <table id="txnTable">
+        <thead>
+          <tr>
+            <th>Date</th><th>Instrument</th><th>Market</th><th>Type</th>
+            <th class="num">Qty</th><th class="num">Price</th><th>Ccy</th>
+            <th class="num">Charges</th><th>FX</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="txnBody"></tbody>
+      </table>
+      <div id="txnEmpty" class="empty" style="display:none;">No transactions yet. Add your first one above.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = "https://ujpzghumcwbwlppnhgoe.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqcHpnaHVtY3did2xwcG5oZ29lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2OTgxODksImV4cCI6MjEwNDI3NDE4OX0.LBi_5OaVVvRtR57ALhNhW7W4lr9IOadwJZqtMoCh22k";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const els = {
+  connStatus: document.getElementById('connStatus'),
+  connCount: document.getElementById('connCount'),
+  summaryGrid: document.getElementById('summaryGrid'),
+  holdingsBody: document.getElementById('holdingsBody'),
+  holdingsEmpty: document.getElementById('holdingsEmpty'),
+  txnBody: document.getElementById('txnBody'),
+  txnEmpty: document.getElementById('txnEmpty'),
+  fxToggle: document.getElementById('f-fxtoggle'),
+  fxFields: document.getElementById('fxFields'),
+  btnSave: document.getElementById('btnSave'),
+  btnClear: document.getElementById('btnClear'),
+};
+
+els.fxToggle.addEventListener('change', () => {
+  els.fxFields.classList.toggle('show', els.fxToggle.checked);
+});
+
+document.getElementById('f-date').valueAsDate = new Date();
+
+function fmt(n, ccy){
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const symbol = ccy === 'USD' ? '$' : '₹';
+  return symbol + Number(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+async function loadAll(){
+  const [{data: txns, error: e1}, {data: opens, error: e2}] = await Promise.all([
+    sb.from('transactions').select('*').order('txn_date', {ascending:true}),
+    sb.from('opening_holdings').select('*')
+  ]);
+
+  if (e1 || e2) {
+    els.connStatus.textContent = 'Connection error — check console for details.';
+    els.connStatus.className = 'status err';
+    console.error(e1, e2);
+    return;
+  }
+
+  els.connStatus.textContent = 'Connected to Supabase';
+  els.connStatus.className = 'status ok';
+  els.connCount.textContent = `${txns.length} transaction${txns.length===1?'':'s'} logged`;
+
+  renderTransactions(txns);
+  const holdings = computeHoldings(opens, txns);
+  renderHoldings(holdings);
+  renderSummary(holdings, txns);
+}
+
+function computeHoldings(opens, txns){
+  const map = {};
+  const key = (inst, ccy) => inst.trim().toUpperCase() + '|' + ccy;
+
+  (opens || []).forEach(o => {
+    const k = key(o.instrument, o.currency);
+    map[k] = {
+      instrument: o.instrument,
+      market: o.market,
+      currency: o.currency,
+      qty: Number(o.quantity),
+      invested: Number(o.quantity) * Number(o.avg_cost)
+    };
+  });
+
+  (txns || []).forEach(t => {
+    const k = key(t.instrument, t.currency);
+    if (!map[k]) map[k] = {instrument: t.instrument, market: t.market, currency: t.currency, qty:0, invested:0};
+    const qty = Number(t.quantity);
+    const amount = qty * Number(t.price) + Number(t.total_charges || 0);
+    if (t.txn_type === 'Sell') {
+      const avgCostBefore = map[k].qty > 0 ? map[k].invested / map[k].qty : 0;
+      map[k].qty -= qty;
+      map[k].invested -= qty * avgCostBefore;
+    } else {
+      map[k].qty += qty;
+      map[k].invested += amount;
+    }
+  });
+
+  return Object.values(map).filter(h => Math.abs(h.qty) > 0.0000001).map(h => ({
+    ...h,
+    avgCost: h.invested / h.qty
+  }));
+}
+
+function renderHoldings(holdings){
+  els.holdingsBody.innerHTML = '';
+  els.holdingsEmpty.style.display = holdings.length ? 'none' : 'block';
+  holdings.sort((a,b) => a.instrument.localeCompare(b.instrument)).forEach(h => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${h.instrument}</td>
+      <td>${h.market}</td>
+      <td class="num">${h.qty.toLocaleString(undefined,{maximumFractionDigits:4})}</td>
+      <td class="num">${fmt(h.avgCost, h.currency)}</td>
+      <td>${h.currency}</td>
+      <td class="num">${fmt(h.invested, h.currency)}</td>`;
+    els.holdingsBody.appendChild(tr);
+  });
+}
+
+function renderSummary(holdings, txns){
+  const inr = holdings.filter(h=>h.currency==='INR').reduce((s,h)=>s+h.invested,0);
+  const usd = holdings.filter(h=>h.currency==='USD').reduce((s,h)=>s+h.invested,0);
+  const items = [
+    {label:'Instruments held', value: holdings.length},
+    {label:'Invested (INR)', value: fmt(inr,'INR')},
+    {label:'Invested (USD)', value: fmt(usd,'USD')},
+    {label:'Total transactions', value: txns.length},
+  ];
+  els.summaryGrid.innerHTML = items.map(i => `
+    <div class="stat"><div class="label">${i.label}</div><div class="value">${i.value}</div></div>
+  `).join('');
+}
+
+function renderTransactions(txns){
+  els.txnBody.innerHTML = '';
+  els.txnEmpty.style.display = txns.length ? 'none' : 'block';
+  txns.slice().reverse().forEach(t => {
+    const tr = document.createElement('tr');
+    const typeClass = t.txn_type === 'Buy' ? 'tag-buy' : t.txn_type === 'Sell' ? 'tag-sell' : 'tag-sip';
+    const fx = t.exchange_rate ? `<span class="pill">@ ${t.exchange_rate}</span>` : '—';
+    tr.innerHTML = `
+      <td>${t.txn_date}</td>
+      <td>${t.instrument}</td>
+      <td>${t.market}</td>
+      <td class="${typeClass}">${t.txn_type}</td>
+      <td class="num">${Number(t.quantity).toLocaleString(undefined,{maximumFractionDigits:4})}</td>
+      <td class="num">${fmt(t.price, t.currency)}</td>
+      <td>${t.currency}</td>
+      <td class="num">${fmt(t.total_charges, t.currency)}</td>
+      <td>${fx}</td>
+      <td><button class="danger-text" data-id="${t.id}">Delete</button></td>`;
+    els.txnBody.appendChild(tr);
+  });
+
+  els.txnBody.querySelectorAll('button[data-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Delete this transaction? This cannot be undone.')) return;
+      const {error} = await sb.from('transactions').delete().eq('id', btn.dataset.id);
+      if (error) { alert('Delete failed: ' + error.message); return; }
+      loadAll();
+    });
+  });
+}
+
+function clearForm(){
+  document.getElementById('f-instrument').value = '';
+  document.getElementById('f-qty').value = '';
+  document.getElementById('f-price').value = '';
+  document.getElementById('f-charges').value = '';
+  document.getElementById('f-notes').value = '';
+  document.getElementById('f-inr').value = '';
+  document.getElementById('f-usd').value = '';
+  document.getElementById('f-fxrate').value = '';
+  document.getElementById('f-fxcharges').value = '';
+  els.fxToggle.checked = false;
+  els.fxFields.classList.remove('show');
+  document.getElementById('f-date').valueAsDate = new Date();
+}
+
+els.btnClear.addEventListener('click', clearForm);
+
+els.btnSave.addEventListener('click', async () => {
+  const instrument = document.getElementById('f-instrument').value.trim();
+  const qty = parseFloat(document.getElementById('f-qty').value);
+  const price = parseFloat(document.getElementById('f-price').value);
+
+  if (!instrument || isNaN(qty) || qty <= 0 || isNaN(price) || price < 0) {
+    alert('Please enter at least an instrument, a positive quantity, and a price.');
+    return;
+  }
+
+  const payload = {
+    txn_date: document.getElementById('f-date').value,
+    instrument,
+    market: document.getElementById('f-market').value,
+    txn_type: document.getElementById('f-type').value,
+    quantity: qty,
+    price,
+    currency: document.getElementById('f-currency').value,
+    total_charges: parseFloat(document.getElementById('f-charges').value) || 0,
+    notes: document.getElementById('f-notes').value.trim() || null,
+    inr_amount: null, usd_amount: null, exchange_rate: null, fx_conversion_charges: null,
+  };
+
+  if (els.fxToggle.checked) {
+    payload.inr_amount = parseFloat(document.getElementById('f-inr').value) || null;
+    payload.usd_amount = parseFloat(document.getElementById('f-usd').value) || null;
+    payload.exchange_rate = parseFloat(document.getElementById('f-fxrate').value) || null;
+    payload.fx_conversion_charges = parseFloat(document.getElementById('f-fxcharges').value) || 0;
+  }
+
+  els.btnSave.disabled = true;
+  els.btnSave.textContent = 'Saving…';
+  const {error} = await sb.from('transactions').insert(payload);
+  els.btnSave.disabled = false;
+  els.btnSave.textContent = 'Save transaction';
+
+  if (error) { alert('Save failed: ' + error.message); console.error(error); return; }
+  clearForm();
+  loadAll();
+});
+
+loadAll();
+</script>
+</body>
+</html>
