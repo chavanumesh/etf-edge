@@ -180,6 +180,28 @@
   <div class="summary-grid" id="summaryGrid"></div>
 
   <div class="card">
+    <h2>Bulk import transactions</h2>
+    <p class="hint" style="margin-top:0;">Paste rows in this exact format (one per line, comma-separated), then click Preview:<br>
+    <code>date,instrument,market,type,qty,price,currency,charges,exchange_rate</code><br>
+    Example: <code>2026-09-04,AAPL,US,Buy,0.0156,320.00,USD,0.02,94.49</code> — leave exchange_rate blank for INR trades.</p>
+    <textarea id="bulkInput" rows="8" style="width:100%;font-family:monospace;font-size:12.5px;padding:10px;border:1px solid var(--line);border-radius:3px;background:#fffdfa;color:var(--ink);"></textarea>
+    <div class="actions">
+      <button class="ghost" id="btnBulkPreview">Preview</button>
+      <button class="primary" id="btnBulkImport" style="display:none;">Confirm import</button>
+      <button class="ghost" id="btnBulkClear">Clear</button>
+    </div>
+    <div id="bulkPreviewWrap" style="display:none;margin-top:16px;">
+      <div class="scroll-x">
+        <table id="bulkPreviewTable">
+          <thead><tr><th>Date</th><th>Instrument</th><th>Market</th><th>Type</th><th class="num">Qty</th><th class="num">Price</th><th>Ccy</th><th class="num">Charges</th><th class="num">Rate</th></tr></thead>
+          <tbody id="bulkPreviewBody"></tbody>
+        </table>
+      </div>
+      <div id="bulkPreviewSummary" class="hint"></div>
+    </div>
+  </div>
+
+  <div class="card">
     <h2 id="formTitle">Add a transaction</h2>
     <div id="editBanner" style="display:none;" class="hint">Editing an existing transaction — Save will update it instead of adding a new one.</div>
     <div class="grid">
@@ -766,6 +788,102 @@ els.btnSave.addEventListener('click', async () => {
 });
 
 loadAll();
+
+// ---- Bulk import ----
+let bulkParsedRows = [];
+
+function parseBulkInput(text){
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length);
+  const rows = [];
+  const errors = [];
+  lines.forEach((line, idx) => {
+    const parts = line.split(',').map(p => p.trim());
+    if (parts.length < 8) { errors.push(`Line ${idx+1}: expected at least 8 fields, got ${parts.length}`); return; }
+    const [date, instrument, market, type, qty, price, currency, charges, rate] = parts;
+    if (!date || !instrument || !market || !type) { errors.push(`Line ${idx+1}: missing required text field`); return; }
+    const qtyNum = parseFloat(qty), priceNum = parseFloat(price), chargesNum = parseFloat(charges) || 0;
+    const rateNum = rate ? parseFloat(rate) : null;
+    if (isNaN(qtyNum) || isNaN(priceNum)) { errors.push(`Line ${idx+1}: invalid quantity or price`); return; }
+    if (!['India','US'].includes(market)) { errors.push(`Line ${idx+1}: market must be 'India' or 'US'`); return; }
+    if (!['Buy','Sell','SIP'].includes(type)) { errors.push(`Line ${idx+1}: type must be Buy, Sell, or SIP`); return; }
+    if (!['INR','USD'].includes(currency)) { errors.push(`Line ${idx+1}: currency must be INR or USD`); return; }
+    rows.push({
+      txn_date: date, instrument, market, txn_type: type,
+      quantity: qtyNum, price: priceNum, currency,
+      total_charges: chargesNum,
+      exchange_rate: (currency === 'USD' && rateNum) ? rateNum : null,
+      notes: null, inr_amount: null, usd_amount: null, fx_conversion_charges: null,
+    });
+  });
+  return {rows, errors};
+}
+
+document.getElementById('btnBulkPreview').addEventListener('click', () => {
+  const text = document.getElementById('bulkInput').value;
+  const {rows, errors} = parseBulkInput(text);
+  bulkParsedRows = rows;
+
+  const previewBody = document.getElementById('bulkPreviewBody');
+  previewBody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.txn_date}</td><td>${r.instrument}</td><td>${r.market}</td><td>${r.txn_type}</td>
+      <td class="num">${r.quantity}</td><td class="num">${r.price}</td><td>${r.currency}</td>
+      <td class="num">${r.total_charges}</td><td class="num">${r.exchange_rate ?? '—'}</td>
+    </tr>`).join('');
+
+  const summary = document.getElementById('bulkPreviewSummary');
+  let msg = `${rows.length} row${rows.length===1?'':'s'} parsed successfully.`;
+  if (errors.length) msg += ` ${errors.length} line(s) had problems and were skipped:<br>` + errors.join('<br>');
+  summary.innerHTML = msg;
+
+  document.getElementById('bulkPreviewWrap').style.display = 'block';
+  document.getElementById('btnBulkImport').style.display = rows.length ? 'inline-block' : 'none';
+});
+
+document.getElementById('btnBulkImport').addEventListener('click', async () => {
+  if (!bulkParsedRows.length) return;
+  const btn = document.getElementById('btnBulkImport');
+
+  // Auto-fetch missing USD exchange rates, one lookup per unique date, before inserting
+  const needRate = bulkParsedRows.filter(r => r.currency === 'USD' && !r.exchange_rate);
+  const uniqueDates = [...new Set(needRate.map(r => r.txn_date))];
+  if (uniqueDates.length) {
+    btn.disabled = true;
+    for (let i = 0; i < uniqueDates.length; i++) {
+      const d = uniqueDates[i];
+      btn.textContent = `Fetching rates… (${i+1}/${uniqueDates.length})`;
+      try {
+        const res = await fetch(`https://api.frankfurter.dev/v1/${d}?base=USD&symbols=INR`);
+        if (res.ok) {
+          const data = await res.json();
+          const rate = data && data.rates && data.rates.INR;
+          if (rate) bulkParsedRows.filter(r => r.txn_date === d && r.currency === 'USD' && !r.exchange_rate)
+                                    .forEach(r => r.exchange_rate = rate);
+        }
+      } catch(e) { console.error('Rate fetch failed for', d, e); }
+    }
+  }
+
+  btn.disabled = true;
+  btn.textContent = `Importing ${bulkParsedRows.length} rows…`;
+  const {error} = await sb.from('transactions').insert(bulkParsedRows);
+  btn.disabled = false;
+  btn.textContent = 'Confirm import';
+  if (error) { alert('Bulk import failed: ' + error.message); console.error(error); return; }
+  alert(`Successfully imported ${bulkParsedRows.length} transactions.`);
+  document.getElementById('bulkInput').value = '';
+  document.getElementById('bulkPreviewWrap').style.display = 'none';
+  btn.style.display = 'none';
+  bulkParsedRows = [];
+  loadAll();
+});
+
+document.getElementById('btnBulkClear').addEventListener('click', () => {
+  document.getElementById('bulkInput').value = '';
+  document.getElementById('bulkPreviewWrap').style.display = 'none';
+  document.getElementById('btnBulkImport').style.display = 'none';
+  bulkParsedRows = [];
+});
 </script>
 </body>
 </html>
