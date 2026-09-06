@@ -346,19 +346,21 @@ async function fetchRefRate(){
   const myToken = ++rateFetchToken;
   refRateHint.textContent = 'Fetching that day\'s rate…';
   try {
-    const res = await fetch(`https://api.frankfurter.app/${useDate}?from=USD&to=INR`);
+    const res = await fetch(`https://api.frankfurter.dev/v1/${useDate}?base=USD&symbols=INR`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (myToken !== rateFetchToken) return; // a newer request superseded this one
     const rate = data && data.rates && data.rates.INR;
     if (rate) {
       refRateInput.value = rate.toFixed(4);
-      refRateHint.textContent = `Auto-filled from ${useDate}'s official rate — override if your broker used a different one.`;
+      refRateHint.textContent = `Auto-filled from ${data.date}'s official rate — override if your broker used a different one.`;
     } else {
       refRateHint.textContent = 'Could not auto-fetch a rate for this date — enter it manually if you know it.';
     }
   } catch (e) {
     if (myToken !== rateFetchToken) return;
-    refRateHint.textContent = 'Auto-fetch failed (offline?) — enter the rate manually if you know it.';
+    console.error('Rate fetch failed:', e);
+    refRateHint.textContent = 'Auto-fetch failed (offline or blocked?) — enter the rate manually if you know it.';
   }
 }
 
