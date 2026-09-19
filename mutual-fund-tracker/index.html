@@ -588,7 +588,7 @@ async function doSearch(q){
 }
 
 function addFund(code, name){
-  if(funds.find(f=>f.code===code)){ return; }
+  if(funds.find(f=>String(f.code)===String(code))){ return; }
   if(funds.length >= 11){ alert('Max 10 funds + 1 benchmark. Remove one first.'); return; }
   funds.push({code, name, benchmark:false, navData:null});
   document.getElementById('searchBox').value='';
@@ -597,13 +597,13 @@ function addFund(code, name){
 }
 
 function removeFund(code){
-  const i = funds.findIndex(f=>f.code===code);
+  const i = funds.findIndex(f=>String(f.code)===String(code));
   if(i>-1) funds.splice(i,1);
   renderFundList();
 }
 
 function setBenchmark(code){
-  funds.forEach(f=> f.benchmark = (f.code===code));
+  funds.forEach(f=> f.benchmark = (String(f.code)===String(code)));
   renderFundList();
 }
 
@@ -820,7 +820,7 @@ async function runRanking(){
 
 async function runSip(){
   const code = document.getElementById('simFundSelect').value;
-  const fund = funds.find(f=>f.code===code);
+  const fund = funds.find(f=>String(f.code)===String(code));
   if(!fund){ alert('Add and select a fund first.'); return; }
   const statusEl = document.getElementById('sipStatus');
   statusEl.innerHTML = '<div class="status loading">Fetching NAV history...</div>';
