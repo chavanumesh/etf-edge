@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mutual Fund Tracker</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --card:#ffffff; --border:#e2e5ea; --text:#1c2430; --muted:#6b7482;
+    --accent:#2e6f57; --accent-light:#e6f0eb; --bad:#b0413e; --bad-light:#fbe9e8;
+    --warn:#a5720a; --warn-light:#fbf1de;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:20px 14px 60px;}
+  h1{font-size:22px;margin:4px 0 2px;}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;}
+  .card h2{font-size:15px;margin:0 0 12px;}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;}
+  input,select{width:100%;padding:9px 10px;border:1px solid var(--border);border-radius:7px;font-size:14px;background:#fff;color:var(--text);}
+  button{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:7px;font-size:14px;cursor:pointer;}
+  button.secondary{background:#fff;color:var(--accent);border:1px solid var(--accent);}
+  button.small{padding:5px 9px;font-size:12px;}
+  button:disabled{opacity:.5;cursor:default;}
+  .row{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
+  .row > div{flex:1;min-width:140px;}
+  .fund-list{list-style:none;padding:0;margin:10px 0 0;}
+  .fund-list li{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--border);border-radius:7px;margin-bottom:6px;font-size:13px;}
+  .fund-list li.bench{background:var(--accent-light);}
+  .tag{font-size:10px;color:var(--accent);border:1px solid var(--accent);padding:1px 6px;border-radius:10px;margin-left:6px;}
+  .search-results{border:1px solid var(--border);border-radius:7px;margin-top:6px;max-height:220px;overflow-y:auto;background:#fff;}
+  .search-results div{padding:8px 10px;font-size:13px;border-bottom:1px solid var(--border);cursor:pointer;}
+  .search-results div:hover{background:var(--accent-light);}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--border);white-space:nowrap;}
+  th:first-child,td:first-child{text-align:left;}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.02em;}
+  tr.rank1{background:var(--accent-light);}
+  .pos{color:var(--accent);} .neg{color:var(--bad);}
+  .note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5;}
+  .status{font-size:13px;padding:8px 10px;border-radius:7px;margin-top:10px;}
+  .status.loading{background:var(--warn-light);color:var(--warn);}
+  .status.error{background:var(--bad-light);color:var(--bad);}
+  .badge{display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:600;}
+  .badge.good{background:var(--accent-light);color:var(--accent);}
+  .badge.bad{background:var(--bad-light);color:var(--bad);}
+  .scroll-x{overflow-x:auto;}
+  .tab-btns{display:flex;gap:6px;margin-bottom:14px;}
+  .tab-btns button{background:#fff;color:var(--muted);border:1px solid var(--border);}
+  .tab-btns button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .tabpane{display:none;} .tabpane.active{display:block;}
+  .metric-def{font-size:11.5px;color:var(--muted);margin-top:2px;}
+</style>
+</head>
+<body>
+
+<h1>Mutual Fund Tracker</h1>
+<div class="sub">Rank funds vs a benchmark using AMFI NAV history, and compare SIP vs lumpsum outcomes.</div>
+
+<div class="tab-btns">
+  <button id="tab-btn-rank" class="active" onclick="switchTab('rank')">Fund Ranking</button>
+  <button id="tab-btn-sip" onclick="switchTab('sip')">SIP vs Lumpsum</button>
+  <button id="tab-btn-cat" onclick="switchTab('cat')">Category Explorer</button>
+  <button id="tab-btn-fs" onclick="switchTab('fs')">Fact Sheet</button>
+</div>
+
+<!-- Add funds -->
+<div class="card">
+  <h2>1. Add funds</h2>
+  <div class="row">
+    <div style="flex:3">
+      <label>Search AMFI fund name</label>
+      <input id="searchBox" placeholder="e.g. Parag Parikh Flexi Cap" oninput="onSearchInput()">
+      <div id="searchResults" class="search-results" style="display:none;"></div>
+    </div>
+    <div>
+      <label>Lookback (years)</label>
+      <select id="lookback">
+        <option value="1">1</option><option value="3">3</option>
+        <option value="5" selected>5</option><option value="10">10</option>
+      </select>
+    </div>
+  </div>
+  <ul id="fundList" class="fund-list"></ul>
+  <div class="note">Add up to 10 funds you want ranked, then mark one as the <b>benchmark</b> (usually an index fund, e.g. a Nifty 50 index fund) to compare against.</div>
+</div>
+
+<!-- RANKING TAB -->
+<div id="tabpane-rank" class="tabpane active">
+  <div class="card">
+    <h2>2. Risk-free rate (for Sharpe/Sortino)</h2>
+    <div class="row">
+      <div><label>Annual risk-free rate (%)</label><input id="rfRate" type="number" value="7.0" step="0.1"></div>
+      <div style="flex:0"><button onclick="runRanking()">Rank funds</button></div>
+    </div>
+  </div>
+  <div id="rankStatus"></div>
+  <div id="rankResults"></div>
+</div>
+
+<!-- SIP TAB -->
+<div id="tabpane-sip" class="tabpane">
+  <div class="card">
+    <h2>2. Simulation inputs</h2>
+    <div class="row">
+      <div><label>Fund for simulation</label><select id="simFundSelect"></select></div>
+      <div><label>Monthly SIP amount (₹)</label><input id="sipAmt" type="number" value="10000"></div>
+      <div><label>Lumpsum amount (₹)</label><input id="lumpAmt" type="number" value="120000"></div>
+      <div><label>Horizon (years)</label><input id="simYears" type="number" value="5"></div>
+    </div>
+    <div style="margin-top:10px;"><button onclick="runSip()">Run simulation</button></div>
+  </div>
+  <div id="sipStatus"></div>
+  <div id="sipResults"></div>
+</div>
+
+<!-- CATEGORY EXPLORER TAB -->
+<div id="tabpane-cat" class="tabpane">
+  <div class="card">
+    <h2>Pick a category</h2>
+    <div class="row">
+      <div style="flex:2">
+        <label>Fund category</label>
+        <select id="catSelect"></select>
+      </div>
+      <div><label>Lookback (years)</label>
+        <select id="catLookback">
+          <option value="1">1</option><option value="3" selected>3</option>
+          <option value="5">5</option><option value="10">10</option>
+        </select>
+      </div>
+      <div style="flex:0"><button id="catScanBtn" onclick="runCategoryScan()">Find top 10</button></div>
+    </div>
+    <div class="note">This scans the full AMFI scheme universe for your chosen category (Direct Growth plans preferred), confirms each fund's actual category from AMFI data, then ranks by a blend of return and risk-adjusted return. This can take 1-2 minutes — it's making a lot of small requests.</div>
+  </div>
+  <div id="catStatus"></div>
+  <div id="catResults"></div>
+</div>
+
+<!-- FACT SHEET TAB -->
+<div id="tabpane-fs" class="tabpane">
+  <div class="card">
+    <h2>Look up a fund</h2>
+    <div class="row">
+      <div style="flex:3">
+        <label>Search fund name</label>
+        <input id="fsSearchBox" placeholder="e.g. HDFC Flexi Cap" oninput="onFsSearchInput()">
+        <div id="fsSearchResults" class="search-results" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+  <div id="fsStatus"></div>
+  <div id="fsResults"></div>
+</div>
+
+<script>
+const AMFI_CATEGORIES = [
+  {label:'Large Cap', nameHints:['large cap','bluechip','top 100'], metaHint:'large cap'},
+  {label:'Mid Cap', nameHints:['mid cap','midcap'], metaHint:'mid cap fund'},
+  {label:'Small Cap', nameHints:['small cap','smallcap'], metaHint:'small cap'},
+  {label:'Large & Mid Cap', nameHints:['large & mid','large and mid'], metaHint:'large & mid cap'},
+  {label:'Multi Cap', nameHints:['multi cap','multicap'], metaHint:'multi cap'},
+  {label:'Flexi Cap', nameHints:['flexi cap','flexicap'], metaHint:'flexi cap'},
+  {label:'ELSS (Tax Saver)', nameHints:['elss','tax saver','tax plan'], metaHint:'elss'},
+  {label:'Focused Fund', nameHints:['focused'], metaHint:'focused fund'},
+  {label:'Value / Contra', nameHints:['value fund','contra'], metaHint:'value fund'},
+  {label:'Sectoral / Thematic', nameHints:['sector','thematic','infrastructure','technology','pharma','banking & financial','consumption','psu','mnc','digital'], metaHint:'sectoral'},
+  {label:'Index Fund (Equity)', nameHints:['index fund','nifty','sensex'], metaHint:'index fund'},
+  {label:'Liquid Fund', nameHints:['liquid fund'], metaHint:'liquid fund'},
+  {label:'Ultra Short / Low Duration', nameHints:['ultra short','low duration'], metaHint:'duration fund'},
+  {label:'Short Duration Debt', nameHints:['short duration','short term'], metaHint:'short duration'},
+  {label:'Corporate Bond', nameHints:['corporate bond'], metaHint:'corporate bond'},
+  {label:'Banking & PSU Debt', nameHints:['banking & psu','banking and psu'], metaHint:'banking and psu'},
+  {label:'Gilt Fund', nameHints:['gilt'], metaHint:'gilt fund'},
+  {label:'Dynamic Bond', nameHints:['dynamic bond'], metaHint:'dynamic bond'},
+  {label:'Credit Risk', nameHints:['credit risk'], metaHint:'credit risk'},
+  {label:'Conservative Hybrid', nameHints:['conservative hybrid'], metaHint:'conservative hybrid'},
+  {label:'Aggressive Hybrid', nameHints:['aggressive hybrid','equity hybrid'], metaHint:'aggressive hybrid'},
+  {label:'Balanced Advantage', nameHints:['balanced advantage','dynamic asset'], metaHint:'balanced advantage'},
+  {label:'Multi Asset Allocation', nameHints:['multi asset'], metaHint:'multi asset'},
+  {label:'Arbitrage Fund', nameHints:['arbitrage'], metaHint:'arbitrage'},
+  {label:'Equity Savings', nameHints:['equity savings'], metaHint:'equity savings'},
+];
+
+(function initCatDropdown(){
+  const sel = document.getElementById('catSelect');
+  sel.innerHTML = AMFI_CATEGORIES.map((c,i)=>`<option value="${i}">${c.label}</option>`).join('');
+})();
+
+let fullSchemeList = null;
+
+async function getFullSchemeList(){
+  if(fullSchemeList) return fullSchemeList;
+  const res = await fetch('https://api.mfapi.in/mf');
+  fullSchemeList = await res.json(); // [{schemeCode, schemeName}]
+  return fullSchemeList;
+}
+
+function isPreferredPlan(name){
+  const n = name.toLowerCase();
+  const isDirect = n.includes('direct');
+  const isGrowth = n.includes('growth');
+  const isNotIdcw = !n.includes('idcw') && !n.includes('dividend') && !n.includes('bonus');
+  return isDirect && isGrowth && isNotIdcw;
+}
+
+async function fetchWithMeta(code){
+  const res = await fetch('https://api.mfapi.in/mf/'+code);
+  const json = await res.json();
+  const navData = json.data.map(d=>{
+    const [dd,mm,yyyy] = d.date.split('-');
+    return { date: new Date(+yyyy, +mm-1, +dd), nav: parseFloat(d.nav) };
+  }).filter(d=>!isNaN(d.nav)).reverse();
+  return { meta: json.meta, navData };
+}
+
+async function runCategoryScan(){
+  const catIdx = +document.getElementById('catSelect').value;
+  const cat = AMFI_CATEGORIES[catIdx];
+  const years = +document.getElementById('catLookback').value;
+  const statusEl = document.getElementById('catStatus');
+  const btn = document.getElementById('catScanBtn');
+  btn.disabled = true;
+  document.getElementById('catResults').innerHTML = '';
+  statusEl.innerHTML = '<div class="status loading">Loading full AMFI scheme list...</div>';
+
+  let list;
+  try{ list = await getFullSchemeList(); }
+  catch(e){ statusEl.innerHTML = '<div class="status error">Could not load scheme list. Check your connection.</div>'; btn.disabled=false; return; }
+
+  // Step 1: name-based pre-filter, preferring Direct Growth plans
+  let candidates = list.filter(s=>{
+    const n = s.schemeName.toLowerCase();
+    return cat.nameHints.some(h=>n.includes(h));
+  });
+  const preferred = candidates.filter(s=>isPreferredPlan(s.schemeName));
+  if(preferred.length >= 10) candidates = preferred;
+  candidates = candidates.slice(0, 300); // cap to keep runtime reasonable
+
+  if(candidates.length===0){
+    statusEl.innerHTML = '<div class="status error">No funds matched this category by name. Try a different category.</div>';
+    btn.disabled=false; return;
+  }
+
+  // Step 2: fetch each candidate, confirm category via meta, compute metrics
+  const rf = 0.07;
+  const matched = [];
+  let scanned = 0;
+  const CONCURRENCY = 8;
+  let idx = 0;
+  async function worker(){
+    while(idx < candidates.length){
+      const my = idx++; 
+      const c = candidates[my];
+      try{
+        const { meta, navData } = await fetchWithMeta(c.schemeCode);
+        scanned++;
+        const catStr = (meta.scheme_category||'').toLowerCase();
+        if(catStr.includes(cat.metaHint)){
+          const trimmed = filterLookback(navData, years);
+          const useData = trimmed.length>=13? trimmed: navData;
+          const ms = monthEndSeries(useData);
+          if(ms.length>=13){
+            const cagr = annReturn(ms);
+            const rets = monthlyReturns(ms);
+            const vol = stdev(rets)*Math.sqrt(12);
+            const sharpe = vol===0?0:(cagr-rf)/vol;
+            const mdd = maxDrawdown(useData);
+            matched.push({ code:c.schemeCode, name: meta.scheme_name, fundHouse: meta.fund_house, category: meta.scheme_category, cagr, vol, sharpe, mdd, navData, monthSeries: ms });
+          }
+        }
+      }catch(e){ /* skip failures */ }
+      if(scanned % 5 === 0 || idx>=candidates.length){
+        statusEl.innerHTML = `<div class="status loading">Scanned ${scanned} of ${candidates.length} candidates — ${matched.length} confirmed in "${cat.label}" so far...</div>`;
+      }
+    }
+  }
+  await Promise.all(Array.from({length:CONCURRENCY}, worker));
+
+  if(matched.length===0){
+    statusEl.innerHTML = '<div class="status error">Scanned candidates but none confirmed as this category with enough history. Try a longer/shorter lookback.</div>';
+    btn.disabled=false; return;
+  }
+
+  // Composite score: normalize CAGR and Sharpe, rank
+  const cagrs = matched.map(m=>m.cagr), sharpes = matched.map(m=>m.sharpe);
+  const cMin=Math.min(...cagrs), cMax=Math.max(...cagrs), sMin=Math.min(...sharpes), sMax=Math.max(...sharpes);
+  matched.forEach(m=>{
+    const cNorm = cMax===cMin?0.5:(m.cagr-cMin)/(cMax-cMin);
+    const sNorm = sMax===sMin?0.5:(m.sharpe-sMin)/(sMax-sMin);
+    m.score = 0.5*cNorm + 0.5*sNorm;
+  });
+  matched.sort((a,b)=>b.score-a.score);
+  const top10 = matched.slice(0,10);
+
+  statusEl.innerHTML = `<div class="status loading">Done — scanned ${scanned} candidates, ${matched.length} confirmed as ${cat.label}. Showing top 10 by blended return + Sharpe score.</div>`;
+  window._lastCategoryScan = { category: cat.label, years, top10 };
+  renderCategoryResults(cat.label, years, top10);
+  btn.disabled=false;
+}
+
+function renderCategoryResults(catLabel, years, top10){
+  let html = `<div class="card"><h2>Top 10 — ${catLabel} (${years}yr lookback)</h2>`;
+  html += '<div style="margin-bottom:10px;"><button onclick="exportCategoryPdf()">Download full PDF report</button></div>';
+  html += '<div class="scroll-x"><table><tr><th>#</th><th>Fund</th><th>Fund House</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>Max DD</th></tr>';
+  top10.forEach((f,i)=>{
+    html += `<tr class="${i===0?'rank1':''}"><td>${i+1}</td><td>${f.name}</td><td>${f.fundHouse}</td>
+      <td class="${f.cagr>=0?'pos':'neg'}">${pct(f.cagr)}</td><td>${pct(f.vol)}</td><td>${num(f.sharpe)}</td><td class="neg">${pct(f.mdd)}</td></tr>`;
+  });
+  html += '</table></div>';
+  html += '<div class="note">Ranking = 50% normalized CAGR + 50% normalized Sharpe ratio, over the selected lookback. Direct Growth plans preferred where available. Verify with official factsheets before investing.</div></div>';
+  document.getElementById('catResults').innerHTML = html;
+}
+
+// ---- Simple canvas line chart for PDF embedding ----
+function drawGrowthChart(top10, width=760, height=320){
+  const canvas = document.createElement('canvas');
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,width,height);
+  const pad = {l:50,r:15,t:15,b:30};
+  const colors = ['#2e6f57','#a5720a','#b0413e','#3a5ba0','#7a4ea0','#0a8a8a','#c06a2c','#5a5a5a','#1c6b3a','#8a2c5a'];
+  // normalize each fund's monthSeries to growth of 100
+  const series = top10.slice(0,6).map((f,i)=>{
+    const ms = f.monthSeries;
+    const base = ms[0].nav;
+    return { name:f.name, color:colors[i%colors.length], points: ms.map(d=>100*d.nav/base) };
+  });
+  const maxLen = Math.max(...series.map(s=>s.points.length));
+  const allVals = series.flatMap(s=>s.points);
+  const yMin = Math.min(...allVals)*0.95, yMax = Math.max(...allVals)*1.05;
+  function x(i){ return pad.l + (width-pad.l-pad.r) * i/(maxLen-1); }
+  function y(v){ return height-pad.b - (height-pad.t-pad.b)*(v-yMin)/(yMax-yMin); }
+  ctx.strokeStyle = '#ccc'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,height-pad.b); ctx.lineTo(width-pad.r,height-pad.b); ctx.stroke();
+  ctx.fillStyle = '#666'; ctx.font='10px sans-serif';
+  ctx.fillText(yMax.toFixed(0), 4, pad.t+8); ctx.fillText(yMin.toFixed(0), 4, height-pad.b);
+  series.forEach(s=>{
+    ctx.strokeStyle = s.color; ctx.lineWidth=1.6; ctx.beginPath();
+    s.points.forEach((v,i)=>{ const px=x(i), py=y(v); if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py); });
+    ctx.stroke();
+  });
+  return { dataUrl: canvas.toDataURL('image/png'), legend: series.map(s=>({name:s.name,color:s.color})) };
+}
+
+function drawBarChart(top10, key, label, width=760, height=260){
+  const canvas = document.createElement('canvas');
+  canvas.width=width; canvas.height=height;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,width,height);
+  const pad={l:50,r:15,t:20,b:70};
+  const vals = top10.map(f=>f[key]*(key==='cagr'||key==='mdd'?100:1));
+  const vMin = Math.min(0,...vals), vMax = Math.max(...vals)*1.1;
+  const bw = (width-pad.l-pad.r)/top10.length;
+  function y(v){ return height-pad.b - (height-pad.t-pad.b)*(v-vMin)/(vMax-vMin); }
+  ctx.strokeStyle='#ccc'; ctx.beginPath(); ctx.moveTo(pad.l,y(0)); ctx.lineTo(width-pad.r,y(0)); ctx.stroke();
+  top10.forEach((f,i)=>{
+    const v = f[key]*(key==='cagr'||key==='mdd'?100:1);
+    const bx = pad.l + i*bw + bw*0.15, bwid = bw*0.7;
+    ctx.fillStyle = v>=0? '#2e6f57':'#b0413e';
+    const top = Math.min(y(0),y(v)), h = Math.abs(y(v)-y(0));
+    ctx.fillRect(bx, top, bwid, h);
+    ctx.save();
+    ctx.translate(bx+bwid/2, height-pad.b+8);
+    ctx.rotate(Math.PI/5);
+    ctx.fillStyle='#333'; ctx.font='9px sans-serif'; ctx.textAlign='left';
+    ctx.fillText(f.name.slice(0,22), 0, 0);
+    ctx.restore();
+  });
+  ctx.fillStyle='#333'; ctx.font='11px sans-serif'; ctx.fillText(label, pad.l, 12);
+  return canvas.toDataURL('image/png');
+}
+
+async function exportCategoryPdf(){
+  const scan = window._lastCategoryScan;
+  if(!scan){ alert('Run a category scan first.'); return; }
+  if(!window.jspdf){
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const pw = doc.internal.pageSize.getWidth();
+  let y = 50;
+
+  doc.setFontSize(18); doc.text('Mutual Fund Research Report', 40, y); y+=22;
+  doc.setFontSize(11); doc.setTextColor(90);
+  doc.text(`Category: ${scan.category}   |   Lookback: ${scan.years} years   |   Generated: ${new Date().toLocaleDateString('en-IN')}`, 40, y); y+=26;
+  doc.setTextColor(0);
+
+  doc.setFontSize(13); doc.text('Executive summary', 40, y); y+=16;
+  doc.setFontSize(10);
+  const top3 = scan.top10.slice(0,3).map(f=>f.name).join('; ');
+  const summaryLines = doc.splitTextToSize(
+    `This report ranks funds in the "${scan.category}" category over the trailing ${scan.years} years using AMFI NAV data, blending annualized return (CAGR) and Sharpe ratio equally. Top 3 by this blend: ${top3}. Direct Growth plans were preferred where available. This is a quantitative screen only — verify expense ratio, AUM, portfolio holdings and manager tenure against the official factsheet before investing. Past performance is not indicative of future results.`, pw-80);
+  doc.text(summaryLines, 40, y); y += summaryLines.length*13 + 14;
+
+  // Ranked table
+  doc.setFontSize(13); doc.text('Ranked table (top 10)', 40, y); y+=16;
+  doc.setFontSize(8.5);
+  const headers = ['#','Fund','CAGR','Vol','Sharpe','Max DD'];
+  const colX = [40,60,270,330,390,450];
+  headers.forEach((h,i)=>doc.text(h,colX[i],y));
+  y+=4; doc.setLineWidth(0.5); doc.line(40,y,pw-40,y); y+=12;
+  scan.top10.forEach((f,i)=>{
+    if(y>760){ doc.addPage(); y=50; }
+    doc.text(String(i+1),colX[0],y);
+    doc.text(f.name.slice(0,45),colX[1],y);
+    doc.text((f.cagr*100).toFixed(2)+'%',colX[2],y);
+    doc.text((f.vol*100).toFixed(2)+'%',colX[3],y);
+    doc.text(f.sharpe.toFixed(2),colX[4],y);
+    doc.text((f.mdd*100).toFixed(2)+'%',colX[5],y);
+    y+=14;
+  });
+  y+=16;
+
+  // Charts
+  if(y>500){ doc.addPage(); y=50; }
+  doc.setFontSize(13); doc.text('Growth of ₹100 (top 6 funds)', 40, y); y+=10;
+  const growth = drawGrowthChart(scan.top10);
+  doc.addImage(growth.dataUrl, 'PNG', 40, y, pw-80, (pw-80)*320/760); y += (pw-80)*320/760 + 10;
+  doc.setFontSize(8);
+  growth.legend.forEach((l,i)=>{
+    doc.setFillColor(l.color); doc.rect(40+i*90, y, 8,8,'F');
+    doc.setTextColor(0); doc.text(l.name.slice(0,16), 52+i*90, y+7);
+  });
+  y += 26;
+
+  doc.addPage(); y=50;
+  doc.setFontSize(13); doc.setTextColor(0); doc.text('CAGR comparison', 40, y); y+=10;
+  const barImg1 = drawBarChart(scan.top10, 'cagr', 'CAGR (%)');
+  doc.addImage(barImg1, 'PNG', 40, y, pw-80, (pw-80)*260/760); y += (pw-80)*260/760 + 20;
+
+  doc.setFontSize(13); doc.text('Maximum drawdown comparison', 40, y); y+=10;
+  const barImg2 = drawBarChart(scan.top10, 'mdd', 'Max Drawdown (%)');
+  doc.addImage(barImg2, 'PNG', 40, y, pw-80, (pw-80)*260/760); y += (pw-80)*260/760 + 20;
+
+  // Methodology
+  doc.addPage(); y=50;
+  doc.setFontSize(13); doc.text('Methodology', 40, y); y+=16;
+  doc.setFontSize(9.5);
+  const methodText = [
+    'Data source: AMFI historical NAV data via the mfapi.in public API.',
+    'Universe: schemes matched to the selected category first by scheme-name keywords, then confirmed against AMFI\'s scheme_category field.',
+    'CAGR: compound annual growth rate of NAV over the lookback period, computed on month-end NAV points.',
+    'Volatility: annualized standard deviation of monthly returns.',
+    'Sharpe ratio: (CAGR - risk-free rate) / annualized volatility. Risk-free rate assumed at 7% p.a.',
+    'Max drawdown: largest peak-to-trough decline in NAV over the lookback period.',
+    'Ranking score: 0.5 x normalized CAGR + 0.5 x normalized Sharpe ratio, each min-max scaled across the matched universe.',
+    'Limitations: expense ratio, AUM, portfolio turnover, and fund manager tenure are not included — check the official factsheet for these. Direct Growth plans were preferred but not guaranteed available for every fund. This report is a quantitative screen, not investment advice.'
+  ];
+  methodText.forEach(line=>{
+    const wrapped = doc.splitTextToSize('• '+line, pw-80);
+    if(y+wrapped.length*13>780){ doc.addPage(); y=50; }
+    doc.text(wrapped, 40, y); y += wrapped.length*13+6;
+  });
+
+  doc.save(`mutual-fund-report-${scan.category.replace(/[^a-z0-9]/gi,'-').toLowerCase()}.pdf`);
+}
+
+function loadScript(src){
+  return new Promise((resolve,reject)=>{
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+// ---- Fact sheet ----
+let fsSearchTimer;
+function onFsSearchInput(){
+  clearTimeout(fsSearchTimer);
+  const q = document.getElementById('fsSearchBox').value.trim();
+  const box = document.getElementById('fsSearchResults');
+  if(q.length<3){ box.style.display='none'; return; }
+  fsSearchTimer = setTimeout(()=>doFsSearch(q), 400);
+}
+async function doFsSearch(q){
+  const box = document.getElementById('fsSearchResults');
+  box.style.display='block'; box.innerHTML='<div>Searching...</div>';
+  try{
+    const res = await fetch('https://api.mfapi.in/mf/search?q='+encodeURIComponent(q));
+    const data = await res.json();
+    if(!data.length){ box.innerHTML='<div>No matches.</div>'; return; }
+    box.innerHTML='';
+    data.slice(0,25).forEach(f=>{
+      const div = document.createElement('div');
+      div.textContent = f.schemeName;
+      div.onclick = ()=>loadFactSheet(f.schemeCode);
+      box.appendChild(div);
+    });
+  }catch(e){ box.innerHTML = '<div>Search failed.</div>'; }
+}
+
+function trailingReturn(navData, months){
+  if(navData.length<2) return null;
+  const target = new Date(navData[navData.length-1].date);
+  target.setMonth(target.getMonth()-months);
+  let ref = navData.find(d=>d.date>=target);
+  if(!ref) ref = navData[0];
+  const latest = navData[navData.length-1];
+  const years = months/12;
+  if(years<1) return latest.nav/ref.nav - 1; // simple return for <1y
+  return Math.pow(latest.nav/ref.nav, 1/years) - 1;
+}
+
+async function loadFactSheet(code){
+  document.getElementById('fsSearchResults').style.display='none';
+  document.getElementById('fsSearchBox').value='';
+  const statusEl = document.getElementById('fsStatus');
+  statusEl.innerHTML = '<div class="status loading">Fetching fund data...</div>';
+  document.getElementById('fsResults').innerHTML='';
+  try{
+    const { meta, navData } = await fetchWithMeta(code);
+    statusEl.innerHTML='';
+    const latest = navData[navData.length-1];
+    const r1y = trailingReturn(navData,12), r3y = trailingReturn(navData,36), r5y = trailingReturn(navData,60);
+    const mdd3y = maxDrawdown(filterLookback(navData,3));
+    const searchQuery = encodeURIComponent(meta.scheme_name + ' factsheet pdf');
+    let html = `<div class="card"><h2>${meta.scheme_name}</h2>
+      <table style="margin-bottom:10px;">
+        <tr><td>Fund house</td><td><b>${meta.fund_house}</b></td></tr>
+        <tr><td>Category</td><td><b>${meta.scheme_category||'—'}</b></td></tr>
+        <tr><td>Scheme type</td><td><b>${meta.scheme_type||'—'}</b></td></tr>
+        <tr><td>ISIN (Growth)</td><td><b>${meta.isin_growth||'—'}</b></td></tr>
+        <tr><td>Latest NAV</td><td><b>₹${latest.nav.toFixed(4)} (as of ${latest.date.toLocaleDateString('en-IN')})</b></td></tr>
+        <tr><td>1yr return</td><td class="${r1y>=0?'pos':'neg'}"><b>${r1y!=null?pct(r1y):'—'}</b></td></tr>
+        <tr><td>3yr return (ann.)</td><td class="${r3y>=0?'pos':'neg'}"><b>${r3y!=null?pct(r3y):'—'}</b></td></tr>
+        <tr><td>5yr return (ann.)</td><td class="${r5y>=0?'pos':'neg'}"><b>${r5y!=null?pct(r5y):'—'}</b></td></tr>
+        <tr><td>3yr max drawdown</td><td class="neg"><b>${pct(mdd3y)}</b></td></tr>
+      </table>
+      <button class="secondary" onclick="window.open('https://www.google.com/search?q=${searchQuery}','_blank')">Search official factsheet (expense ratio, AUM, manager, holdings)</button>
+      <div class="note">Expense ratio, AUM, portfolio turnover and fund manager tenure aren't in AMFI's free NAV data — use the button above to find the AMC's official factsheet PDF for those.</div>
+    </div>`;
+    document.getElementById('fsResults').innerHTML = html;
+  }catch(e){
+    statusEl.innerHTML = '<div class="status error">Could not fetch this fund\'s data.</div>';
+  }
+}
+
+const funds = []; // {code, name, benchmark:bool, navData:[{date,nav}]}
+let searchTimer;
+
+function switchTab(t){
+  ['rank','sip','cat','fs'].forEach(k=>{
+    document.getElementById('tabpane-'+k).classList.toggle('active', t===k);
+    document.getElementById('tab-btn-'+k).classList.toggle('active', t===k);
+  });
+}
+
+function onSearchInput(){
+  clearTimeout(searchTimer);
+  const q = document.getElementById('searchBox').value.trim();
+  const box = document.getElementById('searchResults');
+  if(q.length < 3){ box.style.display='none'; return; }
+  searchTimer = setTimeout(()=>doSearch(q), 400);
+}
+
+async function doSearch(q){
+  const box = document.getElementById('searchResults');
+  box.style.display='block';
+  box.innerHTML = '<div>Searching...</div>';
+  try{
+    const res = await fetch('https://api.mfapi.in/mf/search?q='+encodeURIComponent(q));
+    const data = await res.json();
+    if(!data.length){ box.innerHTML = '<div>No matches. Try a different name.</div>'; return; }
+    box.innerHTML = '';
+    data.slice(0,25).forEach(f=>{
+      const div = document.createElement('div');
+      div.textContent = f.schemeName;
+      div.onclick = ()=>addFund(f.schemeCode, f.schemeName);
+      box.appendChild(div);
+    });
+  }catch(e){
+    box.innerHTML = '<div>Search failed — check your connection.</div>';
+  }
+}
+
+function addFund(code, name){
+  if(funds.find(f=>f.code===code)){ return; }
+  if(funds.length >= 11){ alert('Max 10 funds + 1 benchmark. Remove one first.'); return; }
+  funds.push({code, name, benchmark:false, navData:null});
+  document.getElementById('searchBox').value='';
+  document.getElementById('searchResults').style.display='none';
+  renderFundList();
+}
+
+function removeFund(code){
+  const i = funds.findIndex(f=>f.code===code);
+  if(i>-1) funds.splice(i,1);
+  renderFundList();
+}
+
+function setBenchmark(code){
+  funds.forEach(f=> f.benchmark = (f.code===code));
+  renderFundList();
+}
+
+function renderFundList(){
+  const ul = document.getElementById('fundList');
+  ul.innerHTML = '';
+  funds.forEach(f=>{
+    const li = document.createElement('li');
+    if(f.benchmark) li.className='bench';
+    li.innerHTML = `<span>${f.name}${f.benchmark?'<span class="tag">BENCHMARK</span>':''}</span>`;
+    const btnWrap = document.createElement('span');
+    if(!f.benchmark){
+      const b1 = document.createElement('button');
+      b1.className='small secondary'; b1.textContent='Set as benchmark';
+      b1.onclick = ()=>setBenchmark(f.code);
+      btnWrap.appendChild(b1);
+    }
+    const b2 = document.createElement('button');
+    b2.className='small secondary'; b2.style.marginLeft='6px'; b2.textContent='Remove';
+    b2.onclick = ()=>removeFund(f.code);
+    btnWrap.appendChild(b2);
+    li.appendChild(btnWrap);
+    ul.appendChild(li);
+  });
+  const sel = document.getElementById('simFundSelect');
+  sel.innerHTML = funds.map(f=>`<option value="${f.code}">${f.name}${f.benchmark?' (benchmark)':''}</option>`).join('');
+}
+
+async function fetchNav(code){
+  const res = await fetch('https://api.mfapi.in/mf/'+code);
+  const json = await res.json();
+  // API returns newest first; convert to oldest-first, parse dd-mm-yyyy
+  const data = json.data.map(d=>{
+    const [dd,mm,yyyy] = d.date.split('-');
+    return { date: new Date(+yyyy, +mm-1, +dd), nav: parseFloat(d.nav) };
+  }).filter(d=>!isNaN(d.nav)).reverse();
+  return data;
+}
+
+function filterLookback(navData, years){
+  const cutoff = new Date();
+  cutoff.setFullYear(cutoff.getFullYear() - years);
+  return navData.filter(d => d.date >= cutoff);
+}
+
+// Resample daily NAV series to month-end points
+function monthEndSeries(navData){
+  const map = new Map();
+  navData.forEach(d=>{
+    const key = d.date.getFullYear()+'-'+d.date.getMonth();
+    map.set(key, d); // last one wins per month since data is ascending
+  });
+  return Array.from(map.values());
+}
+
+function monthlyReturns(monthSeries){
+  const rets = [];
+  for(let i=1;i<monthSeries.length;i++){
+    rets.push(monthSeries[i].nav/monthSeries[i-1].nav - 1);
+  }
+  return rets;
+}
+
+function mean(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function stdev(arr){
+  const m = mean(arr);
+  const v = mean(arr.map(x=>(x-m)*(x-m)));
+  return Math.sqrt(v);
+}
+function annReturn(monthSeries){
+  const first = monthSeries[0].nav, last = monthSeries[monthSeries.length-1].nav;
+  const years = (monthSeries.length-1)/12;
+  if(years<=0) return 0;
+  return Math.pow(last/first, 1/years) - 1;
+}
+function maxDrawdown(navData){
+  let peak = -Infinity, maxDd = 0;
+  navData.forEach(d=>{
+    if(d.nav>peak) peak = d.nav;
+    const dd = (d.nav-peak)/peak;
+    if(dd<maxDd) maxDd = dd;
+  });
+  return maxDd;
+}
+// OLS regression of fundRet on benchRet -> {alpha, beta, r2}
+function regress(fundRet, benchRet){
+  const n = fundRet.length;
+  const mx = mean(benchRet), my = mean(fundRet);
+  let sxy=0, sxx=0, syy=0;
+  for(let i=0;i<n;i++){
+    sxy += (benchRet[i]-mx)*(fundRet[i]-my);
+    sxx += (benchRet[i]-mx)*(benchRet[i]-mx);
+    syy += (fundRet[i]-my)*(fundRet[i]-my);
+  }
+  const beta = sxx===0?0:sxy/sxx;
+  const alphaMonthly = my - beta*mx;
+  const r2 = (sxx===0||syy===0)?0:(sxy*sxy)/(sxx*syy);
+  return { alpha: Math.pow(1+alphaMonthly,12)-1, beta, r2 };
+}
+
+function computeMetrics(fund, bench, rf){
+  const ms = fund.monthSeries, bms = bench.monthSeries;
+  const rets = monthlyReturns(ms);
+  const bRets = monthlyReturns(bms);
+  const n = Math.min(rets.length, bRets.length);
+  const fr = rets.slice(-n), br = bRets.slice(-n);
+
+  const cagr = annReturn(ms);
+  const vol = stdev(fr) * Math.sqrt(12);
+  const sharpe = vol===0?0:(cagr-rf)/vol;
+  const downside = fr.filter(r=>r<0);
+  const downDev = downside.length? stdev(downside)*Math.sqrt(12) : 0;
+  const sortino = downDev===0?0:(cagr-rf)/downDev;
+  const mdd = maxDrawdown(fund.navData);
+
+  let alpha=0, beta=0, r2=0, te=0, ir=0, upCap=0, downCap=0, winRate=0;
+  if(fund.code !== bench.code){
+    const reg = regress(fr, br);
+    alpha = reg.alpha; beta = reg.beta; r2 = reg.r2;
+    const active = fr.map((r,i)=> r - br[i]);
+    te = stdev(active) * Math.sqrt(12);
+    ir = te===0?0: mean(active)*12/te;
+    const upIdx = br.map((r,i)=>r>0?i:-1).filter(i=>i>=0);
+    const downIdx = br.map((r,i)=>r<0?i:-1).filter(i=>i>=0);
+    upCap = upIdx.length? (mean(upIdx.map(i=>fr[i])) / mean(upIdx.map(i=>br[i]))) * 100 : 0;
+    downCap = downIdx.length? (mean(downIdx.map(i=>fr[i])) / mean(downIdx.map(i=>br[i]))) * 100 : 0;
+    winRate = (fr.filter((r,i)=>r>br[i]).length / n) * 100;
+  }
+
+  return { cagr, vol, sharpe, sortino, mdd, alpha, beta, r2, te, ir, upCap, downCap, winRate };
+}
+
+function pct(x,d=2){ return (x*100).toFixed(d)+'%'; }
+function num(x,d=2){ return x.toFixed(d); }
+
+async function runRanking(){
+  if(funds.length < 2){ alert('Add at least 2 funds, and mark one as benchmark.'); return; }
+  const bench = funds.find(f=>f.benchmark);
+  if(!bench){ alert('Mark one fund as the benchmark.'); return; }
+  const statusEl = document.getElementById('rankStatus');
+  statusEl.innerHTML = '<div class="status loading">Fetching NAV history from AMFI (via mfapi.in)...</div>';
+  document.getElementById('rankResults').innerHTML = '';
+  const years = +document.getElementById('lookback').value;
+  const rf = +document.getElementById('rfRate').value / 100;
+
+  try{
+    for(const f of funds){
+      if(!f.navData){ f.navData = await fetchNav(f.code); }
+    }
+  }catch(e){
+    statusEl.innerHTML = '<div class="status error">Could not fetch NAV data. Check your internet connection and try again.</div>';
+    return;
+  }
+
+  const usable = [];
+  funds.forEach(f=>{
+    const trimmed = filterLookback(f.navData, years);
+    if(trimmed.length < 24){
+      f.insufficientHistory = true;
+    } else {
+      f.insufficientHistory = false;
+    }
+    f.navDataUsed = trimmed.length? trimmed : f.navData;
+    f.monthSeries = monthEndSeries(f.navDataUsed);
+  });
+
+  const results = [];
+  funds.forEach(f=>{
+    if(f.monthSeries.length < 13) return; // need at least ~1yr of monthly points
+    const m = computeMetrics(f, bench, rf);
+    results.push({ fund:f, m });
+  });
+
+  // Rank by Information Ratio (fund vs itself excluded), fallback Sharpe for benchmark
+  results.sort((a,b)=>{
+    if(a.fund.benchmark) return 1;
+    if(b.fund.benchmark) return -1;
+    return b.m.ir - a.m.ir;
+  });
+
+  statusEl.innerHTML = '';
+  let html = '<div class="card"><h2>Ranked results</h2>';
+  const short = funds.some(f=>f.insufficientHistory);
+  if(short) html += '<div class="status loading">Note: some funds have less than the selected lookback of history — metrics for those use their full available history instead.</div>';
+  html += '<div class="scroll-x"><table><tr><th>Fund</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>Sortino</th><th>Alpha</th><th>Beta</th><th>Track.Err</th><th>Info Ratio</th><th>Up/Down Cap</th><th>Win Rate</th><th>Max DD</th></tr>';
+  results.forEach((r,i)=>{
+    const m = r.m, f = r.fund;
+    html += `<tr class="${i===0 && !f.benchmark ?'rank1':''}">
+      <td>${f.name.slice(0,38)}${f.benchmark?' <span class="tag">BM</span>':''}</td>
+      <td class="${m.cagr>=0?'pos':'neg'}">${pct(m.cagr)}</td>
+      <td>${pct(m.vol)}</td>
+      <td>${num(m.sharpe)}</td>
+      <td>${num(m.sortino)}</td>
+      <td class="${m.alpha>=0?'pos':'neg'}">${f.benchmark?'—':pct(m.alpha)}</td>
+      <td>${f.benchmark?'—':num(m.beta)}</td>
+      <td>${f.benchmark?'—':pct(m.te)}</td>
+      <td>${f.benchmark?'—':num(m.ir)}</td>
+      <td>${f.benchmark?'—':num(m.upCap,0)+'% / '+num(m.downCap,0)+'%'}</td>
+      <td>${f.benchmark?'—':num(m.winRate,0)+'%'}</td>
+      <td class="neg">${pct(m.mdd)}</td>
+    </tr>`;
+  });
+  html += '</table></div>';
+  html += `<div class="metric-def">
+    <b>Sharpe/Sortino</b>: return per unit of total/downside risk, vs the risk-free rate above.
+    <b>Alpha/Beta</b>: from a regression of the fund's monthly returns against the benchmark's — alpha is annualized excess return unexplained by market moves, beta is sensitivity to the benchmark.
+    <b>Tracking error</b>: how much the fund's returns deviate from the benchmark. <b>Information ratio</b>: excess return per unit of tracking error — higher and positive is better, used here to rank.
+    <b>Up/Down capture</b>: % of benchmark's gain/loss the fund captured in up/down months (lower down-capture is better). <b>Win rate</b>: % of months the fund beat the benchmark.
+  </div>`;
+  html += '<div class="note">Data: AMFI NAV history via mfapi.in. Past performance is not a guarantee of future results — verify with official factsheets before investing.</div>';
+  html += '</div>';
+  document.getElementById('rankResults').innerHTML = html;
+}
+
+async function runSip(){
+  const code = document.getElementById('simFundSelect').value;
+  const fund = funds.find(f=>f.code===code);
+  if(!fund){ alert('Add and select a fund first.'); return; }
+  const statusEl = document.getElementById('sipStatus');
+  statusEl.innerHTML = '<div class="status loading">Fetching NAV history...</div>';
+  document.getElementById('sipResults').innerHTML = '';
+
+  const sipAmt = +document.getElementById('sipAmt').value;
+  const lumpAmt = +document.getElementById('lumpAmt').value;
+  const years = +document.getElementById('simYears').value;
+  const months = years*12;
+
+  try{
+    if(!fund.navData){ fund.navData = await fetchNav(fund.code); }
+  }catch(e){
+    statusEl.innerHTML = '<div class="status error">Could not fetch NAV data.</div>';
+    return;
+  }
+  const ms = monthEndSeries(fund.navData);
+  if(ms.length < months+1){
+    statusEl.innerHTML = `<div class="status error">Not enough history: need ${years} years (${months} months) of data, only have ${ms.length} months.</div>`;
+    return;
+  }
+  statusEl.innerHTML='';
+
+  // Roll a window of `months` length across all available history, both for SIP and lumpsum
+  const sipResults = [], lumpResults = [];
+  for(let start=0; start+months < ms.length; start++){
+    // Lumpsum: invest lumpAmt at ms[start], value at ms[start+months]
+    const lumpUnits = lumpAmt / ms[start].nav;
+    const lumpEnd = lumpUnits * ms[start+months].nav;
+    lumpResults.push({ start: ms[start].date, xirr: Math.pow(lumpEnd/lumpAmt, 1/years)-1, corpus: lumpEnd });
+
+    // SIP: invest sipAmt at each month start..start+months-1, redeem at start+months
+    let units = 0, invested = 0;
+    for(let m=start; m<start+months; m++){
+      units += sipAmt/ms[m].nav; invested += sipAmt;
+    }
+    const corpus = units * ms[start+months].nav;
+    const approxAnnualReturn = Math.pow(corpus/invested, 1/years) - 1; // simplified, not true XIRR
+    sipResults.push({ start: ms[start].date, corpus, invested, approxAnnualReturn });
+  }
+
+  const lumpXirrs = lumpResults.map(r=>r.xirr).sort((a,b)=>a-b);
+  const sipRets = sipResults.map(r=>r.approxAnnualReturn).sort((a,b)=>a-b);
+  const pctl = (arr,p)=> arr[Math.floor(arr.length*p)];
+
+  let html = `<div class="card"><h2>Results — rolling ${years}-year windows (${lumpResults.length} historical start points)</h2>`;
+  html += '<div class="scroll-x"><table><tr><th></th><th>Median return (ann.)</th><th>Worst case</th><th>Best case</th><th>10th pct.</th></tr>';
+  html += `<tr><td>Lumpsum (₹${lumpAmt.toLocaleString('en-IN')})</td>
+    <td>${pct(pctl(lumpXirrs,0.5))}</td><td class="neg">${pct(lumpXirrs[0])}</td><td class="pos">${pct(lumpXirrs[lumpXirrs.length-1])}</td><td>${pct(pctl(lumpXirrs,0.1))}</td></tr>`;
+  html += `<tr><td>SIP (₹${sipAmt.toLocaleString('en-IN')}/mo)</td>
+    <td>${pct(pctl(sipRets,0.5))}</td><td class="neg">${pct(sipRets[0])}</td><td class="pos">${pct(sipRets[sipRets.length-1])}</td><td>${pct(pctl(sipRets,0.1))}</td></tr>`;
+  html += '</table></div>';
+
+  const lumpMedian = pctl(lumpXirrs,0.5), sipMedian = pctl(sipRets,0.5);
+  const lumpWorst = lumpXirrs[0], sipWorst = sipRets[0];
+  let verdict;
+  if(sipWorst > lumpWorst && sipMedian <= lumpMedian){
+    verdict = "Historically, SIP gave a narrower range of outcomes (better worst-case) at the cost of slightly lower median returns — better for smoothing entry-point risk.";
+  } else if(lumpMedian > sipMedian && lumpWorst >= sipWorst*0.8){
+    verdict = "Historically, lumpsum tended to outperform SIP on median return over this horizon, typical when markets trend upward over most rolling windows.";
+  } else {
+    verdict = "Results are mixed across the historical windows tested — the gap between SIP and lumpsum outcomes is narrow for this fund and horizon.";
+  }
+  html += `<div class="note"><b>Reading this:</b> ${verdict} This uses actual historical NAV data for every possible ${years}-year start point available, not a single hypothetical run. SIP return is an approximation (invested-vs-corpus growth rate), not true XIRR.</div>`;
+  html += '<div class="note">Reminder: past performance is not a guarantee of future results. Verify before investing.</div>';
+  html += '</div>';
+  document.getElementById('sipResults').innerHTML = html;
+}
+</script>
+</body>
+</html>
