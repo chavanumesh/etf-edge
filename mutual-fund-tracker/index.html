@@ -246,6 +246,7 @@ async function runCategoryScan(){
   // Step 2: fetch each candidate, confirm category via meta, compute metrics
   const rf = 0.07;
   const matched = [];
+  const fallbackMatched = []; // name matched but category string didn't confirm
   let scanned = 0;
   const CONCURRENCY = 8;
   let idx = 0;
@@ -257,18 +258,18 @@ async function runCategoryScan(){
         const { meta, navData } = await fetchWithMeta(c.schemeCode);
         scanned++;
         const catStr = (meta.scheme_category||'').toLowerCase();
-        if(catStr.includes(cat.metaHint)){
-          const trimmed = filterLookback(navData, years);
-          const useData = trimmed.length>=13? trimmed: navData;
-          const ms = monthEndSeries(useData);
-          if(ms.length>=13){
-            const cagr = annReturn(ms);
-            const rets = monthlyReturns(ms);
-            const vol = stdev(rets)*Math.sqrt(12);
-            const sharpe = vol===0?0:(cagr-rf)/vol;
-            const mdd = maxDrawdown(useData);
-            matched.push({ code:c.schemeCode, name: meta.scheme_name, fundHouse: meta.fund_house, category: meta.scheme_category, cagr, vol, sharpe, mdd, navData, monthSeries: ms });
-          }
+        const trimmed = filterLookback(navData, years);
+        const useData = trimmed.length>=13? trimmed: navData;
+        const ms = monthEndSeries(useData);
+        if(ms.length>=13){
+          const cagr = annReturn(ms);
+          const rets = monthlyReturns(ms);
+          const vol = stdev(rets)*Math.sqrt(12);
+          const sharpe = vol===0?0:(cagr-rf)/vol;
+          const mdd = maxDrawdown(useData);
+          const entry = { code:c.schemeCode, name: meta.scheme_name, fundHouse: meta.fund_house, category: meta.scheme_category, cagr, vol, sharpe, mdd, navData, monthSeries: ms };
+          if(catStr.includes(cat.metaHint)) matched.push(entry);
+          else fallbackMatched.push(entry);
         }
       }catch(e){ /* skip failures */ }
       if(scanned % 5 === 0 || idx>=candidates.length){
@@ -278,34 +279,44 @@ async function runCategoryScan(){
   }
   await Promise.all(Array.from({length:CONCURRENCY}, worker));
 
-  if(matched.length===0){
-    statusEl.innerHTML = '<div class="status error">Scanned candidates but none confirmed as this category with enough history. Try a longer/shorter lookback.</div>';
+  let usedFallback = false;
+  let finalMatched = matched;
+  if(finalMatched.length===0 && fallbackMatched.length>0){
+    finalMatched = fallbackMatched;
+    usedFallback = true;
+  }
+
+  if(finalMatched.length===0){
+    statusEl.innerHTML = '<div class="status error">Scanned candidates but none had enough NAV history for this lookback. Try a shorter lookback (this category may be newer).</div>';
     btn.disabled=false; return;
   }
 
   // Composite score: normalize CAGR and Sharpe, rank
-  const cagrs = matched.map(m=>m.cagr), sharpes = matched.map(m=>m.sharpe);
+  const cagrs = finalMatched.map(m=>m.cagr), sharpes = finalMatched.map(m=>m.sharpe);
   const cMin=Math.min(...cagrs), cMax=Math.max(...cagrs), sMin=Math.min(...sharpes), sMax=Math.max(...sharpes);
-  matched.forEach(m=>{
+  finalMatched.forEach(m=>{
     const cNorm = cMax===cMin?0.5:(m.cagr-cMin)/(cMax-cMin);
     const sNorm = sMax===sMin?0.5:(m.sharpe-sMin)/(sMax-sMin);
     m.score = 0.5*cNorm + 0.5*sNorm;
   });
-  matched.sort((a,b)=>b.score-a.score);
-  const top10 = matched.slice(0,10);
+  finalMatched.sort((a,b)=>b.score-a.score);
+  const top10 = finalMatched.slice(0,10);
 
-  statusEl.innerHTML = `<div class="status loading">Done — scanned ${scanned} candidates, ${matched.length} confirmed as ${cat.label}. Showing top 10 by blended return + Sharpe score.</div>`;
-  window._lastCategoryScan = { category: cat.label, years, top10 };
-  renderCategoryResults(cat.label, years, top10);
+  statusEl.innerHTML = `<div class="status loading">Done — scanned ${scanned} candidates, ${finalMatched.length} matched${usedFallback?' (by name only — AMFI\'s category label didn\'t confirm, shown anyway)':' as '+cat.label}. Showing top 10 by blended return + Sharpe score.</div>`;
+  window._lastCategoryScan = { category: cat.label, years, top10, usedFallback };
+  renderCategoryResults(cat.label, years, top10, usedFallback);
   btn.disabled=false;
 }
 
-function renderCategoryResults(catLabel, years, top10){
+function renderCategoryResults(catLabel, years, top10, usedFallback){
   let html = `<div class="card"><h2>Top 10 — ${catLabel} (${years}yr lookback)</h2>`;
+  if(usedFallback){
+    html += '<div class="status loading">These funds matched by name but AMFI\'s scheme_category field used different wording than expected — category not independently confirmed. Double-check the "Category" column below.</div>';
+  }
   html += '<div style="margin-bottom:10px;"><button onclick="exportCategoryPdf()">Download full PDF report</button></div>';
-  html += '<div class="scroll-x"><table><tr><th>#</th><th>Fund</th><th>Fund House</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>Max DD</th></tr>';
+  html += '<div class="scroll-x"><table><tr><th>#</th><th>Fund</th><th>Category</th><th>Fund House</th><th>CAGR</th><th>Vol</th><th>Sharpe</th><th>Max DD</th></tr>';
   top10.forEach((f,i)=>{
-    html += `<tr class="${i===0?'rank1':''}"><td>${i+1}</td><td>${f.name}</td><td>${f.fundHouse}</td>
+    html += `<tr class="${i===0?'rank1':''}"><td>${i+1}</td><td>${f.name}</td><td>${f.category||'—'}</td><td>${f.fundHouse}</td>
       <td class="${f.cagr>=0?'pos':'neg'}">${pct(f.cagr)}</td><td>${pct(f.vol)}</td><td>${num(f.sharpe)}</td><td class="neg">${pct(f.mdd)}</td></tr>`;
   });
   html += '</table></div>';
